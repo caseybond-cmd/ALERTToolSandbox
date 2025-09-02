@@ -34,11 +34,13 @@
         .module-bg-e { background-color: #fef2f2; }
         .module-bg-f { background-color: #faf5ff; }
         .module-bg-g { background-color: #f5f3ff; }
-        .patient-tabs { @apply flex border-b border-gray-300 mb-4 flex-wrap; }
-        .patient-tab { @apply cursor-pointer py-2 px-4 text-gray-600 border-b-2 border-transparent hover:bg-gray-100; margin-bottom: -1px; border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0; }
-        .patient-tab.active { @apply border-gray-300 text-teal-700 font-semibold bg-white; border-bottom: 1px solid white; }
-        .delete-patient-btn { @apply text-red-400 hover:text-red-600 ml-2 font-mono; }
-        .device-flag { @apply ml-2 text-xs font-bold text-white bg-red-600 px-2 py-1 rounded-full; }
+        .patient-tabs { display: flex; border-bottom-width: 1px; border-color: #D1D5DB; margin-bottom: 1rem; flex-wrap: wrap; }
+        .patient-tab { cursor: pointer; padding: 0.5rem 1rem; color: #4B5563; border-bottom-width: 2px; border-color: transparent; margin-bottom: -1px; border: 1px solid transparent; border-bottom-style: none; border-radius: 6px 6px 0 0; }
+        .patient-tab:hover { background-color: #F3F4F6; }
+        .patient-tab.active { border-color: #D1D5DB; color: #047857; font-weight: 600; background-color: #FFFFFF; border-bottom: 1px solid white; }
+        .delete-patient-btn { color: #F87171; margin-left: 0.5rem; font-family: monospace; }
+        .delete-patient-btn:hover { color: #DC2626; }
+        .device-flag { margin-left: 0.5rem; font-size: 0.75rem; font-weight: 700; color: #FFFFFF; background-color: #DC2626; padding: 0.25rem 0.5rem; border-radius: 9999px; }
         
         @media print {
             body > *:not(#printoutContainer) { display: none !important; }
@@ -179,9 +181,9 @@
                 </div>
 
                 <div class="final-score-bg text-white rounded-xl shadow-lg p-6 mt-8">
-                     <div class="flex flex-col sm:flex-row justify-between items-center text-center">
-                         <div class="mb-4 sm:mb-0"><span class="text-lg font-medium text-gray-400">TOTAL SCORE</span><div id="totalScore" class="text-5xl font-bold">0</div></div>
-                         <div class="w-full sm:w-auto"><span class="text-lg font-medium text-gray-400">FINAL CATEGORY & ACTION</span><div id="riskCategory" class="text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300"></div></div>
+                       <div class="flex flex-col sm:flex-row justify-between items-center text-center">
+                           <div class="mb-4 sm:mb-0"><span class="text-lg font-medium text-gray-400">TOTAL SCORE</span><div id="totalScore" class="text-5xl font-bold">0</div></div>
+                           <div class="w-full sm:w-auto"><span class="text-lg font-medium text-gray-400">FINAL CATEGORY & ACTION</span><div id="riskCategory" class="text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300"></div></div>
                     </div>
                 </div>
             </div>
@@ -988,12 +990,12 @@
             }
 
             // Restore dynamic elements
-            if (data.allergies) { data.allergies.forEach(a => { createAllergyInput(); const lastRow = allergiesContainer.lastChild.querySelector('.allergy-row'); lastRow.querySelector('.allergen-name').value = a.name; lastRow.querySelector('.allergen-reaction').value = a.reaction; }); }
-            if (data.centralLines) { data.centralLines.forEach(d => { createCentralLineInput(); const lastRow = centralLinesContainer.lastChild.querySelector('.device-row'); for(const k in d) { const el = lastRow.querySelector(`.cvad-${k}`); if (el) el.value = d[k]; } }); }
-            if (data.pivcs) { data.pivcs.forEach(d => { createPivcInput(); const lastRow = pivcsContainer.lastChild.querySelector('.device-row'); for(const k in d) { const el = lastRow.querySelector(`.pivc-${k}`); if (el) el.value = d[k]; } }); }
-            if (data.ngTubes) { data.ngTubes.forEach(d => { createNgTubeInput(); const lastRow = ngTubesContainer.lastChild.querySelector('.device-row'); for(const k in d) { const el = lastRow.querySelector(`.ng-${k}`); if (el) el.value = d[k]; } }); }
-            if (data.drains) { data.drains.forEach(d => { createDrainInput(); const lastRow = drainsContainer.lastChild.querySelector('.device-row'); for(const k in d) { const el = lastRow.querySelector(`.drain-${k.replace('outputType','output-type').replace('output24hr','output-24hr').replace('outputTotal','output-total')}`); if (el) el.value = d[k]; } }); }
-            if (data.wounds) { data.wounds.forEach(d => { createWoundInput(); const lastRow = woundsContainer.lastChild.querySelector('.device-row'); for(const k in d) { const el = lastRow.querySelector(`.wound-${k}`); if (el) el.value = d[k]; } }); }
+            if (data.allergies) { data.allergies.forEach(a => { createAllergyInput(); const lastRow = allergiesContainer.lastChild; if (lastRow) { lastRow.querySelector('.allergen-name').value = a.name; lastRow.querySelector('.allergen-reaction').value = a.reaction; } }); }
+            if (data.centralLines) { data.centralLines.forEach(d => { createCentralLineInput(); const lastRow = centralLinesContainer.lastChild; if (lastRow) { for(const k in d) { const el = lastRow.querySelector(`.cvad-${k}`); if (el) el.value = d[k]; } } }); }
+            if (data.pivcs) { data.pivcs.forEach(d => { createPivcInput(); const lastRow = pivcsContainer.lastChild; if (lastRow) { for(const k in d) { const el = lastRow.querySelector(`.pivc-${k}`); if (el) el.value = d[k]; } } }); }
+            if (data.ngTubes) { data.ngTubes.forEach(d => { createNgTubeInput(); const lastRow = ngTubesContainer.lastChild; if (lastRow) { for(const k in d) { const el = lastRow.querySelector(`.ng-${k}`); if (el) el.value = d[k]; } } }); }
+            if (data.drains) { data.drains.forEach(d => { createDrainInput(); const lastRow = drainsContainer.lastChild; if (lastRow) { for(const k in d) { const el = lastRow.querySelector(`.drain-${k.replace('outputType','output-type').replace('output24hr','output-24hr').replace('outputTotal','output-total')}`); if (el) el.value = d[k]; } } }); }
+            if (data.wounds) { data.wounds.forEach(d => { createWoundInput(); const lastRow = woundsContainer.lastChild; if (lastRow) { for(const k in d) { const el = lastRow.querySelector(`.wound-${k}`); if (el) el.value = d[k]; } } }); }
             
             assessmentForm.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('input', { bubbles: true })));
             assessmentForm.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
@@ -1027,7 +1029,7 @@
             if (!activePatientId) return;
             const patientData = getFormData();
             const patientName = patientData.patientInitials || `Patient`;
-            patients[activePatientId] = { id: activePatientId, name: patientName, score: totalScoreEl.textContent, category: riskCategoryEl.innerHTML, data: patientData };
+            patients[activePatientId] = { id: activePatientId, name: patientName, score: totalScoreEl.textContent, category: riskCategoryEl.textContent.split(' ')[0], data: patientData };
             saveState();
             renderTabs();
         }
@@ -1093,7 +1095,7 @@
             if (data['precaution-Airborne']) precautionsList.push('Airborne');
             const precautions = precautionsList.length > 0 ? precautionsList.join(', ') : 'Standard';
 
-            return { name: data.patientInitials || patient.name || 'N/A', location: data.wardAndRoom || 'N/A', urn: data.urnLast4 || 'N/A', score: patient.score || 0, category: patient.category || 'N/A', goc: data.goc || 'N/A', los: data.losDays || 'N/A', allergies: allergies, precautions: precautions, reason: data.infectionControlReason || '' };
+            return { name: data.patientInitials || patient.name || 'N/A', location: data.wardAndRoom || 'N/A', urn: data.urnLast4 || 'N/A', score: patient.score || 0, category: (patient.category || 'N/A').replace(/<br.*?>/gi, ' - '), goc: data.goc || 'N/A', los: data.losDays || 'N/A', allergies: allergies, precautions: precautions, reason: data.infectionControlReason || '' };
         }
 
         function generateDigitalList() {
@@ -1101,7 +1103,7 @@
             const sortedPatients = Object.values(patients).sort((a, b) => (b.score || 0) - (a.score || 0));
             sortedPatients.forEach(p => {
                 const d = getListData(p);
-                listHtml += `<div class="prose max-w-none border-t pt-4 mt-4"><h3>${d.name} - ${d.location} (URN: ${d.urn})</h3><p><strong>Risk Score: ${d.score}</strong> (${d.category.replace(/<br.*?>/gi, ' - ')})</p><p><strong>Key Info:</strong> GOC: ${d.goc} | ICU LOS: ${d.los} days | Allergies: ${d.allergies} | Precautions: ${d.precautions}</p><h4>Review Checklist:</h4><ul><li><strong>Airway:</strong> Patent, secure? Trache status?</li><li><strong>Breathing:</strong> WOB, RR trend, O2 stable/weaning?</li><li><strong>Circulation:</strong> Fluid status? Lines patent/clean? Output adequate?</li><li><strong>Disability:</strong> GCS/AVPU, Delirium screen (CAM-ICU/4AT), Pain controlled?</li><li><strong>Exposure/Systemic:</strong> Bowels opened? Nutrition plan? Mobility plan?</li></ul></div>`;
+                listHtml += `<div class="prose max-w-none border-t pt-4 mt-4"><h3>${d.name} - ${d.location} (URN: ${d.urn})</h3><p><strong>Risk Score: ${d.score}</strong> (${d.category})</p><p><strong>Key Info:</strong> GOC: ${d.goc} | ICU LOS: ${d.los} days | Allergies: ${d.allergies} | Precautions: ${d.precautions}</p><h4>Review Checklist:</h4><ul><li><strong>Airway:</strong> Patent, secure? Trache status?</li><li><strong>Breathing:</strong> WOB, RR trend, O2 stable/weaning?</li><li><strong>Circulation:</strong> Fluid status? Lines patent/clean? Output adequate?</li><li><strong>Disability:</strong> GCS/AVPU, Delirium screen (CAM-ICU/4AT), Pain controlled?</li><li><strong>Exposure/Systemic:</strong> Bowels opened? Nutrition plan? Mobility plan?</li></ul></div>`;
             });
             digitalListContent.innerHTML = listHtml;
             digitalListModal.classList.remove('hidden');
@@ -1118,6 +1120,23 @@
             });
             printoutContainer.innerHTML = printHtml;
             window.print();
+        }
+
+        // *** BUG FIX: Added missing copySummary function ***
+        function copySummary() {
+            if (!emrSummaryEl.value) {
+                alert('Please generate the summary first.');
+                return;
+            }
+            navigator.clipboard.writeText(emrSummaryEl.value).then(() => {
+                copySummaryButton.textContent = 'Copied!';
+                setTimeout(() => {
+                    copySummaryButton.textContent = 'Copy to Clipboard';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy summary. Please try again or copy manually.');
+            });
         }
 
         function initializeApp() {
@@ -1138,7 +1157,7 @@
             nkdaCheckbox.addEventListener('change', () => { const isChecked = nkdaCheckbox.checked; if(isChecked) allergiesContainer.innerHTML = ''; allergiesContainer.style.display = isChecked ? 'none' : 'block'; addAllergyButton.style.display = isChecked ? 'none' : 'block'; });
             precautionCheckboxes.forEach(cb => { cb.addEventListener('change', () => { const anyChecked = [...precautionCheckboxes].some(c => c.checked); infectionControlDetails.classList.toggle('hidden', !anyChecked); if(!anyChecked) document.getElementById('infectionControlReason').value = ''; }); });
             addCentralLineButton.addEventListener('click', createCentralLineInput); addPivcButton.addEventListener('click', createPivcInput); addNgTubeButton.addEventListener('click', createNgTubeInput); addDrainButton.addEventListener('click', createDrainInput); addWoundButton.addEventListener('click', createWoundInput);
-            [centralLinesContainer, pivcsContainer, ngTubesContainer, drainsContainer, woundsContainer, allergiesSection].forEach(c => { if (c) c.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.closest('.device-row, .allergy-row').remove(); }}); });
+            [centralLinesContainer, pivcsContainer, ngTubesContainer, drainsContainer, woundsContainer, allergiesContainer].forEach(c => { if (c) c.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.closest('.device-row, .allergy-row').remove(); }}); });
             pacingWiresPresentCheckbox.addEventListener('change', () => { pacingWiresDetailsDiv.classList.toggle('hidden', !pacingWiresPresentCheckbox.checked); });
             pacingStatusSelect.addEventListener('change', () => { pacingSettingsDiv.classList.toggle('hidden', pacingStatusSelect.value === 'capped'); });
             homeTeamPlanCheckbox.addEventListener('change', () => { homeTeamPlanDetails.classList.toggle('hidden', !homeTeamPlanCheckbox.checked); if(!homeTeamPlanCheckbox.checked) { document.getElementById('homeTeamPlanText').value = ''; }});
