@@ -36,6 +36,15 @@
         .module-bg-g { background-color: #f5f3ff; }
         
         /* --- UI for Header & Tabs --- */
+        .tabs-placeholder {
+            color: #9CA3AF; /* text-gray-400 */
+            padding: 1rem;
+            text-align: center;
+            font-style: italic;
+            font-size: 0.875rem; /* text-sm */
+            border: 2px dashed #E5E7EB; /* border-gray-200 */
+            border-radius: 6px;
+        }
         .patient-tabs-container { border-bottom: 1px solid #D1D5DB; }
         .patient-tab { 
             position: relative;
@@ -62,7 +71,6 @@
         .delete-patient-btn:hover { color: #DC2626; background-color: #FEE2E2; }
         .tab-score-badge { font-size: 0.7rem; font-weight: 700; color: white; padding: 2px 6px; border-radius: 8px; }
         
-        /* Tab Risk Colors */
         .patient-tab.active.risk-critical { border-top-color: #DC2626; }
         .patient-tab.active.risk-intensive-escalate { border-top-color: #F97316; }
         .patient-tab.active.risk-intensive { border-top-color: #F59E0B; }
@@ -495,60 +503,32 @@
         const scoreInputs = document.querySelectorAll('.score-input');
         const totalScoreEl = document.getElementById('totalScore');
         const riskCategoryEl = document.getElementById('riskCategory');
-        const resetButton = document.getElementById('resetButton');
-        const generateSummaryButton = document.getElementById('generateSummaryButton');
-        const copySummaryButton = document.getElementById('copySummaryButton');
         const emrSummaryEl = document.getElementById('emrSummary');
-        const bloodInputs = document.querySelectorAll('.blood-input');
         const calculatedADDSEl = document.getElementById('calculatedADDSScore');
         const addsBreakdownEl = document.getElementById('addsBreakdown');
-        const picsRadios = document.querySelectorAll('input[name="pics_status"]');
         const picsDetailsContainer = document.getElementById('pics_details_container');
-        const vitalInputs = document.querySelectorAll('.vital-input');
-        const nursingConcernRadios = document.querySelectorAll('input[name="concern_score"]');
         const nursingConcernText = document.getElementById('nursingConcernText');
-        const timeInputs = document.querySelectorAll('.time-input');
-        const reviewTypeSelect = document.getElementById('reviewType');
         const postStepdownFields = document.getElementById('postStepdownFields');
         const afterHoursContainer = document.getElementById('after_hours_container');
         const afterHoursCheckbox = document.getElementById('systemic_after_hours_checkbox');
-        const gocSelect = document.getElementById('goc');
         const gocSpecificsContainer = document.getElementById('gocSpecificsContainer');
-        const nkdaCheckbox = document.getElementById('nkdaCheckbox');
         const allergiesContainer = document.getElementById('allergies_container');
-        const addAllergyButton = document.getElementById('addAllergyButton');
-        const precautionCheckboxes = document.querySelectorAll('.precaution-cb');
         const infectionControlDetails = document.getElementById('infectionControlDetails');
-        const addCentralLineButton = document.getElementById('addCentralLineButton');
         const centralLinesContainer = document.getElementById('central_lines_container');
-        const addPivcButton = document.getElementById('addPivcButton');
         const pivcsContainer = document.getElementById('pivcs_container');
-        const addNgTubeButton = document.getElementById('addNgTubeButton');
         const ngTubesContainer = document.getElementById('ng_tubes_container');
-        const pacingWiresPresentCheckbox = document.getElementById('pacing_wires_present');
         const pacingWiresDetailsDiv = document.getElementById('pacing_wires_details');
-        const pacingStatusSelect = document.getElementById('pacing_status');
         const pacingSettingsDiv = document.getElementById('pacing_settings');
-        const addDrainButton = document.getElementById('addDrainButton');
         const drainsContainer = document.getElementById('drains_container');
-        const addWoundButton = document.getElementById('addWoundButton');
         const woundsContainer = document.getElementById('wounds_container');
-        const homeTeamPlanCheckbox = document.getElementById('homeTeamPlanCheckbox');
         const homeTeamPlanDetails = document.getElementById('homeTeamPlanDetails');
-        
         const patientTabsContainer = document.getElementById('patientTabsContainer');
         const tabsPlaceholder = document.getElementById('tabsPlaceholder');
-        const addPatientBtn = document.getElementById('addPatientBtn');
-        const clearDataBtn = document.getElementById('clearDataBtn');
-        const printListBtn = document.getElementById('printListBtn');
-        const digitalListBtn = document.getElementById('digitalListBtn');
-
         const digitalListModal = document.getElementById('digitalListModal');
         const digitalListContent = document.getElementById('digitalListContent');
-        const copyDigitalListBtn = document.getElementById('copyDigitalListBtn');
-        const closeDigitalListModalBtn = document.getElementById('closeDigitalListModalBtn');
         const printoutContainer = document.getElementById('printoutContainer');
 
+        // --- State Management ---
         let patients = {};
         let activePatientId = null;
         const LOCAL_STORAGE_KEY = 'alertToolPatientData_v4.7'; 
@@ -563,21 +543,23 @@
         };
 
         const consciousnessMap = {
-            '0': 'Alert',
-            '1': 'Voice',
-            '2': 'Pain',
-            '3': 'Unresponsive'
+            '0': 'Alert', '1': 'Voice', '2': 'Pain', '3': 'Unresponsive'
         };
         
+        // --- Data Maps (unchanged) ---
         const carePlanMap = { 'crit_met_post': 'CRITICAL: Patient is in MET criteria on the ward. Initiate immediate MET call as per local protocol and escalate to senior nursing and medical staff.', 'crit_met_pre': 'CRITICAL: Patient\'s current observations would trigger a MET call on the ward. This is a significant barrier to transfer. Liaise with ICU and home teams to create a clear mitigation plan before stepdown.', 'crit_adds4': 'CRITICAL: High ADDS score indicates significant physiological instability. Escalate for urgent medical review (<30 mins) and ensure adherence to the AORC escalation pathway.', 'crit_lactate_high': 'CRITICAL: Critically high lactate suggests potential tissue hypoperfusion. Escalate immediately to the medical team for urgent review.', 'crit_af': 'CRITICAL: Unstable AF (e.g., with hypotension, ischaemia) requires urgent intervention. Escalate for cardiology/medical review and prepare for 12-lead ECG.', 'crit_hb_drop': 'CRITICAL: Significant Hb drop or active bleeding requires urgent investigation. Escalate for urgent medical/surgical review, ensure IV access, and consider group and hold.', 'resp_increasing_o2': 'Respiratory Plan: Increasing O2 needs noted. Perform focused respiratory assessments (work of breathing) per AORC. Ensure clear documentation of Resp Rate and O2 requirements to monitor trends. Liaise with medical team to review.', 'resp_rapid_wean': 'Respiratory Plan: Recent rapid wean of respiratory support. Perform focused respiratory assessments (work of breathing) per AORC and ensure clear documentation of Resp Rate and O2 requirements to monitor for signs of fatigue.', 'bloods_electrolytes': 'Biochemical Plan: Significant electrolyte abnormalities noted. Escalate to medical officer for review and prescribing of replacement therapy. For severe K+ abnormalities, escalate to senior nursing staff and contact ALERT CNS for support regarding patient placement and monitoring.', 'bloods_lactate_mid': 'Biochemical Plan: Liaise with medical team for serial lactate measurement within 4 hours to ensure clearance. Continue to review fluid status and clinical signs of perfusion.', 'bloods_creatinine': 'Biochemical Plan: Maintain strict fluid balance chart. Ensure urine output remains >0.5ml/kg/hr and escalate to the medical team if it falls below this target. Liaise with pharmacy to review for nephrotoxic medications.', 'bloods_albumin': 'Nutrition Plan: Significant hypoalbuminaemia noted. Ensure active dietitian referral for nutritional assessment and planning. Monitor for oedema.', 'bloods_anaemia': 'Haematology Plan: Monitor for signs of occult bleeding or haemodynamic instability. Liaise with medical team to clarify transfusion threshold.', 'pain_pca': 'Pain Management: Pain appears poorly controlled. Perform comprehensive pain assessments (score 0-10) with each set of observations. Ensure prescribed analgesia is optimised and offered regularly. Escalate to the Acute Pain Service if pain remains severe.', 'fluid_sig': 'Fluid Management: Significant fluid imbalance identified. Maintain strict fluid balance chart and daily weights. Perform clinical fluid assessment (peripheral oedema, lung auscultation). Liaise with medical team to review fluid orders. Please contact ALERT CNS for support with assessment if required.', 'delirium_mod': 'Cognitive Support: Implement delirium prevention strategies (e.g., reorientation, day/night cycle, family presence). Liaise with the medical team and pharmacy to review for potential deliriogenic medications.', 'mobility_bedbound': 'Mobility & Pressure Care: Implement pressure injury prevention bundle: Regular turns, pressure-relieving mattress, skin assessment. Liaise with physiotherapy for in-bed exercise plan.', 'airway_altered': 'Airway Management: Ensure patient is in an appropriate bed location with trained staff. Confirm required emergency equipment (e.g., spare inner cannula, spare tracheostomy tube of same/smaller size, obturator, 10ml syringe, trach dilators) is present and checked at the bedside. Contact ALERT CNS for support if required.', 'lines_cvc_present': 'Line Management: Daily review of Central Line necessity with medical team (to minimise line days). Maintain strict ANTT for all access and monitor site for signs of infection (CLABSI bundle).', 'drains_high_risk': 'Drain Management: Maintain close monitoring of drain patency, output characteristics, and volume. Escalate immediately to the home team for any sudden changes, particularly for outputs >100ml/hr of fresh blood, or signs of blockage.', 'bowels_issue': 'Bowel Management: Patient has not opened bowels >3 days. Monitor for signs of abdominal distension or discomfort. Escalate to the medical team for review and consideration of aperients.', 'concern_present': "Nursing Concerns: Articulate specific nursing concerns and escalate to senior nursing/medical staff for a 'fresh eyes' review of the patient's trajectory.", 'frailty_mod': 'Frailty Plan: Ensure referrals to Physiotherapy and Occupational Therapy are active to support mobility and function. Focus on falls prevention and nutritional support.', 'after_hours_high_risk': 'TRANSFER SAFETY ALERT: This high-risk patient had an after-hours discharge. Ensure handover to the ward team is exceptionally detailed, highlighting key risks for the first 24 hours.', 'after_hours_very_high_risk': 'CRITICAL RISK: This patient\'s high score combined with an after-hours discharge represents a significant risk of readmission. A direct, senior-level (Registrar or Consultant) discussion between ICU and the receiving home team is strongly recommended before transfer.' };
         const impressionMap = {'crit_met':'is currently meeting MET criteria','crit_adds4':'has a high ADDS score indicating physiological instability','crit_lactate_high':'has a critically high lactate concerning for hypoperfusion','crit_af':'is in unstable atrial fibrillation','crit_hb_drop':'has had a significant drop in haemoglobin or is actively bleeding','resp_increasing_o2':'has increasing oxygen requirements','delirium_mod':'is suffering from moderate to severe delirium','fluid_sig':'has a significant fluid imbalance','pain_pca':'has poorly controlled pain requiring advanced analgesia','concern_present':'has specific concerns raised by the bedside nursing staff'};
-        const standardScores = { getRrScore(rr) { let s=0,m=false; if(rr>=36||rr<5)m=true;else if(rr>=30&&rr<=35)s=3;else if(rr>=25&&rr<=29)s=2;else if(rr>=21&&rr<=24)s=1;else if(rr>=5&&rr<=9)s=3; return {score:s, isMet:m}; }, getSpo2Score(spo2) { let s=0,m=false; if(spo2<=84)m=true;else if(spo2>=85&&spo2<=90)s=2;else if(spo2>=91&&spo2<=93)s=1; return {score:s, isMet:m}; }, getO2Score(o2Flow, o2Unit) { let s=0; if(o2Unit==='lpm'){if(o2Flow>10)s=3;else if(o2Flow>=5&&o2Flow<=9)s=2;else if(o2Flow>=2&&o2Flow<=4)s=1}else{if(o2Flow>=40)s=3;else if(o2Flow>=29)s=2;else if(o2Flow>=21)s=1} return {score:s, isMet:false}; }, getHrScore(hr) { let s=0,m=false; if(hr>=140||hr<30)m=true;else if(hr>=130&&hr<=139)s=3;else if(hr>=120&&hr<=129)s=2;else if(hr>=100&&hr<=119)s=1;else if(hr>=40&&hr<=49)s=1;else if(hr>=30&&hr<=39)s=2; return {score:s, isMet:m}; }, getSbpScore(sbp) { let s=0,m=false; if(sbp<90)m=true;else if(sbp>=190&&sbp<=199)s=3;else if(sbp>=180&&sbp<=189)s=2;else if(sbp>=150&&sbp<=179)s=1;else if(sbp>=80&&sbp<=99)s=1;else if(sbp>=70&&sbp<=79)s=2; return {score:s, isMet:m}; } };
+        const standardScores = { getRrScore(rr) { let s=0,m=false; if(rr>=36||rr<5)m=true;else if(rr>=30&&rr<=35)s=3;else if(rr>=25&&rr<=29)s=2;else if(rr>=21&&rr<=24)s=1;else if(rr>=5&&rr<=9)s=3; return {score:s, isMet:m}; }, getSpo2Score(spo2) { let s=0,m=false; if(spo2<=84)m=true;else if(spo2>=85&&spo2<=90)s=2;else if(spo2>=91&&spo2<=93)s=1; return {score:s, isMet:false}; }, getO2Score(o2Flow, o2Unit) { let s=0; if(o2Unit==='lpm'){if(o2Flow>10)s=3;else if(o2Flow>=5&&o2Flow<=9)s=2;else if(o2Flow>=2&&o2Flow<=4)s=1}else{if(o2Flow>=40)s=3;else if(o2Flow>=29)s=2;else if(o2Flow>=21)s=1} return {score:s, isMet:false}; }, getHrScore(hr) { let s=0,m=false; if(hr>=140||hr<30)m=true;else if(hr>=130&&hr<=139)s=3;else if(hr>=120&&hr<=129)s=2;else if(hr>=100&&hr<=119)s=1;else if(hr>=40&&hr<=49)s=1;else if(hr>=30&&hr<=39)s=2; return {score:s, isMet:m}; }, getSbpScore(sbp) { let s=0,m=false; if(sbp<90)m=true;else if(sbp>=190&&sbp<=199)s=3;else if(sbp>=180&&sbp<=189)s=2;else if(sbp>=150&&sbp<=179)s=1;else if(sbp>=80&&sbp<=99)s=1;else if(sbp>=70&&sbp<=79)s=2; return {score:s, isMet:m}; } };
         
+        // --- Helper Functions ---
+        // (safeGet, safeIsChecked, getSelectText, safeGetNum remain the same)
         const safeGet = (id) => document.getElementById(id)?.value || '';
         const safeIsChecked = (id) => document.getElementById(id)?.checked || false;
         const getSelectText = (selectEl) => selectEl ? (selectEl.options[selectEl.selectedIndex]?.text || '') : '';
         const safeGetNum = (id) => { const val = parseFloat(safeGet(id)); return isNaN(val) ? null : val; };
         
+        // --- Core Functions ---
+        // (resetForm, calculateScore, getCategoryClass, updateRiskCategory, etc. remain the same)
         function resetForm(){
             assessmentForm.reset();
             document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], textarea').forEach(el => el.value = '');
@@ -590,7 +572,6 @@
             allergiesContainer.style.display = 'block';
             addAllergyButton.style.display = 'block';
             infectionControlDetails.classList.add('hidden');
-            homeTeamPlanCheckbox.checked = false;
             homeTeamPlanDetails.classList.add('hidden');
             document.getElementById('homeTeamPlanText').value = '';
 
@@ -604,7 +585,7 @@
                 el.classList.remove('input-critical-alert', 'critical-input-label', 'risk-item-selected-critical');
             });
             
-            reviewTypeSelect.dispatchEvent(new Event('change'));
+            document.getElementById('reviewType').dispatchEvent(new Event('change'));
             calculateADDS();
         }
 
@@ -928,7 +909,7 @@
             summary += `IMPRESSION: ${generateImpression()}\n\n`;
 
             summary += `PATIENT: ${safeGet('patientInitials')} (${safeGet('urnLast4')}), ${safeGet('wardAndRoom')}\n`;
-            summary += `REVIEW TYPE: ${getSelectText(reviewTypeSelect)}\n`;
+            summary += `REVIEW TYPE: ${getSelectText(document.getElementById('reviewType'))}\n`;
             summary += `ICU LOS: ${safeGet('losDays')} days\n\n`;
             
             summary += `ASSESSMENT (A-E):\n`;
@@ -1140,7 +1121,7 @@
         function deletePatient(idToDelete) {
              if(Object.keys(patients).length <= 1) { 
                 if(confirm('This is the last patient. Clearing this patient will reset the list. Continue?')){
-                    clearDataBtn.click();
+                    document.getElementById('clearDataBtn').click();
                 }
                 return; 
             }
@@ -1164,6 +1145,7 @@
 
         function renderTabs() {
             patientTabsContainer.querySelectorAll('.patient-tab').forEach(tab => tab.remove());
+            
             const patientCount = Object.keys(patients).length;
             tabsPlaceholder.style.display = patientCount === 0 ? 'block' : 'none';
 
@@ -1308,6 +1290,7 @@
         }
         
         function generatePrintList() {
+            saveActivePatientData(); // Ensure the latest data is saved before printing
             let printHtml = `<h1>ALERT Ward Handover - ${new Date().toLocaleDateString('en-AU')}</h1><div class="print-grid-container">`;
             const sortedPatients = Object.values(patients).sort((a,b) => (b.score || 0) - (a.score || 0));
             sortedPatients.forEach(p => {
@@ -1324,9 +1307,9 @@
                 return;
             }
             navigator.clipboard.writeText(emrSummaryEl.value).then(() => {
-                copySummaryButton.textContent = 'Copied!';
+                document.getElementById('copySummaryButton').textContent = 'Copied!';
                 setTimeout(() => {
-                    copySummaryButton.textContent = 'Copy to Clipboard';
+                    document.getElementById('copySummaryButton').textContent = 'Copy to Clipboard';
                 }, 2000);
             }).catch(err => {
                 console.error('Failed to copy text: ', err);
@@ -1335,45 +1318,60 @@
         }
 
         function initializeApp() {
-            resetButton.addEventListener('click', () => { if(confirm('Are you sure you want to reset the form for this patient?')) { resetForm(); saveActivePatientData(); } });
-            generateSummaryButton.addEventListener('click', generateSummary);
-            copySummaryButton.addEventListener('click', copySummary);
-            bloodInputs.forEach(input => input.addEventListener('input', handleBloodInputs));
-            scoreInputs.forEach(input => input.addEventListener('change', (e) => { const target = e.target; const parentLabel = target.closest('label'); if (!parentLabel) return; if (target.type === 'radio') { document.querySelectorAll(`input[name="${target.name}"]`).forEach(radio => radio.closest('label')?.classList.remove('risk-item-selected-critical')); } if (target.dataset.isCritical === 'true') { parentLabel.classList.toggle('risk-item-selected-critical', target.checked); } calculateScore(); }));
-            nursingConcernRadios.forEach(radio => radio.addEventListener('change', () => { nursingConcernText.style.display = document.querySelector('input[name="concern_score"]:checked').value === "5" ? 'block' : 'none'; if (document.querySelector('input[name="concern_score"]:checked').value !== "5") nursingConcernText.value = ''; }));
-            picsRadios.forEach(radio => radio.addEventListener('change', (e) => { picsDetailsContainer.classList.toggle('hidden', e.target.value === 'negative'); }));
-            vitalInputs.forEach(i=>i.addEventListener('input', calculateADDS));
-            document.getElementById('losDays').addEventListener('input', () => { const days = parseFloat(safeGet('losDays')); document.getElementById('losCheckbox').checked = days > 3; calculateScore(); });
+            // Refactored event listeners for robustness
+            const eventListeners = {
+                'resetButton': { event: 'click', handler: () => { if(confirm('Are you sure you want to reset the form for this patient?')) { resetForm(); saveActivePatientData(); } } },
+                'generateSummaryButton': { event: 'click', handler: generateSummary },
+                'copySummaryButton': { event: 'click', handler: copySummary },
+                'losDays': { event: 'input', handler: () => { const days = parseFloat(safeGet('losDays')); document.getElementById('losCheckbox').checked = days > 3; calculateScore(); } },
+                'reviewType': { event: 'change', handler: (e) => { const isPre = e.target.value === 'pre'; postStepdownFields.style.display = isPre ? 'none' : 'grid'; handleAfterHoursLogic(); calculateScore(); } },
+                'goc': { event: 'change', handler: (e) => { const showSpecifics = ['B', 'C'].includes(e.target.value); gocSpecificsContainer.classList.toggle('hidden', !showSpecifics); if (!showSpecifics) document.getElementById('gocSpecifics').value = ''; } },
+                'addAllergyButton': { event: 'click', handler: createAllergyInput },
+                'nkdaCheckbox': { event: 'change', handler: (e) => { const isChecked = e.target.checked; if(isChecked) allergiesContainer.innerHTML = ''; allergiesContainer.style.display = isChecked ? 'none' : 'block'; addAllergyButton.style.display = isChecked ? 'none' : 'block'; } },
+                'addCentralLineButton': { event: 'click', handler: createCentralLineInput },
+                'addPivcButton': { event: 'click', handler: createPivcInput },
+                'addNgTubeButton': { event: 'click', handler: createNgTubeInput },
+                'addDrainButton': { event: 'click', handler: createDrainInput },
+                'addWoundButton': { event: 'click', handler: createWoundInput },
+                'pacing_wires_present': { event: 'change', handler: (e) => { pacingWiresDetailsDiv.classList.toggle('hidden', !e.target.checked); } },
+                'pacing_status': { event: 'change', handler: (e) => { pacingSettingsDiv.classList.toggle('hidden', e.target.value === 'capped'); } },
+                'homeTeamPlanCheckbox': { event: 'change', handler: (e) => { homeTeamPlanDetails.classList.toggle('hidden', !e.target.checked); if(!e.target.checked) { document.getElementById('homeTeamPlanText').value = ''; }} },
+                'addPatientBtn': { event: 'click', handler: () => addPatient() },
+                'clearDataBtn': { event: 'click', handler: () => { if(confirm('ARE YOU SURE you want to delete ALL patient data? This is permanent.')) { if(confirm('Second confirmation: This will delete everything.')) { localStorage.removeItem(LOCAL_STORAGE_KEY); patients = {}; activePatientId = null; addPatient(false); } } } },
+                'printListBtn': { event: 'click', handler: generatePrintList },
+                'digitalListBtn': { event: 'click', handler: generateDigitalList },
+                'closeDigitalListModalBtn': { event: 'click', handler: () => { digitalListModal.classList.add('hidden'); digitalListModal.classList.remove('flex'); } },
+                'copyDigitalListBtn': { event: 'click', handler: () => { navigator.clipboard.writeText(digitalListContent.innerText).then(() => { document.getElementById('copyDigitalListBtn').textContent = 'Copied!'; setTimeout(() => { document.getElementById('copyDigitalListBtn').textContent = 'Copy to Clipboard'; }, 2000); }, () => alert('Failed to copy.')); } }
+            };
+
+            for (const id in eventListeners) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener(eventListeners[id].event, eventListeners[id].handler);
+                }
+            }
+
+            // Listeners for groups of elements
+            document.querySelectorAll('.blood-input').forEach(input => input.addEventListener('input', handleBloodInputs));
+            document.querySelectorAll('.score-input').forEach(input => input.addEventListener('change', (e) => { const target = e.target; const parentLabel = target.closest('label'); if (!parentLabel) return; if (target.type === 'radio') { document.querySelectorAll(`input[name="${target.name}"]`).forEach(radio => radio.closest('label')?.classList.remove('risk-item-selected-critical')); } if (target.dataset.isCritical === 'true') { parentLabel.classList.toggle('risk-item-selected-critical', target.checked); } calculateScore(); }));
+            document.querySelectorAll('input[name="nursingConcernRadios"]').forEach(radio => radio.addEventListener('change', () => { nursingConcernText.style.display = document.querySelector('input[name="concern_score"]:checked').value === "5" ? 'block' : 'none'; if (document.querySelector('input[name="concern_score"]:checked').value !== "5") nursingConcernText.value = ''; }));
+            document.querySelectorAll('input[name="pics_status"]').forEach(radio => radio.addEventListener('change', (e) => { picsDetailsContainer.classList.toggle('hidden', e.target.value === 'negative'); }));
+            document.querySelectorAll('.vital-input').forEach(i=>i.addEventListener('input', calculateADDS));
             document.querySelectorAll('.fluid-input').forEach(i=>i.addEventListener('input', handleFluidBalance));
-            timeInputs.forEach(input => input.addEventListener('input', handleAfterHoursLogic));
-            reviewTypeSelect.addEventListener('change', (e) => { const isPre = e.target.value === 'pre'; const postFields = document.getElementById('postStepdownFields'); if(postFields) postFields.style.display = isPre ? 'none' : 'grid'; handleAfterHoursLogic(); calculateScore(); });
-            gocSelect.addEventListener('change', () => { const showSpecifics = ['B', 'C'].includes(gocSelect.value); gocSpecificsContainer.classList.toggle('hidden', !showSpecifics); if (!showSpecifics) document.getElementById('gocSpecifics').value = ''; });
-            addAllergyButton.addEventListener('click', createAllergyInput);
-            nkdaCheckbox.addEventListener('change', () => { const isChecked = nkdaCheckbox.checked; if(isChecked) allergiesContainer.innerHTML = ''; allergiesContainer.style.display = isChecked ? 'none' : 'block'; addAllergyButton.style.display = isChecked ? 'none' : 'block'; });
-            precautionCheckboxes.forEach(cb => { cb.addEventListener('change', () => { const anyChecked = [...precautionCheckboxes].some(c => c.checked); infectionControlDetails.classList.toggle('hidden', !anyChecked); if(!anyChecked) document.getElementById('infectionControlReason').value = ''; }); });
-            addCentralLineButton.addEventListener('click', createCentralLineInput); addPivcButton.addEventListener('click', createPivcInput); addNgTubeButton.addEventListener('click', createNgTubeButton); addDrainButton.addEventListener('click', createDrainInput); addWoundButton.addEventListener('click', createWoundInput);
+            document.querySelectorAll('.time-input').forEach(input => input.addEventListener('input', handleAfterHoursLogic));
+            document.querySelectorAll('.precaution-cb').forEach(cb => { cb.addEventListener('change', () => { const anyChecked = [...document.querySelectorAll('.precaution-cb')].some(c => c.checked); infectionControlDetails.classList.toggle('hidden', !anyChecked); if(!anyChecked) document.getElementById('infectionControlReason').value = ''; }); });
             
-            // *** BUG FIX: Using more compatible syntax for event delegation ***
-            [centralLinesContainer, pivcsContainer, ngTubesContainer, drainsContainer, woundsContainer, allergiesContainer].forEach(c => { 
-                if (c) c.addEventListener('click', e => { 
-                    if (e.target.classList.contains('remove-btn')) { 
-                        const elementToRemove = e.target.closest('.device-row, .allergy-row');
-                        if (elementToRemove) {
-                            elementToRemove.remove();
-                        }
+            // Single, robust event listener for all dynamic remove buttons
+            assessmentForm.addEventListener('click', e => {
+                if (e.target && e.target.classList.contains('remove-btn')) {
+                    const elementToRemove = e.target.closest('.device-row, .allergy-row');
+                    if (elementToRemove) {
+                        elementToRemove.remove();
                     }
-                }); 
+                }
             });
 
-            pacingWiresPresentCheckbox.addEventListener('change', () => { pacingWiresDetailsDiv.classList.toggle('hidden', !pacingWiresPresentCheckbox.checked); });
-            pacingStatusSelect.addEventListener('change', () => { pacingSettingsDiv.classList.toggle('hidden', pacingStatusSelect.value === 'capped'); });
-            homeTeamPlanCheckbox.addEventListener('change', () => { homeTeamPlanDetails.classList.toggle('hidden', !homeTeamPlanCheckbox.checked); if(!homeTeamPlanCheckbox.checked) { document.getElementById('homeTeamPlanText').value = ''; }});
-            addPatientBtn.addEventListener('click', () => addPatient());
-            clearDataBtn.addEventListener('click', () => { if(confirm('ARE YOU SURE you want to delete ALL patient data? This is permanent.')) { if(confirm('Second confirmation: This will delete everything.')) { localStorage.removeItem(LOCAL_STORAGE_KEY); patients = {}; activePatientId = null; addPatient(false); } } });
-            printListBtn.addEventListener('click', generatePrintList);
-            digitalListBtn.addEventListener('click', generateDigitalList);
-            closeDigitalListModalBtn.addEventListener('click', () => { digitalListModal.classList.add('hidden'); digitalListModal.classList.remove('flex'); });
-            copyDigitalListBtn.addEventListener('click', () => { navigator.clipboard.writeText(digitalListContent.innerText).then(() => { copyDigitalListBtn.textContent = 'Copied!'; setTimeout(() => { copyDigitalListBtn.textContent = 'Copy to Clipboard'; }, 2000); }, () => alert('Failed to copy.')); });
+            // Autosave logic
             let saveTimeout;
             assessmentForm.addEventListener('input', () => { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveActivePatientData, 500); });
             assessmentForm.addEventListener('change', () => { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveActivePatientData, 500); });
