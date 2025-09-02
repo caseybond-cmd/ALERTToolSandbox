@@ -257,10 +257,10 @@
                 </div>
 
                 <div class="final-score-bg text-white rounded-xl shadow-lg p-6 mt-8">
-                       <div class="flex flex-col sm:flex-row justify-between items-center text-center">
-                           <div class="mb-4 sm:mb-0"><span class="text-lg font-medium text-gray-400">TOTAL SCORE</span><div id="totalScore" class="text-5xl font-bold">0</div></div>
-                           <div class="w-full sm:w-auto"><span class="text-lg font-medium text-gray-400">FINAL CATEGORY & ACTION</span><div id="riskCategory" class="text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300"></div></div>
-                    </div>
+                            <div class="flex flex-col sm:flex-row justify-between items-center text-center">
+                                <div class="mb-4 sm:mb-0"><span class="text-lg font-medium text-gray-400">TOTAL SCORE</span><div id="totalScore" class="text-5xl font-bold">0</div></div>
+                                <div class="w-full sm:w-auto"><span class="text-lg font-medium text-gray-400">FINAL CATEGORY & ACTION</span><div id="riskCategory" class="text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300"></div></div>
+                        </div>
                 </div>
             </div>
 
@@ -337,45 +337,45 @@
                 </div>
 
                 <div class="mb-6 space-y-6">
-                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Detailed Patient Information</h3>
-                     <div class="md:col-span-2 space-y-4">
-                         <div>
-                             <label for="goc" class="block text-sm font-medium text-gray-700">Goals of Care:</label>
-                             <select id="goc" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                 <option value="">Not Documented</option>
-                                 <option value="A">A</option>
-                                 <option value="B">B</option>
-                                 <option value="C">C</option>
-                             </select>
-                             <div id="gocSpecificsContainer" class="hidden mt-2">
-                                 <label for="gocSpecifics" class="block text-sm font-medium text-gray-700">Specifics:</label>
-                                 <input type="text" id="gocSpecifics" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                             </div>
+                         <h3 class="text-lg font-semibold text-gray-700 mb-4">Detailed Patient Information</h3>
+                         <div class="md:col-span-2 space-y-4">
+                              <div>
+                                   <label for="goc" class="block text-sm font-medium text-gray-700">Goals of Care:</label>
+                                   <select id="goc" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                       <option value="">Not Documented</option>
+                                       <option value="A">A</option>
+                                       <option value="B">B</option>
+                                       <option value="C">C</option>
+                                   </select>
+                                   <div id="gocSpecificsContainer" class="hidden mt-2">
+                                       <label for="gocSpecifics" class="block text-sm font-medium text-gray-700">Specifics:</label>
+                                       <input type="text" id="gocSpecifics" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                   </div>
+                              </div>
+                              <div id="allergies-section">
+                                   <label class="block text-sm font-medium text-gray-700">Allergies:</label>
+                                   <div class="mt-2 space-y-2">
+                                       <div class="flex items-center">
+                                           <input type="checkbox" id="nkdaCheckbox" class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                                           <label for="nkdaCheckbox" class="ml-2 block text-sm text-gray-900">No Known Drug Allergies (NKDA)</label>
+                                       </div>
+                                       <div id="allergies_container" class="space-y-2"></div>
+                                       <button type="button" id="addAllergyButton" class="mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add Allergy</button>
+                                   </div>
+                              </div>
+                              <div>
+                                   <label class="block text-sm font-medium text-gray-700">Infection Control Precautions:</label>
+                                   <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                                       <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Contact" value="Contact"> <span class="ml-2">Contact</span></label>
+                                       <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Droplet" value="Droplet"> <span class="ml-2">Droplet</span></label>
+                                       <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Airborne" value="Airborne"> <span class="ml-2">Airborne</span></label>
+                                   </div>
+                                   <div id="infectionControlDetails" class="hidden mt-2">
+                                       <label for="infectionControlReason" class="block text-sm font-medium text-gray-700">Reason:</label>
+                                       <input type="text" id="infectionControlReason" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                   </div>
+                              </div>
                          </div>
-                         <div id="allergies-section">
-                             <label class="block text-sm font-medium text-gray-700">Allergies:</label>
-                             <div class="mt-2 space-y-2">
-                                 <div class="flex items-center">
-                                     <input type="checkbox" id="nkdaCheckbox" class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                                     <label for="nkdaCheckbox" class="ml-2 block text-sm text-gray-900">No Known Drug Allergies (NKDA)</label>
-                                 </div>
-                                 <div id="allergies_container" class="space-y-2"></div>
-                                 <button type="button" id="addAllergyButton" class="mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add Allergy</button>
-                             </div>
-                         </div>
-                         <div>
-                             <label class="block text-sm font-medium text-gray-700">Infection Control Precautions:</label>
-                             <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Contact" value="Contact"> <span class="ml-2">Contact</span></label>
-                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Droplet" value="Droplet"> <span class="ml-2">Droplet</span></label>
-                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Airborne" value="Airborne"> <span class="ml-2">Airborne</span></label>
-                             </div>
-                             <div id="infectionControlDetails" class="hidden mt-2">
-                                 <label for="infectionControlReason" class="block text-sm font-medium text-gray-700">Reason:</label>
-                                 <input type="text" id="infectionControlReason" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                             </div>
-                         </div>
-                     </div>
                 </div>
 
                 <div class="mb-6">
@@ -1120,11 +1120,11 @@
 
         function deletePatient(idToDelete) {
              if(Object.keys(patients).length <= 1) { 
-                if(confirm('This is the last patient. Clearing this patient will reset the list. Continue?')){
-                    document.getElementById('clearDataBtn').click();
-                }
-                return; 
-            }
+                 if(confirm('This is the last patient. Clearing this patient will reset the list. Continue?')){
+                     document.getElementById('clearDataBtn').click();
+                 }
+                 return; 
+             }
             if(confirm(`Are you sure you want to delete patient ${patients[idToDelete].name || 'this patient'}?`)) {
                 delete patients[idToDelete];
                 if (activePatientId === idToDelete) { activePatientId = Object.keys(patients)[0]; }
@@ -1354,7 +1354,20 @@
             // Listeners for groups of elements
             document.querySelectorAll('.blood-input').forEach(input => input.addEventListener('input', handleBloodInputs));
             document.querySelectorAll('.score-input').forEach(input => input.addEventListener('change', (e) => { const target = e.target; const parentLabel = target.closest('label'); if (!parentLabel) return; if (target.type === 'radio') { document.querySelectorAll(`input[name="${target.name}"]`).forEach(radio => radio.closest('label')?.classList.remove('risk-item-selected-critical')); } if (target.dataset.isCritical === 'true') { parentLabel.classList.toggle('risk-item-selected-critical', target.checked); } calculateScore(); }));
-            document.querySelectorAll('input[name="nursingConcernRadios"]').forEach(radio => radio.addEventListener('change', () => { nursingConcernText.style.display = document.querySelector('input[name="concern_score"]:checked').value === "5" ? 'block' : 'none'; if (document.querySelector('input[name="concern_score"]:checked').value !== "5") nursingConcernText.value = ''; }));
+            
+            // ====================================================================
+            // BUG FIX: The selector 'input[name="nursingConcernRadios"]' was
+            // incorrect. It has been changed to 'input[name="concern_score"]' to
+            // match the name attribute in the HTML.
+            // ====================================================================
+            document.querySelectorAll('input[name="concern_score"]').forEach(radio => radio.addEventListener('change', (e) => {
+                const showTextarea = e.target.value === '5';
+                nursingConcernText.style.display = showTextarea ? 'block' : 'none';
+                if (!showTextarea) {
+                    nursingConcernText.value = '';
+                }
+            }));
+
             document.querySelectorAll('input[name="pics_status"]').forEach(radio => radio.addEventListener('change', (e) => { picsDetailsContainer.classList.toggle('hidden', e.target.value === 'negative'); }));
             document.querySelectorAll('.vital-input').forEach(i=>i.addEventListener('input', calculateADDS));
             document.querySelectorAll('.fluid-input').forEach(i=>i.addEventListener('input', handleFluidBalance));
