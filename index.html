@@ -78,7 +78,7 @@
             </div>
         </div>
 
-        <form id="assessmentForm">
+        <form id="assessmentForm" onsubmit="return false;">
             <div class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
                 <div class="header-gradient p-6 flex items-center justify-center text-white">
                     <div class="bg-white/20 rounded-full p-2 mr-4">
@@ -418,7 +418,7 @@
 
     <div id="printoutContainer" class="hidden"></div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.6.1 - Bug Fix & Enhancements</div>
+    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.6.2 - Major Bug Fix</div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -449,7 +449,6 @@
         const nkdaCheckbox = document.getElementById('nkdaCheckbox');
         const allergiesContainer = document.getElementById('allergies_container');
         const addAllergyButton = document.getElementById('addAllergyButton');
-        const allergiesSection = document.getElementById('allergies-section');
         const precautionCheckboxes = document.querySelectorAll('.precaution-cb');
         const infectionControlDetails = document.getElementById('infectionControlDetails');
         const addCentralLineButton = document.getElementById('addCentralLineButton');
@@ -989,7 +988,7 @@
                 }
             }
 
-            // Restore dynamic elements
+            // *** BUG FIX: Correctly reference the newly created row ***
             if (data.allergies) { data.allergies.forEach(a => { createAllergyInput(); const lastRow = allergiesContainer.lastChild; if (lastRow) { lastRow.querySelector('.allergen-name').value = a.name; lastRow.querySelector('.allergen-reaction').value = a.reaction; } }); }
             if (data.centralLines) { data.centralLines.forEach(d => { createCentralLineInput(); const lastRow = centralLinesContainer.lastChild; if (lastRow) { for(const k in d) { const el = lastRow.querySelector(`.cvad-${k}`); if (el) el.value = d[k]; } } }); }
             if (data.pivcs) { data.pivcs.forEach(d => { createPivcInput(); const lastRow = pivcsContainer.lastChild; if (lastRow) { for(const k in d) { const el = lastRow.querySelector(`.pivc-${k}`); if (el) el.value = d[k]; } } }); }
@@ -1003,8 +1002,12 @@
         }
 
         function saveState() {
-            const dataToSave = { patients: patients, activePatientId: activePatientId };
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+            if (Object.keys(patients).length > 0) {
+                const dataToSave = { patients: patients, activePatientId: activePatientId };
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+            } else {
+                 localStorage.removeItem(LOCAL_STORAGE_KEY);
+            }
         }
 
         function loadAllData() {
@@ -1029,7 +1032,7 @@
             if (!activePatientId) return;
             const patientData = getFormData();
             const patientName = patientData.patientInitials || `Patient`;
-            patients[activePatientId] = { id: activePatientId, name: patientName, score: totalScoreEl.textContent, category: riskCategoryEl.textContent.split(' ')[0], data: patientData };
+            patients[activePatientId] = { id: activePatientId, name: patientName, score: totalScoreEl.textContent, category: riskCategoryEl.textContent.split('-')[0].trim(), data: patientData };
             saveState();
             renderTabs();
         }
@@ -1056,10 +1059,12 @@
         }
 
         function switchPatient(newId) {
-            if (activePatientId && activePatientId !== newId) { saveActivePatientData(); }
+            if (activePatientId && patients[activePatientId] && activePatientId !== newId) { saveActivePatientData(); }
             activePatientId = newId;
             const patient = patients[newId];
-            loadFormData(patient.data);
+            if (patient) {
+                loadFormData(patient.data);
+            }
             renderTabs();
         }
 
@@ -1095,7 +1100,7 @@
             if (data['precaution-Airborne']) precautionsList.push('Airborne');
             const precautions = precautionsList.length > 0 ? precautionsList.join(', ') : 'Standard';
 
-            return { name: data.patientInitials || patient.name || 'N/A', location: data.wardAndRoom || 'N/A', urn: data.urnLast4 || 'N/A', score: patient.score || 0, category: (patient.category || 'N/A').replace(/<br.*?>/gi, ' - '), goc: data.goc || 'N/A', los: data.losDays || 'N/A', allergies: allergies, precautions: precautions, reason: data.infectionControlReason || '' };
+            return { name: data.patientInitials || patient.name || 'N/A', location: data.wardAndRoom || 'N/A', urn: data.urnLast4 || 'N/A', score: patient.score || 0, category: (patient.category || 'N/A'), goc: data.goc || 'N/A', los: data.losDays || 'N/A', allergies: allergies, precautions: precautions, reason: data.infectionControlReason || '' };
         }
 
         function generateDigitalList() {
@@ -1156,13 +1161,13 @@
             addAllergyButton.addEventListener('click', createAllergyInput);
             nkdaCheckbox.addEventListener('change', () => { const isChecked = nkdaCheckbox.checked; if(isChecked) allergiesContainer.innerHTML = ''; allergiesContainer.style.display = isChecked ? 'none' : 'block'; addAllergyButton.style.display = isChecked ? 'none' : 'block'; });
             precautionCheckboxes.forEach(cb => { cb.addEventListener('change', () => { const anyChecked = [...precautionCheckboxes].some(c => c.checked); infectionControlDetails.classList.toggle('hidden', !anyChecked); if(!anyChecked) document.getElementById('infectionControlReason').value = ''; }); });
-            addCentralLineButton.addEventListener('click', createCentralLineInput); addPivcButton.addEventListener('click', createPivcInput); addNgTubeButton.addEventListener('click', createNgTubeInput); addDrainButton.addEventListener('click', createDrainInput); addWoundButton.addEventListener('click', createWoundInput);
-            [centralLinesContainer, pivcsContainer, ngTubesContainer, drainsContainer, woundsContainer, allergiesContainer].forEach(c => { if (c) c.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.closest('.device-row, .allergy-row').remove(); }}); });
+            addCentralLineButton.addEventListener('click', createCentralLineInput); addPivcButton.addEventListener('click', createPivcInput); addNgTubeButton.addEventListener('click', createNgTubeInput); addDrainButton.addEventListener('click', createDrainInput); addWoundButton.addEventListener('click', createWoundButton);
+            [centralLinesContainer, pivcsContainer, ngTubesContainer, drainsContainer, woundsContainer, allergiesContainer].forEach(c => { if (c) c.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.closest('.device-row, .allergy-row')?.remove(); }}); });
             pacingWiresPresentCheckbox.addEventListener('change', () => { pacingWiresDetailsDiv.classList.toggle('hidden', !pacingWiresPresentCheckbox.checked); });
             pacingStatusSelect.addEventListener('change', () => { pacingSettingsDiv.classList.toggle('hidden', pacingStatusSelect.value === 'capped'); });
             homeTeamPlanCheckbox.addEventListener('change', () => { homeTeamPlanDetails.classList.toggle('hidden', !homeTeamPlanCheckbox.checked); if(!homeTeamPlanCheckbox.checked) { document.getElementById('homeTeamPlanText').value = ''; }});
             addPatientBtn.addEventListener('click', () => addPatient());
-            clearDataBtn.addEventListener('click', () => { if(confirm('ARE YOU SURE you want to delete ALL patient data? This is permanent.')) { if(confirm('Second confirmation: This will delete everything.')) { localStorage.removeItem(LOCAL_STORAGE_KEY); patients = {}; activePatientId = null; addPatient(); } } });
+            clearDataBtn.addEventListener('click', () => { if(confirm('ARE YOU SURE you want to delete ALL patient data? This is permanent.')) { if(confirm('Second confirmation: This will delete everything.')) { localStorage.removeItem(LOCAL_STORAGE_KEY); patients = {}; activePatientId = null; addPatient(false); } } });
             printListBtn.addEventListener('click', generatePrintList);
             digitalListBtn.addEventListener('click', generateDigitalList);
             closeDigitalListModalBtn.addEventListener('click', () => { digitalListModal.classList.add('hidden'); digitalListModal.classList.remove('flex'); });
