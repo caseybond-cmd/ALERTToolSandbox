@@ -37,11 +37,12 @@
         
         /* --- UI for Header & Tabs --- */
         .tabs-placeholder {
-            color: #9CA3AF;
+            color: #9CA3AF; /* text-gray-400 */
             padding: 1rem;
             text-align: center;
             font-style: italic;
-            border: 2px dashed #E5E7EB;
+            font-size: 0.875rem; /* text-sm */
+            border: 2px dashed #E5E7EB; /* border-gray-200 */
             border-radius: 6px;
         }
         .patient-tabs-container { border-bottom: 1px solid #D1D5DB; }
@@ -147,8 +148,8 @@
                     <button id="clearDataBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm transition-colors">Clear Data</button>
                 </div>
             </div>
-            <div id="patientTabsContainer" class="patient-tabs-container flex flex-wrap">
-                <div id="tabsPlaceholder" class="tabs-placeholder w-full">Patient tabs will appear here as you add them.</div>
+            <div id="patientTabsContainer" class="patient-tabs-container flex flex-wrap items-center">
+                <div id="tabsPlaceholder" class="tabs-placeholder w-full" style="display: none;">Patient tabs will appear here as you add them.</div>
             </div>
         </div>
 
@@ -492,7 +493,7 @@
 
     <div id="printoutContainer" class="hidden"></div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.7.1 - UI Refinement & Critical Bugfix</div>
+    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.7.2 - Major Bugfix & UI Polish</div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -563,13 +564,19 @@
         const LOCAL_STORAGE_KEY = 'alertToolPatientData_v4.7'; 
         let currentAddsBreakdown = 'Normal Parameters';
 
-        // *** BUG FIX: Storing colors in JS is more reliable than reading from the DOM ***
         const categoryColorMap = {
             'risk-critical': '#DC2626',
             'risk-intensive-escalate': '#F97316',
             'risk-intensive': '#F59E0B',
             'risk-standard': '#2DD4BF',
             'risk-single': '#67E8F9'
+        };
+
+        const consciousnessMap = {
+            '0': 'Alert',
+            '1': 'Voice',
+            '2': 'Pain',
+            '3': 'Unresponsive'
         };
         
         // --- Data Maps ---
@@ -1120,7 +1127,6 @@
                 if (!activePatientId || !patients[activePatientId]) { activePatientId = Object.keys(patients)[0]; }
                 switchPatient(activePatientId);
             }
-            renderTabs();
         }
         
         function saveActivePatientData() {
@@ -1147,11 +1153,10 @@
             activePatientId = newId;
             if(doSave) saveState();
             switchPatient(newId);
-            renderTabs();
         }
 
         function deletePatient(idToDelete) {
-            if(Object.keys(patients).length <= 1) { 
+             if(Object.keys(patients).length <= 1) { 
                 if(confirm('This is the last patient. Clearing this patient will reset the list. Continue?')){
                     clearDataBtn.click();
                 }
@@ -1162,7 +1167,6 @@
                 if (activePatientId === idToDelete) { activePatientId = Object.keys(patients)[0]; }
                 saveState();
                 switchPatient(activePatientId);
-                renderTabs();
             }
         }
 
@@ -1177,12 +1181,9 @@
         }
 
         function renderTabs() {
-            // Clear existing tabs
-            while(patientTabsContainer.firstChild && patientTabsContainer.firstChild !== tabsPlaceholder){
-                patientTabsContainer.removeChild(patientTabsContainer.firstChild);
-            }
-
-            const patientCount = Object.values(patients).length;
+            patientTabsContainer.querySelectorAll('.patient-tab').forEach(tab => tab.remove());
+            
+            const patientCount = Object.keys(patients).length;
             tabsPlaceholder.style.display = patientCount === 0 ? 'block' : 'none';
 
             if (patientCount > 0) {
@@ -1212,12 +1213,12 @@
                     tab.appendChild(nameSpan);
                     tab.appendChild(deleteBtn);
                     tab.onclick = () => switchPatient(patient.id);
-                    patientTabsContainer.insertBefore(tab, tabsPlaceholder);
+                    patientTabsContainer.appendChild(tab);
                 });
             }
         }
         
-        // --- NEW WARD LIST FUNCTIONS ---
+        // --- WARD LIST FUNCTIONS ---
         function generatePatientCardHTML(patient){
             const d = patient.data || {};
             const score = patient.score || 0;
@@ -1267,7 +1268,7 @@
                             <strong>RR:</strong> <span>${d.rr_input || '―'}</span>
                             <strong>SpO₂:</strong> <span>${d.spo2_input || '―'}% on ${d.o2_flow_input || 'RA'}${d.o2_flow_input ? (d.o2_unit_input === 'lpm' ? 'L' : '%') : ''}</span>
                             <strong>Temp:</strong> <span>${d.temp_input || '―'}°C</span>
-                            <strong>Consc:</strong> <span>${(d.consciousness_input && d.consciousness_input !== "0") ? getSelectText(document.querySelector('#consciousness_input option[value="' + d.consciousness_input + '"]')) : 'Alert'}</span>
+                            <strong>Consc:</strong> <span>${consciousnessMap[d.consciousness_input] || 'Alert'}</span>
                         </div>
                     </div>
                     <div class="ward-list-section">
