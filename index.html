@@ -35,7 +35,15 @@
         .module-bg-f { background-color: #faf5ff; }
         .module-bg-g { background-color: #f5f3ff; }
         
-        /* --- NEW UI for Header & Tabs --- */
+        /* --- UI for Header & Tabs --- */
+        .tabs-placeholder {
+            color: #9CA3AF;
+            padding: 1rem;
+            text-align: center;
+            font-style: italic;
+            border: 2px dashed #E5E7EB;
+            border-radius: 6px;
+        }
         .patient-tabs-container { border-bottom: 1px solid #D1D5DB; }
         .patient-tab { 
             position: relative;
@@ -69,7 +77,7 @@
         .patient-tab.active.risk-standard { border-top-color: #2DD4BF; }
         .patient-tab.active.risk-single { border-top-color: #67E8F9; }
 
-        /* --- NEW Print & Digital List Styles --- */
+        /* --- Print & Digital List Styles --- */
         .ward-list-card {
             border: 1px solid #D1D5DB;
             border-radius: 6px;
@@ -131,8 +139,7 @@
 
     <div class="max-w-4xl mx-auto">
         <div class="bg-white rounded-xl shadow-lg mb-6 p-4">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-xl font-bold text-gray-800">ALERT Patient Dashboard</h2>
+            <div class="flex justify-end items-center mb-3">
                 <div class="flex items-center gap-2">
                     <button id="addPatientBtn" type="button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors">Add Patient</button>
                     <button id="printListBtn" type="button" class="bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold py-2 px-3 rounded-lg text-sm transition-colors">Print List</button>
@@ -140,7 +147,9 @@
                     <button id="clearDataBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm transition-colors">Clear Data</button>
                 </div>
             </div>
-            <div id="patientTabsContainer" class="patient-tabs-container flex flex-wrap"></div>
+            <div id="patientTabsContainer" class="patient-tabs-container flex flex-wrap">
+                <div id="tabsPlaceholder" class="tabs-placeholder w-full">Patient tabs will appear here as you add them.</div>
+            </div>
         </div>
 
         <form id="assessmentForm" onsubmit="return false;">
@@ -469,7 +478,8 @@
     </div>
     
     <div id="digitalListModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-6xl max-h-[90vh] flex flex-col"> <div class="flex justify-between items-center mb-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
                  <h2 class="text-xl font-bold">Digital Ward List</h2>
                  <button id="closeDigitalListModalBtn" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </div>
@@ -482,7 +492,7 @@
 
     <div id="printoutContainer" class="hidden"></div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.7.0 - UI & Ward List Overhaul</div>
+    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.7.1 - UI Refinement & Critical Bugfix</div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -534,6 +544,7 @@
         
         // Patient Management UI
         const patientTabsContainer = document.getElementById('patientTabsContainer');
+        const tabsPlaceholder = document.getElementById('tabsPlaceholder');
         const addPatientBtn = document.getElementById('addPatientBtn');
         const clearDataBtn = document.getElementById('clearDataBtn');
         const printListBtn = document.getElementById('printListBtn');
@@ -549,8 +560,17 @@
         // --- State Management ---
         let patients = {};
         let activePatientId = null;
-        const LOCAL_STORAGE_KEY = 'alertToolPatientData_v4.7'; // Version bump for new data structure
+        const LOCAL_STORAGE_KEY = 'alertToolPatientData_v4.7'; 
         let currentAddsBreakdown = 'Normal Parameters';
+
+        // *** BUG FIX: Storing colors in JS is more reliable than reading from the DOM ***
+        const categoryColorMap = {
+            'risk-critical': '#DC2626',
+            'risk-intensive-escalate': '#F97316',
+            'risk-intensive': '#F59E0B',
+            'risk-standard': '#2DD4BF',
+            'risk-single': '#67E8F9'
+        };
         
         // --- Data Maps ---
         const carePlanMap = { 'crit_met_post': 'CRITICAL: Patient is in MET criteria on the ward. Initiate immediate MET call as per local protocol and escalate to senior nursing and medical staff.', 'crit_met_pre': 'CRITICAL: Patient\'s current observations would trigger a MET call on the ward. This is a significant barrier to transfer. Liaise with ICU and home teams to create a clear mitigation plan before stepdown.', 'crit_adds4': 'CRITICAL: High ADDS score indicates significant physiological instability. Escalate for urgent medical review (<30 mins) and ensure adherence to the AORC escalation pathway.', 'crit_lactate_high': 'CRITICAL: Critically high lactate suggests potential tissue hypoperfusion. Escalate immediately to the medical team for urgent review.', 'crit_af': 'CRITICAL: Unstable AF (e.g., with hypotension, ischaemia) requires urgent intervention. Escalate for cardiology/medical review and prepare for 12-lead ECG.', 'crit_hb_drop': 'CRITICAL: Significant Hb drop or active bleeding requires urgent investigation. Escalate for urgent medical/surgical review, ensure IV access, and consider group and hold.', 'resp_increasing_o2': 'Respiratory Plan: Increasing O2 needs noted. Perform focused respiratory assessments (work of breathing) per AORC. Ensure clear documentation of Resp Rate and O2 requirements to monitor trends. Liaise with medical team to review.', 'resp_rapid_wean': 'Respiratory Plan: Recent rapid wean of respiratory support. Perform focused respiratory assessments (work of breathing) per AORC and ensure clear documentation of Resp Rate and O2 requirements to monitor for signs of fatigue.', 'bloods_electrolytes': 'Biochemical Plan: Significant electrolyte abnormalities noted. Escalate to medical officer for review and prescribing of replacement therapy. For severe K+ abnormalities, escalate to senior nursing staff and contact ALERT CNS for support regarding patient placement and monitoring.', 'bloods_lactate_mid': 'Biochemical Plan: Liaise with medical team for serial lactate measurement within 4 hours to ensure clearance. Continue to review fluid status and clinical signs of perfusion.', 'bloods_creatinine': 'Biochemical Plan: Maintain strict fluid balance chart. Ensure urine output remains >0.5ml/kg/hr and escalate to the medical team if it falls below this target. Liaise with pharmacy to review for nephrotoxic medications.', 'bloods_albumin': 'Nutrition Plan: Significant hypoalbuminaemia noted. Ensure active dietitian referral for nutritional assessment and planning. Monitor for oedema.', 'bloods_anaemia': 'Haematology Plan: Monitor for signs of occult bleeding or haemodynamic instability. Liaise with medical team to clarify transfusion threshold.', 'pain_pca': 'Pain Management: Pain appears poorly controlled. Perform comprehensive pain assessments (score 0-10) with each set of observations. Ensure prescribed analgesia is optimised and offered regularly. Escalate to the Acute Pain Service if pain remains severe.', 'fluid_sig': 'Fluid Management: Significant fluid imbalance identified. Maintain strict fluid balance chart and daily weights. Perform clinical fluid assessment (peripheral oedema, lung auscultation). Liaise with medical team to review fluid orders. Please contact ALERT CNS for support with assessment if required.', 'delirium_mod': 'Cognitive Support: Implement delirium prevention strategies (e.g., reorientation, day/night cycle, family presence). Liaise with the medical team and pharmacy to review for potential deliriogenic medications.', 'mobility_bedbound': 'Mobility & Pressure Care: Implement pressure injury prevention bundle: Regular turns, pressure-relieving mattress, skin assessment. Liaise with physiotherapy for in-bed exercise plan.', 'airway_altered': 'Airway Management: Ensure patient is in an appropriate bed location with trained staff. Confirm required emergency equipment (e.g., spare inner cannula, spare tracheostomy tube of same/smaller size, obturator, 10ml syringe, trach dilators) is present and checked at the bedside. Contact ALERT CNS for support if required.', 'lines_cvc_present': 'Line Management: Daily review of Central Line necessity with medical team (to minimise line days). Maintain strict ANTT for all access and monitor site for signs of infection (CLABSI bundle).', 'drains_high_risk': 'Drain Management: Maintain close monitoring of drain patency, output characteristics, and volume. Escalate immediately to the home team for any sudden changes, particularly for outputs >100ml/hr of fresh blood, or signs of blockage.', 'bowels_issue': 'Bowel Management: Patient has not opened bowels >3 days. Monitor for signs of abdominal distension or discomfort. Escalate to the medical team for review and consideration of aperients.', 'concern_present': "Nursing Concerns: Articulate specific nursing concerns and escalate to senior nursing/medical staff for a 'fresh eyes' review of the patient's trajectory.", 'frailty_mod': 'Frailty Plan: Ensure referrals to Physiotherapy and Occupational Therapy are active to support mobility and function. Focus on falls prevention and nutritional support.', 'after_hours_high_risk': 'TRANSFER SAFETY ALERT: This high-risk patient had an after-hours discharge. Ensure handover to the ward team is exceptionally detailed, highlighting key risks for the first 24 hours.', 'after_hours_very_high_risk': 'CRITICAL RISK: This patient\'s high score combined with an after-hours discharge represents a significant risk of readmission. A direct, senior-level (Registrar or Consultant) discussion between ICU and the receiving home team is strongly recommended before transfer.' };
@@ -1098,9 +1118,9 @@
                 addPatient(false);
             } else {
                 if (!activePatientId || !patients[activePatientId]) { activePatientId = Object.keys(patients)[0]; }
-                renderTabs();
                 switchPatient(activePatientId);
             }
+            renderTabs();
         }
         
         function saveActivePatientData() {
@@ -1126,18 +1146,23 @@
             patients[newId] = { id: newId, name: newPatientName, score: 0, categoryClass: 'risk-single', categoryText: 'No specific follow-up required', data: {} };
             activePatientId = newId;
             if(doSave) saveState();
-            renderTabs();
             switchPatient(newId);
+            renderTabs();
         }
 
         function deletePatient(idToDelete) {
-            if(Object.keys(patients).length <= 1) { alert("Cannot delete the last patient."); return; }
+            if(Object.keys(patients).length <= 1) { 
+                if(confirm('This is the last patient. Clearing this patient will reset the list. Continue?')){
+                    clearDataBtn.click();
+                }
+                return; 
+            }
             if(confirm(`Are you sure you want to delete patient ${patients[idToDelete].name || 'this patient'}?`)) {
                 delete patients[idToDelete];
                 if (activePatientId === idToDelete) { activePatientId = Object.keys(patients)[0]; }
                 saveState();
-                renderTabs();
                 switchPatient(activePatientId);
+                renderTabs();
             }
         }
 
@@ -1152,36 +1177,44 @@
         }
 
         function renderTabs() {
-            patientTabsContainer.innerHTML = '';
-            
-            Object.values(patients).forEach(patient => {
-                const tab = document.createElement('div');
-                tab.className = 'patient-tab';
-                if (patient.id === activePatientId) {
-                    tab.classList.add('active', patient.categoryClass || 'risk-single');
-                }
-                tab.dataset.id = patient.id;
+            // Clear existing tabs
+            while(patientTabsContainer.firstChild && patientTabsContainer.firstChild !== tabsPlaceholder){
+                patientTabsContainer.removeChild(patientTabsContainer.firstChild);
+            }
 
-                const scoreBadge = document.createElement('span');
-                scoreBadge.className = 'tab-score-badge';
-                scoreBadge.textContent = patient.score || 0;
-                scoreBadge.style.backgroundColor = window.getComputedStyle(document.querySelector(`.${(patient.categoryClass || 'risk-single').replace('risk-','category-')}`)).backgroundColor;
-                
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = patient.name || 'New Patient';
+            const patientCount = Object.values(patients).length;
+            tabsPlaceholder.style.display = patientCount === 0 ? 'block' : 'none';
 
-                const deleteBtn = document.createElement('button');
-                deleteBtn.innerHTML = '&times;';
-                deleteBtn.className = 'delete-patient-btn';
-                deleteBtn.title = `Delete ${patient.name}`;
-                deleteBtn.onclick = (e) => { e.stopPropagation(); deletePatient(patient.id); };
-                
-                tab.appendChild(scoreBadge);
-                tab.appendChild(nameSpan);
-                tab.appendChild(deleteBtn);
-                tab.onclick = () => switchPatient(patient.id);
-                patientTabsContainer.appendChild(tab);
-            });
+            if (patientCount > 0) {
+                Object.values(patients).forEach(patient => {
+                    const tab = document.createElement('div');
+                    tab.className = 'patient-tab';
+                    if (patient.id === activePatientId) {
+                        tab.classList.add('active', patient.categoryClass || 'risk-single');
+                    }
+                    tab.dataset.id = patient.id;
+
+                    const scoreBadge = document.createElement('span');
+                    scoreBadge.className = 'tab-score-badge';
+                    scoreBadge.textContent = patient.score || 0;
+                    scoreBadge.style.backgroundColor = categoryColorMap[patient.categoryClass || 'risk-single'];
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = patient.name || 'New Patient';
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.innerHTML = '&times;';
+                    deleteBtn.className = 'delete-patient-btn';
+                    deleteBtn.title = `Delete ${patient.name}`;
+                    deleteBtn.onclick = (e) => { e.stopPropagation(); deletePatient(patient.id); };
+                    
+                    tab.appendChild(scoreBadge);
+                    tab.appendChild(nameSpan);
+                    tab.appendChild(deleteBtn);
+                    tab.onclick = () => switchPatient(patient.id);
+                    patientTabsContainer.insertBefore(tab, tabsPlaceholder);
+                });
+            }
         }
         
         // --- NEW WARD LIST FUNCTIONS ---
@@ -1190,7 +1223,7 @@
             const score = patient.score || 0;
             const categoryText = patient.categoryText || 'N/A';
             const categoryClass = patient.categoryClass || 'risk-single';
-            const categoryColor = window.getComputedStyle(document.querySelector(`.${categoryClass.replace('risk-','category-')}`)).backgroundColor;
+            const categoryColor = categoryColorMap[categoryClass] || '#67E8F9';
 
             const allergies = d.allergies && d.allergies.length > 0 ? d.allergies.map(a => a.name).join(', ') : (d.nkdaCheckbox ? 'NKDA' : 'Not documented');
             const precautionsList = [];
@@ -1234,7 +1267,7 @@
                             <strong>RR:</strong> <span>${d.rr_input || '―'}</span>
                             <strong>SpO₂:</strong> <span>${d.spo2_input || '―'}% on ${d.o2_flow_input || 'RA'}${d.o2_flow_input ? (d.o2_unit_input === 'lpm' ? 'L' : '%') : ''}</span>
                             <strong>Temp:</strong> <span>${d.temp_input || '―'}°C</span>
-                            <strong>GCS:</strong> <span>${getSelectText(document.getElementById('consciousness_input'))}</span>
+                            <strong>Consc:</strong> <span>${(d.consciousness_input && d.consciousness_input !== "0") ? getSelectText(document.querySelector('#consciousness_input option[value="' + d.consciousness_input + '"]')) : 'Alert'}</span>
                         </div>
                     </div>
                     <div class="ward-list-section">
