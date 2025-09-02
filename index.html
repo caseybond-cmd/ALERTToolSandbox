@@ -288,9 +288,9 @@
                          <div>
                              <label class="block text-sm font-medium text-gray-700">Infection Control Precautions:</label>
                              <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Contact"> <span class="ml-2">Contact</span></label>
-                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Droplet"> <span class="ml-2">Droplet</span></label>
-                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Airborne"> <span class="ml-2">Airborne</span></label>
+                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Contact" value="Contact"> <span class="ml-2">Contact</span></label>
+                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Droplet" value="Droplet"> <span class="ml-2">Droplet</span></label>
+                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Airborne" value="Airborne"> <span class="ml-2">Airborne</span></label>
                              </div>
                              <div id="infectionControlDetails" class="hidden mt-2">
                                  <label for="infectionControlReason" class="block text-sm font-medium text-gray-700">Reason:</label>
@@ -311,7 +311,7 @@
                             </div>
                             <div id="pics_details_container" class="hidden ml-6 mt-2">
                                 <label for="pics_notes" class="block text-sm font-medium text-gray-700">Information / Plan:</label>
-                                <textarea id="pics_notes" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
+                                <textarea id="pics_notes" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Information/Plan..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -416,7 +416,7 @@
 
     <div id="printoutContainer" class="hidden"></div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.6.0 - Smart Summary & Inputs</div>
+    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.6.1 - Bug Fix & Enhancements</div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -488,37 +488,7 @@
         let currentAddsBreakdown = 'Normal Parameters';
         
         // --- Data Maps ---
-        const carePlanMap = {
-            'crit_met_post': 'CRITICAL: Patient is in MET criteria on the ward. Initiate immediate MET call as per local protocol and escalate to senior nursing and medical staff.',
-            'crit_met_pre': 'CRITICAL: Patient\'s current observations would trigger a MET call on the ward. This is a significant barrier to transfer. Liaise with ICU and home teams to create a clear mitigation plan before stepdown.',
-            'crit_adds4': 'CRITICAL: High ADDS score indicates significant physiological instability. Escalate for urgent medical review (<30 mins) and ensure adherence to the AORC escalation pathway.',
-            'crit_lactate_high': 'CRITICAL: Critically high lactate suggests potential tissue hypoperfusion. Escalate immediately to the medical team for urgent review.',
-            'crit_af': 'CRITICAL: Unstable AF (e.g., with hypotension, ischaemia) requires urgent intervention. Escalate for cardiology/medical review and prepare for 12-lead ECG.',
-            'crit_hb_drop': 'CRITICAL: Significant Hb drop or active bleeding requires urgent investigation. Escalate for urgent medical/surgical review, ensure IV access, and consider group and hold.',
-            'resp_increasing_o2': 'Respiratory Plan: Increasing O2 needs noted. Perform focused respiratory assessments (work of breathing) per AORC. Ensure clear documentation of Resp Rate and O2 requirements to monitor trends. Liaise with medical team to review.',
-            'resp_rapid_wean': 'Respiratory Plan: Recent rapid wean of respiratory support. Perform focused respiratory assessments (work of breathing) per AORC and ensure clear documentation of Resp Rate and O2 requirements to monitor for signs of fatigue.',
-            'bloods_electrolytes': 'Biochemical Plan: Significant electrolyte abnormalities noted. Escalate to medical officer for review and prescribing of replacement therapy. For severe K+ abnormalities, escalate to senior nursing staff and contact ALERT CNS for support regarding patient placement and monitoring.',
-            'bloods_lactate_mid': 'Biochemical Plan: Liaise with medical team for serial lactate measurement within 4 hours to ensure clearance. Continue to review fluid status and clinical signs of perfusion.',
-            'bloods_creatinine': 'Biochemical Plan: Maintain strict fluid balance chart. Ensure urine output remains >0.5ml/kg/hr and escalate to the medical team if it falls below this target. Liaise with pharmacy to review for nephrotoxic medications.',
-            'bloods_albumin': 'Nutrition Plan: Significant hypoalbuminaemia noted. Ensure active dietitian referral for nutritional assessment and planning. Monitor for oedema.',
-            'bloods_anaemia': 'Haematology Plan: Monitor for signs of occult bleeding or haemodynamic instability. Liaise with medical team to clarify transfusion threshold.',
-            'pain_pca': 'Pain Management: Pain appears poorly controlled. Perform comprehensive pain assessments (score 0-10) with each set of observations. Ensure prescribed analgesia is optimised and offered regularly. Escalate to the Acute Pain Service if pain remains severe.',
-            'fluid_sig': 'Fluid Management: Significant fluid imbalance identified. Maintain strict fluid balance chart and daily weights. Perform clinical fluid assessment (peripheral oedema, lung auscultation). Liaise with medical team to review fluid orders. Please contact ALERT CNS for support with assessment if required.',
-            'delirium_mod': 'Cognitive Support: Implement delirium prevention strategies (e.g., reorientation, day/night cycle, family presence). Liaise with the medical team and pharmacy to review for potential deliriogenic medications.',
-            'mobility_bedbound': 'Mobility & Pressure Care: Implement pressure injury prevention bundle: Regular turns, pressure-relieving mattress, skin assessment. Liaise with physiotherapy for in-bed exercise plan.',
-            'airway_altered': 'Airway Management: Ensure patient is in an appropriate bed location with trained staff. Confirm required emergency equipment (e.g., spare inner cannula, spare tracheostomy tube of same/smaller size, obturator, 10ml syringe, trach dilators) is present and checked at the bedside. Contact ALERT CNS for support if required.',
-            'lines_cvc_present': 'Line Management: Daily review of Central Line necessity with medical team (to minimise line days). Maintain strict ANTT for all access and monitor site for signs of infection (CLABSI bundle).',
-            'pivc_overdue_72h': 'Line Management: PIVC in situ >72 hours. Assess site using PIVAS score. Plan for removal and replacement as per institutional policy to reduce risk of phlebitis.',
-            'pivc_pivas_action': 'Line Management: PIVC site has a PIVAS score > 1. Escalate for review and consider immediate removal and replacement, especially for scores 4-5.',
-            'cvc_review_due': 'Line Management: Central line in situ for >7 days. Escalate to home team for review of ongoing necessity.',
-            'cvc_site_issue': 'Line Management: Central line site shows signs of inflammation/infection. Escalate immediately to the home team for assessment. Do not use line until reviewed.',
-            'drains_high_risk': 'Drain Management: Maintain close monitoring of drain patency, output characteristics, and volume. Escalate immediately to the home team for any sudden changes, particularly for outputs >100ml/hr of fresh blood, or signs of blockage.',
-            'bowels_issue': 'Bowel Management: Patient has not opened bowels >3 days. Monitor for signs of abdominal distension or discomfort. Escalate to the medical team for review and consideration of aperients.',
-            'concern_present': "Nursing Concerns: Articulate specific nursing concerns and escalate to senior nursing/medical staff for a 'fresh eyes' review of the patient's trajectory.",
-            'frailty_mod': 'Frailty Plan: Ensure referrals to Physiotherapy and Occupational Therapy are active to support mobility and function. Focus on falls prevention and nutritional support.',
-            'after_hours_high_risk': 'TRANSFER SAFETY ALERT: This high-risk patient had an after-hours discharge. Ensure handover to the ward team is exceptionally detailed, highlighting key risks for the first 24 hours.',
-            'after_hours_very_high_risk': 'CRITICAL RISK: This patient\'s high score combined with an after-hours discharge represents a significant risk of readmission. A direct, senior-level (Registrar or Consultant) discussion between ICU and the receiving home team is strongly recommended before transfer.'
-        };
+        const carePlanMap = { 'crit_met_post': 'CRITICAL: Patient is in MET criteria on the ward. Initiate immediate MET call as per local protocol and escalate to senior nursing and medical staff.', 'crit_met_pre': 'CRITICAL: Patient\'s current observations would trigger a MET call on the ward. This is a significant barrier to transfer. Liaise with ICU and home teams to create a clear mitigation plan before stepdown.', 'crit_adds4': 'CRITICAL: High ADDS score indicates significant physiological instability. Escalate for urgent medical review (<30 mins) and ensure adherence to the AORC escalation pathway.', 'crit_lactate_high': 'CRITICAL: Critically high lactate suggests potential tissue hypoperfusion. Escalate immediately to the medical team for urgent review.', 'crit_af': 'CRITICAL: Unstable AF (e.g., with hypotension, ischaemia) requires urgent intervention. Escalate for cardiology/medical review and prepare for 12-lead ECG.', 'crit_hb_drop': 'CRITICAL: Significant Hb drop or active bleeding requires urgent investigation. Escalate for urgent medical/surgical review, ensure IV access, and consider group and hold.', 'resp_increasing_o2': 'Respiratory Plan: Increasing O2 needs noted. Perform focused respiratory assessments (work of breathing) per AORC. Ensure clear documentation of Resp Rate and O2 requirements to monitor trends. Liaise with medical team to review.', 'resp_rapid_wean': 'Respiratory Plan: Recent rapid wean of respiratory support. Perform focused respiratory assessments (work of breathing) per AORC and ensure clear documentation of Resp Rate and O2 requirements to monitor for signs of fatigue.', 'bloods_electrolytes': 'Biochemical Plan: Significant electrolyte abnormalities noted. Escalate to medical officer for review and prescribing of replacement therapy. For severe K+ abnormalities, escalate to senior nursing staff and contact ALERT CNS for support regarding patient placement and monitoring.', 'bloods_lactate_mid': 'Biochemical Plan: Liaise with medical team for serial lactate measurement within 4 hours to ensure clearance. Continue to review fluid status and clinical signs of perfusion.', 'bloods_creatinine': 'Biochemical Plan: Maintain strict fluid balance chart. Ensure urine output remains >0.5ml/kg/hr and escalate to the medical team if it falls below this target. Liaise with pharmacy to review for nephrotoxic medications.', 'bloods_albumin': 'Nutrition Plan: Significant hypoalbuminaemia noted. Ensure active dietitian referral for nutritional assessment and planning. Monitor for oedema.', 'bloods_anaemia': 'Haematology Plan: Monitor for signs of occult bleeding or haemodynamic instability. Liaise with medical team to clarify transfusion threshold.', 'pain_pca': 'Pain Management: Pain appears poorly controlled. Perform comprehensive pain assessments (score 0-10) with each set of observations. Ensure prescribed analgesia is optimised and offered regularly. Escalate to the Acute Pain Service if pain remains severe.', 'fluid_sig': 'Fluid Management: Significant fluid imbalance identified. Maintain strict fluid balance chart and daily weights. Perform clinical fluid assessment (peripheral oedema, lung auscultation). Liaise with medical team to review fluid orders. Please contact ALERT CNS for support with assessment if required.', 'delirium_mod': 'Cognitive Support: Implement delirium prevention strategies (e.g., reorientation, day/night cycle, family presence). Liaise with the medical team and pharmacy to review for potential deliriogenic medications.', 'mobility_bedbound': 'Mobility & Pressure Care: Implement pressure injury prevention bundle: Regular turns, pressure-relieving mattress, skin assessment. Liaise with physiotherapy for in-bed exercise plan.', 'airway_altered': 'Airway Management: Ensure patient is in an appropriate bed location with trained staff. Confirm required emergency equipment (e.g., spare inner cannula, spare tracheostomy tube of same/smaller size, obturator, 10ml syringe, trach dilators) is present and checked at the bedside. Contact ALERT CNS for support if required.', 'lines_cvc_present': 'Line Management: Daily review of Central Line necessity with medical team (to minimise line days). Maintain strict ANTT for all access and monitor site for signs of infection (CLABSI bundle).', 'drains_high_risk': 'Drain Management: Maintain close monitoring of drain patency, output characteristics, and volume. Escalate immediately to the home team for any sudden changes, particularly for outputs >100ml/hr of fresh blood, or signs of blockage.', 'bowels_issue': 'Bowel Management: Patient has not opened bowels >3 days. Monitor for signs of abdominal distension or discomfort. Escalate to the medical team for review and consideration of aperients.', 'concern_present': "Nursing Concerns: Articulate specific nursing concerns and escalate to senior nursing/medical staff for a 'fresh eyes' review of the patient's trajectory.", 'frailty_mod': 'Frailty Plan: Ensure referrals to Physiotherapy and Occupational Therapy are active to support mobility and function. Focus on falls prevention and nutritional support.', 'after_hours_high_risk': 'TRANSFER SAFETY ALERT: This high-risk patient had an after-hours discharge. Ensure handover to the ward team is exceptionally detailed, highlighting key risks for the first 24 hours.', 'after_hours_very_high_risk': 'CRITICAL RISK: This patient\'s high score combined with an after-hours discharge represents a significant risk of readmission. A direct, senior-level (Registrar or Consultant) discussion between ICU and the receiving home team is strongly recommended before transfer.' };
         const impressionMap = {'crit_met':'is currently meeting MET criteria','crit_adds4':'has a high ADDS score indicating physiological instability','crit_lactate_high':'has a critically high lactate concerning for hypoperfusion','crit_af':'is in unstable atrial fibrillation','crit_hb_drop':'has had a significant drop in haemoglobin or is actively bleeding','resp_increasing_o2':'has increasing oxygen requirements','delirium_mod':'is suffering from moderate to severe delirium','fluid_sig':'has a significant fluid imbalance','pain_pca':'has poorly controlled pain requiring advanced analgesia','concern_present':'has specific concerns raised by the bedside nursing staff'};
         const standardScores = { getRrScore(rr) { let s=0,m=false; if(rr>=36||rr<5)m=true;else if(rr>=30&&rr<=35)s=3;else if(rr>=25&&rr<=29)s=2;else if(rr>=21&&rr<=24)s=1;else if(rr>=5&&rr<=9)s=3; return {score:s, isMet:m}; }, getSpo2Score(spo2) { let s=0,m=false; if(spo2<=84)m=true;else if(spo2>=85&&spo2<=90)s=2;else if(spo2>=91&&spo2<=93)s=1; return {score:s, isMet:m}; }, getO2Score(o2Flow, o2Unit) { let s=0; if(o2Unit==='lpm'){if(o2Flow>10)s=3;else if(o2Flow>=5&&o2Flow<=9)s=2;else if(o2Flow>=2&&o2Flow<=4)s=1}else{if(o2Flow>=40)s=3;else if(o2Flow>=29)s=2;else if(o2Flow>=21)s=1} return {score:s, isMet:false}; }, getHrScore(hr) { let s=0,m=false; if(hr>=140||hr<30)m=true;else if(hr>=130&&hr<=139)s=3;else if(hr>=120&&hr<=129)s=2;else if(hr>=100&&hr<=119)s=1;else if(hr>=40&&hr<=49)s=1;else if(hr>=30&&hr<=39)s=2; return {score:s, isMet:m}; }, getSbpScore(sbp) { let s=0,m=false; if(sbp<90)m=true;else if(sbp>=190&&sbp<=199)s=3;else if(sbp>=180&&sbp<=189)s=2;else if(sbp>=150&&sbp<=179)s=1;else if(sbp>=80&&sbp<=99)s=1;else if(sbp>=70&&sbp<=79)s=2; return {score:s, isMet:m}; } };
         
@@ -601,11 +571,11 @@
                 const now = new Date();
                 const hoursSince = (now - stepdownDate) / (1000 * 60 * 60);
 
-                if (score >= 1 && score <= 3) { // Single Review
+                if (score >= 1 && score <= 3) {
                     followUpMessage = 'Minimum follow-up time met. Consider if safe to discharge from ALERT.';
-                } else if (score >= 4 && score <= 9 && hoursSince > 24) { // 24h Review
+                } else if (score >= 4 && score <= 9 && hoursSince > 24) {
                     followUpMessage = '24hr follow-up period met. Consider if safe to discharge from ALERT.';
-                } else if (score >= 10 && hoursSince > 72) { // 72h Review
+                } else if (score >= 10 && hoursSince > 72) {
                     followUpMessage = '72hr follow-up period met. Consider adding to Patient of Concern list for continued follow-up.';
                 }
             }
@@ -767,7 +737,6 @@
             div.innerHTML = templateHTML.trim();
             const newElement = div.firstChild;
             container.appendChild(newElement);
-            // Attach event listeners for new elements
             newElement.querySelectorAll('.device-date-input').forEach(input => {
                 input.addEventListener('input', checkDeviceFlags);
             });
@@ -868,7 +837,6 @@
         function generateSummary() {
             let summary = `--- ALERT LIAISON NURSE REVIEW ---\n\n`;
             
-            // Smart Impression
             summary += `IMPRESSION: ${generateImpression()}\n\n`;
 
             summary += `PATIENT: ${safeGet('patientInitials')} (${safeGet('urnLast4')}), ${safeGet('wardAndRoom')}\n`;
@@ -900,14 +868,12 @@
             summary += `\n`;
 
             summary += `RISK ASSESSMENT SCORE: ${totalScoreEl.textContent}\n`;
-            summary += `CATEGORY & ACTION: ${riskCategoryEl.textContent.replace('<br>', ' - ')}\n\n`;
+            summary += `CATEGORY & ACTION: ${riskCategoryEl.innerHTML.replace(/<br\s*\/?>/gi, ' - ')}\n\n`;
             
             summary += `KEY ISSUES & PLAN:\n`;
             const carePlanItems = [];
-            // Add device flags to care plan
-            document.querySelectorAll('.device-row').forEach(row => {
-                const flag = row.querySelector('.device-flag');
-                if (flag) carePlanItems.push(`- ${flag.title}`);
+            document.querySelectorAll('.device-row .device-flag').forEach(flag => {
+                if (flag && flag.title) carePlanItems.push(`- ${flag.title}`);
             });
 
             document.querySelectorAll('.score-input:checked').forEach(input => {
@@ -922,7 +888,7 @@
             });
             
             if (carePlanItems.length > 0) {
-                summary += [...new Set(carePlanItems)].join('\n') + '\n\n'; // Use Set to remove duplicates
+                summary += [...new Set(carePlanItems)].join('\n') + '\n\n';
             } else {
                 summary += "- No critical issues identified. Continue standard ward-based care.\n\n";
             }
@@ -976,10 +942,11 @@
         function getFormData() {
             const data = {};
             assessmentForm.querySelectorAll('input, select, textarea').forEach(el => {
+                const id = el.id || `${el.name}-${el.value}`;
                 if (el.type === 'checkbox' || el.type === 'radio') {
-                    if (el.id) data[el.id] = el.checked;
+                     if (id) data[id] = el.checked;
                 } else {
-                    if (el.id) data[el.id] = el.value;
+                    if (id) data[id] = el.value;
                 }
             });
             
@@ -1014,6 +981,9 @@
                     } else {
                         el.value = data[key];
                     }
+                } else { // Handle radio buttons without IDs
+                    const radio = document.querySelector(`input[name="${key.split('-')[0]}"][value="${key.split('-')[1]}"]`);
+                    if(radio) radio.checked = data[key];
                 }
             }
 
@@ -1042,16 +1012,12 @@
                     const parsedData = JSON.parse(savedData);
                     patients = parsedData.patients || {};
                     activePatientId = parsedData.activePatientId;
-                } catch (e) {
-                    console.error("Failed to parse data", e); patients = {}; activePatientId = null;
-                }
+                } catch (e) { console.error("Failed to parse data", e); patients = {}; activePatientId = null; }
             }
             if (Object.keys(patients).length === 0) {
                 addPatient(false);
             } else {
-                if (!activePatientId || !patients[activePatientId]) {
-                    activePatientId = Object.keys(patients)[0];
-                }
+                if (!activePatientId || !patients[activePatientId]) { activePatientId = Object.keys(patients)[0]; }
                 renderTabs();
                 switchPatient(activePatientId);
             }
@@ -1061,7 +1027,7 @@
             if (!activePatientId) return;
             const patientData = getFormData();
             const patientName = patientData.patientInitials || `Patient`;
-            patients[activePatientId] = { id: activePatientId, name: patientName, score: totalScoreEl.textContent, category: riskCategoryEl.textContent, data: patientData };
+            patients[activePatientId] = { id: activePatientId, name: patientName, score: totalScoreEl.textContent, category: riskCategoryEl.innerHTML, data: patientData };
             saveState();
             renderTabs();
         }
@@ -1080,9 +1046,7 @@
             if(Object.keys(patients).length <= 1) { alert("Cannot delete the last patient."); return; }
             if(confirm(`Are you sure you want to delete patient ${patients[idToDelete].name}?`)) {
                 delete patients[idToDelete];
-                if (activePatientId === idToDelete) {
-                    activePatientId = Object.keys(patients)[0];
-                }
+                if (activePatientId === idToDelete) { activePatientId = Object.keys(patients)[0]; }
                 saveState();
                 renderTabs();
                 switchPatient(activePatientId);
@@ -1090,9 +1054,7 @@
         }
 
         function switchPatient(newId) {
-            if (activePatientId && activePatientId !== newId) {
-                saveActivePatientData();
-            }
+            if (activePatientId && activePatientId !== newId) { saveActivePatientData(); }
             activePatientId = newId;
             const patient = patients[newId];
             loadFormData(patient.data);
@@ -1122,7 +1084,6 @@
             patientTabsContainer.appendChild(tabContainer);
         }
         
-        // --- LIST GENERATION ---
         function getListData(patient) {
             const data = patient.data || {};
             const allergies = data.allergies && data.allergies.length > 0 ? data.allergies.map(a => a.name).join(', ') : (data.nkdaCheckbox ? 'NKDA' : 'Not documented');
@@ -1140,7 +1101,7 @@
             const sortedPatients = Object.values(patients).sort((a, b) => (b.score || 0) - (a.score || 0));
             sortedPatients.forEach(p => {
                 const d = getListData(p);
-                listHtml += `<div class="prose max-w-none border-t pt-4 mt-4"><h3>${d.name} - ${d.location} (URN: ${d.urn})</h3><p><strong>Risk Score: ${d.score}</strong> (${d.category.replace(/<br.*?>/g, ' - ')})</p><p><strong>Key Info:</strong> GOC: ${d.goc} | ICU LOS: ${d.los} days | Allergies: ${d.allergies} | Precautions: ${d.precautions}</p><h4>Review Checklist:</h4><ul><li><strong>Airway:</strong> Patent, secure? Trache status?</li><li><strong>Breathing:</strong> WOB, RR trend, O2 stable/weaning?</li><li><strong>Circulation:</strong> Fluid status? Lines patent/clean? Output adequate?</li><li><strong>Disability:</strong> GCS/AVPU, Delirium screen (CAM-ICU/4AT), Pain controlled?</li><li><strong>Exposure/Systemic:</strong> Bowels opened? Nutrition plan? Mobility plan?</li></ul></div>`;
+                listHtml += `<div class="prose max-w-none border-t pt-4 mt-4"><h3>${d.name} - ${d.location} (URN: ${d.urn})</h3><p><strong>Risk Score: ${d.score}</strong> (${d.category.replace(/<br.*?>/gi, ' - ')})</p><p><strong>Key Info:</strong> GOC: ${d.goc} | ICU LOS: ${d.los} days | Allergies: ${d.allergies} | Precautions: ${d.precautions}</p><h4>Review Checklist:</h4><ul><li><strong>Airway:</strong> Patent, secure? Trache status?</li><li><strong>Breathing:</strong> WOB, RR trend, O2 stable/weaning?</li><li><strong>Circulation:</strong> Fluid status? Lines patent/clean? Output adequate?</li><li><strong>Disability:</strong> GCS/AVPU, Delirium screen (CAM-ICU/4AT), Pain controlled?</li><li><strong>Exposure/Systemic:</strong> Bowels opened? Nutrition plan? Mobility plan?</li></ul></div>`;
             });
             digitalListContent.innerHTML = listHtml;
             digitalListModal.classList.remove('hidden');
@@ -1160,7 +1121,6 @@
         }
 
         function initializeApp() {
-            // Setup all event listeners
             resetButton.addEventListener('click', () => { if(confirm('Are you sure you want to reset the form for this patient?')) { resetForm(); saveActivePatientData(); } });
             generateSummaryButton.addEventListener('click', generateSummary);
             copySummaryButton.addEventListener('click', copySummary);
