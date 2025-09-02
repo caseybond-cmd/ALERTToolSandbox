@@ -21,15 +21,6 @@
         .final-score-bg {
             background-color: #134E4A;
         }
-        .form-input, .form-select {
-            @apply mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150;
-        }
-        .form-textarea {
-             @apply mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150;
-        }
-        .sub-label {
-            @apply block text-sm font-medium text-gray-700;
-        }
         .critical-input-label::after {
             content: '❗';
             color: #ef4444; /* red-500 */
@@ -63,20 +54,11 @@
         .module-bg-e { background-color: #fef2f2; }
         .module-bg-f { background-color: #faf5ff; }
         .module-bg-g { background-color: #f5f3ff; }
-        .module-title {
-            @apply font-bold text-xl mb-3 p-3 rounded-t-lg;
-        }
         .remove-btn {
             @apply ml-2 text-red-500 hover:text-red-700 font-bold;
         }
         .mod-score {
             color: #2563EB;
-        }
-        .risk-flag {
-            @apply inline-block ml-2 text-xs font-bold text-white bg-orange-500 px-2 py-1 rounded-full;
-        }
-        .risk-flag-high {
-             @apply inline-block ml-2 text-xs font-bold text-white bg-red-600 px-2 py-1 rounded-full;
         }
         .patient-tabs {
             @apply flex border-b border-gray-200 mb-4 flex-wrap;
@@ -99,14 +81,7 @@
             }
             @page {
                 size: A4;
-                margin: 0.75in;
-            }
-            .print-patient-card {
-                page-break-inside: avoid;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                padding: 16px;
-                margin-bottom: 16px;
+                margin: 0.5in;
             }
         }
     </style>
@@ -114,10 +89,9 @@
 <body class="p-4 sm:p-6 md:p-8">
 
     <div class="max-w-4xl mx-auto">
-        <!-- Patient Management Section -->
         <div class="bg-white rounded-xl shadow-lg mb-6 p-4">
             <h2 class="text-xl font-bold text-gray-800 mb-3">Patient List</h2>
-            <div id="patientTabsContainer" class="patient-tabs"></div>
+            <div id="patientTabsContainer" class="flex border-b border-gray-200 mb-4 flex-wrap"></div>
             <div class="flex flex-wrap gap-2 mt-4">
                 <button id="addPatientBtn" type="button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors">Add New Patient</button>
                 <button id="printListBtn" type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors">Print Ward List</button>
@@ -127,7 +101,6 @@
         </div>
 
         <form id="assessmentForm">
-            <!-- Patient Details -->
             <div class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
                 <div class="header-gradient p-6 flex items-center justify-center text-white">
                     <div class="bg-white/20 rounded-full p-2 mr-4">
@@ -138,131 +111,129 @@
                 <div class="p-6 bg-gray-50/50">
                     <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-6">Patient Details</h2>
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                           <div class="md:col-span-2">
-                               <label for="reviewType" class="block font-medium text-gray-700">Type of Review:</label>
-                               <select id="reviewType" class="form-select">
-                                   <option value="post">Post-ICU stepdown review on ward</option>
-                                   <option value="pre">Pre-ICU stepdown review</option>
-                               </select>
-                           </div>
-                           <div>
-                               <label for="patientInitials" class="block font-medium text-gray-700">Patient Initials:</label>
-                               <input type="text" id="patientInitials" class="form-input">
-                           </div>
-                           <div>
-                               <label for="urnLast4" class="block font-medium text-gray-700">Last 4 Digits of URN:</label>
-                               <input type="text" id="urnLast4" class="form-input">
-                           </div>
-                           <div>
-                               <label for="wardAndRoom" class="block font-medium text-gray-700">Ward & Room No.:</label>
-                               <input type="text" id="wardAndRoom" class="form-input">
-                           </div>
-                           <div>
-                               <label for="losDays" class="block font-medium text-gray-700">ICU LOS (days):</label>
-                               <input type="number" id="losDays" min="0" class="form-input">
-                           </div>
-                            <div id="postStepdownFields" class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 pt-2 border-t mt-2">
-                             <div>
-                                 <label for="icuStepdownDate" class="block font-medium text-gray-700">ICU Stepdown Date:</label>
-                                 <input type="date" id="icuStepdownDate" class="form-input time-input">
-                             </div>
-                             <div>
-                                 <label for="icuStepdownTime" class="block font-medium text-gray-700">ICU Stepdown Time-band:</label>
-                                 <select id="icuStepdownTime" class="form-select time-input">
-                                     <option value="09:00" data-ooh="false">Morning (0600-1159)</option>
-                                     <option value="15:00" data-ooh="false">Afternoon (1200-1759)</option>
-                                     <option value="21:00" data-ooh="true">Evening (1800-2359)</option>
-                                     <option value="03:00" data-ooh="true">Night (0000-0559)</option>
+                             <div class="md:col-span-2">
+                                 <label for="reviewType" class="block font-medium text-gray-700">Type of Review:</label>
+                                 <select id="reviewType" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                                     <option value="post">Post-ICU stepdown review on ward</option>
+                                     <option value="pre">Pre-ICU stepdown review</option>
                                  </select>
                              </div>
-                            </div>
-                            <div class="md:col-span-2 pt-4 border-t mt-2 space-y-4">
-                                <div>
-                                    <label for="goc" class="sub-label">Goals of Care:</label>
-                                    <select id="goc" class="form-select">
-                                        <option value="">Not Documented</option>
-                                        <option value="A">A</option>
-                                        <option value="B">B</option>
-                                        <option value="C">C</option>
-                                    </select>
-                                    <div id="gocSpecificsContainer" class="hidden mt-2">
-                                        <label for="gocSpecifics" class="sub-label">Specifics:</label>
-                                        <input type="text" id="gocSpecifics" class="form-input">
-                                    </div>
-                                </div>
-                                <div id="allergies-section">
-                                    <label class="sub-label">Allergies:</label>
-                                    <div class="mt-2 space-y-2">
-                                        <div class="flex items-center">
-                                            <input type="checkbox" id="nkdaCheckbox" class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                                            <label for="nkdaCheckbox" class="ml-2 block text-sm text-gray-900">No Known Drug Allergies (NKDA)</label>
-                                        </div>
-                                        <div id="allergies_container" class="space-y-2"></div>
-                                        <button type="button" id="addAllergyButton" class="mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add Allergy</button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="sub-label">Infection Control Precautions:</label>
-                                    <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-                                        <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Contact"> <span class="ml-2">Contact</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Droplet"> <span class="ml-2">Droplet</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Airborne"> <span class="ml-2">Airborne</span></label>
-                                    </div>
-                                    <div id="infectionControlDetails" class="hidden mt-2">
-                                        <label for="infectionControlReason" class="sub-label">Reason:</label>
-                                        <input type="text" id="infectionControlReason" class="form-input">
-                                    </div>
-                                </div>
-                            </div>
-                     </div>
+                             <div>
+                                 <label for="patientInitials" class="block font-medium text-gray-700">Patient Initials:</label>
+                                 <input type="text" id="patientInitials" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                             </div>
+                             <div>
+                                 <label for="urnLast4" class="block font-medium text-gray-700">Last 4 Digits of URN:</label>
+                                 <input type="text" id="urnLast4" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                             </div>
+                             <div>
+                                 <label for="wardAndRoom" class="block font-medium text-gray-700">Ward & Room No.:</label>
+                                 <input type="text" id="wardAndRoom" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                             </div>
+                             <div>
+                                 <label for="losDays" class="block font-medium text-gray-700">ICU LOS (days):</label>
+                                 <input type="number" id="losDays" min="0" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                             </div>
+                              <div id="postStepdownFields" class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 pt-2 border-t mt-2">
+                               <div>
+                                   <label for="icuStepdownDate" class="block font-medium text-gray-700">ICU Stepdown Date:</label>
+                                   <input type="date" id="icuStepdownDate" class="time-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                               </div>
+                               <div>
+                                   <label for="icuStepdownTime" class="block font-medium text-gray-700">ICU Stepdown Time-band:</label>
+                                   <select id="icuStepdownTime" class="time-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                                       <option value="09:00" data-ooh="false">Morning (0600-1159)</option>
+                                       <option value="15:00" data-ooh="false">Afternoon (1200-1759)</option>
+                                       <option value="21:00" data-ooh="true">Evening (1800-2359)</option>
+                                       <option value="03:00" data-ooh="true">Night (0000-0559)</option>
+                                   </select>
+                               </div>
+                              </div>
+                              <div class="md:col-span-2 pt-4 border-t mt-2 space-y-4">
+                                  <div>
+                                      <label for="goc" class="block text-sm font-medium text-gray-700">Goals of Care:</label>
+                                      <select id="goc" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                                          <option value="">Not Documented</option>
+                                          <option value="A">A</option>
+                                          <option value="B">B</option>
+                                          <option value="C">C</option>
+                                      </select>
+                                      <div id="gocSpecificsContainer" class="hidden mt-2">
+                                          <label for="gocSpecifics" class="block text-sm font-medium text-gray-700">Specifics:</label>
+                                          <input type="text" id="gocSpecifics" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                                      </div>
+                                  </div>
+                                  <div id="allergies-section">
+                                      <label class="block text-sm font-medium text-gray-700">Allergies:</label>
+                                      <div class="mt-2 space-y-2">
+                                          <div class="flex items-center">
+                                              <input type="checkbox" id="nkdaCheckbox" class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                                              <label for="nkdaCheckbox" class="ml-2 block text-sm text-gray-900">No Known Drug Allergies (NKDA)</label>
+                                          </div>
+                                          <div id="allergies_container" class="space-y-2"></div>
+                                          <button type="button" id="addAllergyButton" class="mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add Allergy</button>
+                                      </div>
+                                  </div>
+                                  <div>
+                                      <label class="block text-sm font-medium text-gray-700">Infection Control Precautions:</label>
+                                      <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                                          <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Contact"> <span class="ml-2">Contact</span></label>
+                                          <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Droplet"> <span class="ml-2">Droplet</span></label>
+                                          <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Airborne"> <span class="ml-2">Airborne</span></label>
+                                      </div>
+                                      <div id="infectionControlDetails" class="hidden mt-2">
+                                          <label for="infectionControlReason" class="block text-sm font-medium text-gray-700">Reason:</label>
+                                          <input type="text" id="infectionControlReason" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                                      </div>
+                                  </div>
+                              </div>
+                        </div>
                 </div>
             </div>
             
-            <!-- Clinical Parameters -->
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
                 <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">Clinical Parameters</h2>
-                <!-- A-E Assessment -->
                 <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <h3 class="font-semibold text-gray-700 mb-4">A-E Assessment</h3>
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">Airway</label>
-                            <div class="sm:col-span-2"><input type="text" id="airway_input" class="form-input" value="Patent"></div>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Airway</label>
+                            <div class="sm:col-span-2"><input type="text" id="airway_input" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" value="Patent"></div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">Resp Rate</label>
-                            <div class="sm:col-span-2"><input type="number" id="rr_input" class="form-input vital-input"></div>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Resp Rate</label>
+                            <div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
                         </div>
                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">SpO2 (%)</label>
-                            <div class="sm:col-span-2"><input type="number" id="spo2_input" class="form-input vital-input"></div>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">SpO2 (%)</label>
+                            <div class="sm:col-span-2"><input type="number" id="spo2_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">Oxygen Delivery</label>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Oxygen Delivery</label>
                             <div class="sm:col-span-2 flex items-center space-x-2">
-                                <input type="number" id="o2_flow_input" class="form-input vital-input" placeholder="Value">
-                                <select id="o2_unit_input" class="form-select vital-input"><option value="lpm">L/min</option><option value="fio2">% FiO2</option></select>
+                                <input type="number" id="o2_flow_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Value">
+                                <select id="o2_unit_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"><option value="lpm">L/min</option><option value="fio2">% FiO2</option></select>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">Heart Rate</label>
-                            <div class="sm:col-span-2"><input type="number" id="hr_input" class="form-input vital-input"></div>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Heart Rate</label>
+                            <div class="sm:col-span-2"><input type="number" id="hr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
                         </div>
                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">SBP (mmHg)</label>
-                            <div class="sm:col-span-2"><input type="number" id="sbp_input" class="form-input vital-input"></div>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">SBP (mmHg)</label>
+                            <div class="sm:col-span-2"><input type="number" id="sbp_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">DBP (mmHg)</label>
-                            <div class="sm:col-span-2"><input type="number" id="dbp_input" class="form-input"></div>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">DBP (mmHg)</label>
+                            <div class="sm:col-span-2"><input type="number" id="dbp_input" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">Consciousness</label>
-                            <div class="sm:col-span-2"><select id="consciousness_input" class="form-select vital-input"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Consciousness</label>
+                            <div class="sm:col-span-2"><select id="consciousness_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="sub-label sm:col-span-1">Temp (°C)</label>
-                            <div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="form-input vital-input"></div>
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Temp (°C)</label>
+                            <div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
                         </div>
                     </div>
 
@@ -281,20 +252,20 @@
                                 <div class="space-y-1">
                                     <label class="flex items-center text-sm"><input type="checkbox" name="mod_param" value="RR"> <span class="ml-2 font-medium">Resp Rate</span></label>
                                     <div class="hidden mod-details space-y-2 pl-5 pt-2">
-                                        <select data-param="rr" class="mod-operator form-select"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
+                                        <select data-param="rr" class="mod-operator mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
                                         <div class="flex items-center space-x-2">
-                                            <input type="number" id="mod_rr_val1" placeholder="Value" class="form-input w-full">
-                                            <span class="mod-val2-container" id="mod_rr_val2_container" style="display:none;"><input type="number" id="mod_rr_val2" placeholder="Max" class="form-input w-full"></span>
+                                            <input type="number" id="mod_rr_val1" placeholder="Value" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                                            <span class="mod-val2-container" id="mod_rr_val2_container" style="display:none;"><input type="number" id="mod_rr_val2" placeholder="Max" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></span>
                                         </div>
                                     </div>
                                 </div>
                                  <div class="space-y-1">
                                     <label class="flex items-center text-sm"><input type="checkbox" name="mod_param" value="HR"> <span class="ml-2 font-medium">Heart Rate</span></label>
                                     <div class="hidden mod-details space-y-2 pl-5 pt-2">
-                                        <select data-param="hr" class="mod-operator form-select"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
+                                        <select data-param="hr" class="mod-operator mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
                                         <div class="flex items-center space-x-2">
-                                            <input type="number" id="mod_hr_val1" placeholder="Value" class="form-input w-full">
-                                            <span class="mod-val2-container" id="mod_hr_val2_container" style="display:none;"><input type="number" id="mod_hr_val2" placeholder="Max" class="form-input w-full"></span>
+                                            <input type="number" id="mod_hr_val1" placeholder="Value" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                                            <span class="mod-val2-container" id="mod_hr_val2_container" style="display:none;"><input type="number" id="mod_hr_val2" placeholder="Max" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -302,7 +273,7 @@
                                     <label class="flex items-center text-sm"><input type="checkbox" name="mod_param" value="SpO2"> <span class="ml-2 font-medium">SpO2</span></label>
                                     <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
                                         <span class="text-sm font-semibold">Target &gt;</span>
-                                        <input type="number" id="mod_spo2_lower" placeholder="e.g. 88" class="form-input w-full">
+                                        <input type="number" id="mod_spo2_lower" placeholder="e.g. 88" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
                                         <span class="text-sm">%</span>
                                     </div>
                                 </div>
@@ -310,21 +281,21 @@
                                     <label class="flex items-center text-sm"><input type="checkbox" name="mod_param" value="SBP"> <span class="ml-2 font-medium">SBP</span></label>
                                     <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
                                         <span class="text-sm font-semibold">Target &gt;</span>
-                                        <input type="number" id="mod_sbp_lower" placeholder="e.g. 90" class="form-input w-full">
+                                        <input type="number" id="mod_sbp_lower" placeholder="e.g. 90" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
                                     </div>
                                 </div>
                                 <div class="space-y-1 col-span-1 md:col-span-2">
                                     <label class="flex items-center text-sm"><input type="checkbox" name="mod_param" value="FiO2"> <span class="ml-2 font-medium">FiO2</span></label>
                                     <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
                                         <span class="text-sm font-semibold">FiO2 &lt;</span>
-                                        <input type="number" id="mod_fio2_upper" placeholder="e.g. 40" class="form-input w-48">
+                                        <input type="number" id="mod_fio2_upper" placeholder="e.g. 40" class="mt-1 w-48 rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
                                          <span class="text-sm">%</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="pt-4">
-                                <label for="addsModificationText" class="sub-label">Modification Rationale:</label>
-                                <textarea id="addsModificationText" rows="2" class="form-textarea"></textarea>
+                                <label for="addsModificationText" class="block text-sm font-medium text-gray-700">Modification Rationale:</label>
+                                <textarea id="addsModificationText" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></textarea>
                             </div>
                         </div>
                     </div>
@@ -333,56 +304,55 @@
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <h3 class="font-semibold text-gray-700 mb-2">Fluid Balance</h3>
                         <div class="flex flex-col space-y-4">
-                            <div><label class="sub-label">24hr Fluid Balance (mL)</label><input type="number" id="fbc_24hr_input" class="form-input fluid-input" placeholder="+/- mL" step="500"></div>
-                            <div><label class="sub-label">Total ICU Balance (mL)</label><input type="number" id="fbc_total_input" class="form-input fluid-input" placeholder="+/- mL" step="500"></div>
+                            <div><label class="block text-sm font-medium text-gray-700">24hr Fluid Balance (mL)</label><input type="number" id="fbc_24hr_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="+/- mL" step="500"></div>
+                            <div><label class="block text-sm font-medium text-gray-700">Total ICU Balance (mL)</label><input type="number" id="fbc_total_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="+/- mL" step="500"></div>
                         </div>
                     </div>
-                     <div class="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                        <div><label class="sub-label" id="lactate_label">Lactate</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" step="0.1" id="lactate_input" class="form-input blood-input" placeholder="Current"><input type="number" step="0.1" id="lactate_input_prev" class="form-input blood-input" placeholder="Prev."></div></div>
-                        <div><label class="sub-label" id="hb_label">Hb</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" id="hb_input" class="form-input blood-input" placeholder="Current"><input type="number" id="hb_input_prev" class="form-input blood-input" placeholder="Prev."></div></div>
-                        <div>
-                            <label class="sub-label" id="k_label">K+</label>
-                            <div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" step="0.1" id="k_input" class="form-input blood-input" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="form-input blood-input" placeholder="Prev."></div>
-                            <label class="flex items-center mt-2 text-xs"><input type="checkbox" id="k_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced since sample</label>
+                      <div class="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                            <div><label class="block text-sm font-medium text-gray-700" id="lactate_label">Lactate</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" step="0.1" id="lactate_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Current"><input type="number" step="0.1" id="lactate_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Prev."></div></div>
+                            <div><label class="block text-sm font-medium text-gray-700" id="hb_label">Hb</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" id="hb_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Current"><input type="number" id="hb_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Prev."></div></div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700" id="k_label">K+</label>
+                                <div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" step="0.1" id="k_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Prev."></div>
+                                <label class="flex items-center mt-2 text-xs"><input type="checkbox" id="k_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced since sample</label>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700" id="mg_label">Mg++</label>
+                                <div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" step="0.1" id="mg_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Prev."></div>
+                                <label class="flex items-center mt-2 text-xs"><input type="checkbox" id="mg_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced since sample</label>
+                            </div>
+                            <div><label class="block text-sm font-medium text-gray-700" id="creatinine_label">Creatinine</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" id="creatinine_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Current"><input type="number" id="creatinine_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Prev."></div></div>
+                            <div><label class="block text-sm font-medium text-gray-700" id="crp_label">CRP</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" id="crp_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Current"><input type="number" id="crp_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Prev."></div></div>
+                            <div><label class="block text-sm font-medium text-gray-700" id="albumin_label">Albumin</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" id="albumin_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Current"><input type="number" id="albumin_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Prev."></div></div>
                         </div>
-                        <div>
-                            <label class="sub-label" id="mg_label">Mg++</label>
-                            <div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" step="0.1" id="mg_input" class="form-input blood-input" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="form-input blood-input" placeholder="Prev."></div>
-                            <label class="flex items-center mt-2 text-xs"><input type="checkbox" id="mg_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced since sample</label>
+                         <div class="mt-4 pt-4 border-t border-gray-300">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="cts_cardiac_checkbox" class="blood-input">
+                                <span class="ml-2 text-sm font-medium text-gray-700">CTS/Cardiac Patient (apply stricter K+/Mg++ targets)</span>
+                            </label>
                         </div>
-                        <div><label class="sub-label" id="creatinine_label">Creatinine</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" id="creatinine_input" class="form-input blood-input" placeholder="Current"><input type="number" id="creatinine_input_prev" class="form-input blood-input" placeholder="Prev."></div></div>
-                        <div><label class="sub-label" id="crp_label">CRP</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" id="crp_input" class="form-input blood-input" placeholder="Current"><input type="number" id="crp_input_prev" class="form-input blood-input" placeholder="Prev."></div></div>
-                        <div><label class="sub-label" id="albumin_label">Albumin</label><div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2"><input type="number" id="albumin_input" class="form-input blood-input" placeholder="Current"><input type="number" id="albumin_input_prev" class="form-input blood-input" placeholder="Prev."></div></div>
-                    </div>
-                     <div class="mt-4 pt-4 border-t border-gray-300">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="cts_cardiac_checkbox" class="blood-input">
-                            <span class="ml-2 text-sm font-medium text-gray-700">CTS/Cardiac Patient (apply stricter K+/Mg++ targets)</span>
-                        </label>
                     </div>
                 </div>
             </div>
 
-            <!-- Scoring Assessment -->
             <div id="scoringContainer">
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
                    <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2>
                    <div class="space-y-8">
-                        <div class="p-4 rounded-lg module-bg-a"><h3 class="module-title bg-rose-200 text-rose-800">Critical Risk Factors</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="15" data-id="crit_met" id="crit_met_checkbox" data-is-critical="true"> <span class="ml-2">Currently in MET criteria</span> <span class="text-gray-600">(+15)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_adds4" id="crit_adds4_checkbox" data-is-critical="true"> <span class="ml-2">ADDS Score ≥ 4</span> <span class="text-gray-600">(+10)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_lactate_high" id="crit_lactate_high_checkbox" data-is-critical="true"> <span class="ml-2">Lactate ≥ 3.5 mmol/L</span> <span class="text-gray-600">(+10)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_af" data-is-critical="true"> <span class="ml-2">Unstable Atrial Fibrillation</span> <span class="text-gray-600">(+10)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_hb_drop" id="crit_hb_drop_checkbox" data-is-critical="true"> <span class="ml-2">New Hb drop >20g/L OR Active Bleeding</span> <span class="text-gray-600">(+10)</span></label></div></div>
-                        <div class="rounded-lg module-bg-b"><h3 class="module-title bg-blue-200 text-blue-800">Physiological & Respiratory Stability</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="radio" name="adds_score" class="score-input" data-score="0" data-id="adds_0" id="adds_0_radio" checked> <span class="ml-2">Current ADDS Score 0 (+0)</span></label><label class="flex items-center p-1"><input type="radio" name="adds_score" class="score-input" data-score="1" data-id="adds_1-2" id="adds_1-2_radio"> <span class="ml-2">Current ADDS Score 1-2 (+1)</span></label><label class="flex items-center p-1"><input type="radio" name="adds_score" class="score-input" data-score="5" data-id="adds_3" id="adds_3_radio"> <span class="ml-2">Current ADDS Score 3 (+5)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="5" data-id="adds_worsening"> <span class="ml-2">Worsening ADDS Trend (last 12-24h) (+5)</span></label><hr class="my-3"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="resp_increasing_o2" data-is-critical="true"> <span class="ml-2">Increasing O2 requirements in last 12h</span> <span class="text-gray-600">(+10)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="6" data-id="resp_rapid_wean" data-is-critical="true"> <span class="ml-2">Rapid weaning of respiratory support in last 4h (+6)</span></label></div></div>
-                        <div class="p-4 rounded-lg module-bg-c"><h3 class="module-title bg-green-200 text-green-800">Bloods</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" data-id="bloods_electrolytes" id="bloods_electrolytes" data-is-critical="true"> <span class="ml-2">Abnormal Electrolytes (K+, Mg++) (+4)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" data-id="bloods_lactate_mid" id="bloods_lactate_mid_checkbox" data-is-critical="true"> <span class="ml-2">Lactate 2.0 - 3.4 (+4)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" data-id="bloods_creatinine" id="bloods_creatinine_checkbox"> <span class="ml-2">Creatinine >200 µmol/L (+4)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bloods_albumin" id="bloods_albumin_checkbox"> <span class="ml-2">Albumin &lt;25 g/L (+3)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bloods_crp" id="bloods_crp_checkbox"> <span class="ml-2">CRP >100 mg/L (static/rising) (+3)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bloods_anaemia" id="bloods_anaemia_checkbox"> <span class="ml-2">Anaemia (Hb &lt; 80 g/L) (+3)</span></label></div></div>
-                        <div class="p-4 rounded-lg module-bg-d"><h3 class="module-title bg-yellow-200 text-yellow-800">Clinical</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="0" data-id="pain_0" checked> <span class="ml-2 text-gray-500">Pain: None / Well Controlled</span></label><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="3" data-id="pain_iv"> <span class="ml-2">Pain: Requires regular IV/potent analgesia (+3)</span></label><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="5" data-id="pain_pca"> <span class="ml-2">Pain: Poorly controlled / PCA (+5)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="0" data-id="fluid_0" id="fluid_0_radio" checked> <span class="ml-2 text-gray-500">Fluid Status: Euvolaemic</span></label><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="2" data-id="fluid_mild" id="fluid_mild_radio"> <span class="ml-2">Mild Dehydration/Overload (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="4" data-id="fluid_sig" id="fluid_sig_radio" data-is-critical="true"> <span class="ml-2">Significant Dehydration/Overload (+4)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="0" data-id="diet_0" checked> <span class="ml-2 text-gray-500">Diet: Normal</span></label><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="2" data-id="diet_modified"> <span class="ml-2">Diet: Supplements / Modified (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="4" data-id="diet_nbm"> <span class="ml-2">Diet: NBM / NG / TPN (+4)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="0" data-id="delirium_0" checked> <span class="ml-2 text-gray-500">Delirium: None</span></label><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="4" data-id="delirium_mild"> <span class="ml-2">Delirium: Mild / Subsyndromal (+4)</span></label><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="8" data-id="delirium_mod" data-is-critical="true"> <span class="ml-2">Delirium: Moderate to Severe</span> <span class="text-gray-600">(+8)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="0" data-id="mobility_0" checked> <span class="ml-2 text-gray-500">Mobility: At Baseline</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="1" data-id="mobility_limited"> <span class="ml-2">Mobility: Limited by devices/attachments (+1)</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="2" data-id="mobility_assisted"> <span class="ml-2">Mobility: Assisted (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="5" data-id="mobility_bedbound"> <span class="ml-2">Mobility: Bed-bound (+5)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="lines_score" class="score-input" data-score="0" data-id="lines_0" checked> <span class="ml-2 text-gray-500">Lines: None / PIVC only</span></label><label class="flex items-center p-1"><input type="radio" name="lines_score" class="score-input" data-score="5" data-id="lines_cvc_present"> <span class="ml-2">Central Line present (CVC/PICC/Vascath) (+5)</span></label><hr class="my-3"><div class="space-y-2"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bowels_issue"> <span class="ml-2">Bowels: Not opened >3 days / Ileus (+3)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="5" data-id="airway_altered" data-is-critical="true"> <span class="ml-2">Altered Airway (Tracheostomy/Laryngectomy) (+5)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="drains_high_risk"> <span class="ml-2">High-Risk Drain present (+3)</span></label></div><hr class="my-3"><div class="pt-2"><label class="flex items-center p-1"><input type="radio" name="concern_score" class="score-input" data-score="0" data-id="concern_0" value="0" checked> <span class="ml-2 text-gray-500">Nursing Concern: None</span></label><label class="flex items-center p-1"><input type="radio" name="concern_score" class="score-input" data-score="5" data-id="concern_present" value="5" data-is-critical="true"> <span class="ml-2">Nursing Concern Present</span> <span class="text-gray-600">(+5)</span></label><textarea id="nursingConcernText" class="mt-2 ml-6 w-full rounded-md border-gray-300 shadow-sm text-sm" rows="2" placeholder="Specify concern..." style="display: none;"></textarea></div></div></div>
-                        <div class="p-4 rounded-lg module-bg-e"><h3 class="module-title bg-red-200 text-red-800">Systemic</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="checkbox" id="losCheckbox" class="score-input" data-score="4" data-id="systemic_los"> <span class="ml-2">LOS > 3 days (+4)</span></label><label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="0" data-id="frailty_0" checked> <span class="ml-2 text-gray-500">Frailty: Not Frail</span></label><label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="2" data-id="frailty_mild"> <span class="ml-2">Frailty: Mild (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="4" data-id="frailty_mod"> <span class="ml-2">Frailty: Mod-Severe (+4)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" id="comorbiditiesCheckbox" data-id="systemic_comorbid"> <span class="ml-2"><span class="comorbidity-main-text">≥3 chronic comorbidities</span> <span class="text-gray-400 text-xs">(e.g. IHD, COPD, T2DM)</span> (+4)</span></label>
+                        <div class="p-4 rounded-lg module-bg-a"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-rose-200 text-rose-800">Critical Risk Factors</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="15" data-id="crit_met" id="crit_met_checkbox" data-is-critical="true"> <span class="ml-2">Currently in MET criteria</span> <span class="text-gray-600">(+15)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_adds4" id="crit_adds4_checkbox" data-is-critical="true"> <span class="ml-2">ADDS Score ≥ 4</span> <span class="text-gray-600">(+10)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_lactate_high" id="crit_lactate_high_checkbox" data-is-critical="true"> <span class="ml-2">Lactate ≥ 3.5 mmol/L</span> <span class="text-gray-600">(+10)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_af" data-is-critical="true"> <span class="ml-2">Unstable Atrial Fibrillation</span> <span class="text-gray-600">(+10)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_hb_drop" id="crit_hb_drop_checkbox" data-is-critical="true"> <span class="ml-2">New Hb drop >20g/L OR Active Bleeding</span> <span class="text-gray-600">(+10)</span></label></div></div>
+                        <div class="rounded-lg module-bg-b"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-blue-200 text-blue-800">Physiological & Respiratory Stability</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="radio" name="adds_score" class="score-input" data-score="0" data-id="adds_0" id="adds_0_radio" checked> <span class="ml-2">Current ADDS Score 0 (+0)</span></label><label class="flex items-center p-1"><input type="radio" name="adds_score" class="score-input" data-score="1" data-id="adds_1-2" id="adds_1-2_radio"> <span class="ml-2">Current ADDS Score 1-2 (+1)</span></label><label class="flex items-center p-1"><input type="radio" name="adds_score" class="score-input" data-score="5" data-id="adds_3" id="adds_3_radio"> <span class="ml-2">Current ADDS Score 3 (+5)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="5" data-id="adds_worsening"> <span class="ml-2">Worsening ADDS Trend (last 12-24h) (+5)</span></label><hr class="my-3"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="resp_increasing_o2" data-is-critical="true"> <span class="ml-2">Increasing O2 requirements in last 12h</span> <span class="text-gray-600">(+10)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="6" data-id="resp_rapid_wean" data-is-critical="true"> <span class="ml-2">Rapid weaning of respiratory support in last 4h (+6)</span></label></div></div>
+                        <div class="p-4 rounded-lg module-bg-c"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-green-200 text-green-800">Bloods</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" data-id="bloods_electrolytes" id="bloods_electrolytes" data-is-critical="true"> <span class="ml-2">Abnormal Electrolytes (K+, Mg++) (+4)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" data-id="bloods_lactate_mid" id="bloods_lactate_mid_checkbox" data-is-critical="true"> <span class="ml-2">Lactate 2.0 - 3.4 (+4)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" data-id="bloods_creatinine" id="bloods_creatinine_checkbox"> <span class="ml-2">Creatinine >200 µmol/L (+4)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bloods_albumin" id="bloods_albumin_checkbox"> <span class="ml-2">Albumin &lt;25 g/L (+3)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bloods_crp" id="bloods_crp_checkbox"> <span class="ml-2">CRP >100 mg/L (static/rising) (+3)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bloods_anaemia" id="bloods_anaemia_checkbox"> <span class="ml-2">Anaemia (Hb &lt; 80 g/L) (+3)</span></label></div></div>
+                        <div class="p-4 rounded-lg module-bg-d"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-yellow-200 text-yellow-800">Clinical</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="0" data-id="pain_0" checked> <span class="ml-2 text-gray-500">Pain: None / Well Controlled</span></label><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="3" data-id="pain_iv"> <span class="ml-2">Pain: Requires regular IV/potent analgesia (+3)</span></label><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="5" data-id="pain_pca"> <span class="ml-2">Pain: Poorly controlled / PCA (+5)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="0" data-id="fluid_0" id="fluid_0_radio" checked> <span class="ml-2 text-gray-500">Fluid Status: Euvolaemic</span></label><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="2" data-id="fluid_mild" id="fluid_mild_radio"> <span class="ml-2">Mild Dehydration/Overload (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="4" data-id="fluid_sig" id="fluid_sig_radio" data-is-critical="true"> <span class="ml-2">Significant Dehydration/Overload (+4)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="0" data-id="diet_0" checked> <span class="ml-2 text-gray-500">Diet: Normal</span></label><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="2" data-id="diet_modified"> <span class="ml-2">Diet: Supplements / Modified (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="4" data-id="diet_nbm"> <span class="ml-2">Diet: NBM / NG / TPN (+4)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="0" data-id="delirium_0" checked> <span class="ml-2 text-gray-500">Delirium: None</span></label><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="4" data-id="delirium_mild"> <span class="ml-2">Delirium: Mild / Subsyndromal (+4)</span></label><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="8" data-id="delirium_mod" data-is-critical="true"> <span class="ml-2">Delirium: Moderate to Severe</span> <span class="text-gray-600">(+8)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="0" data-id="mobility_0" checked> <span class="ml-2 text-gray-500">Mobility: At Baseline</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="1" data-id="mobility_limited"> <span class="ml-2">Mobility: Limited by devices/attachments (+1)</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="2" data-id="mobility_assisted"> <span class="ml-2">Mobility: Assisted (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="5" data-id="mobility_bedbound"> <span class="ml-2">Mobility: Bed-bound (+5)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="lines_score" class="score-input" data-score="0" data-id="lines_0" checked> <span class="ml-2 text-gray-500">Lines: None / PIVC only</span></label><label class="flex items-center p-1"><input type="radio" name="lines_score" class="score-input" data-score="5" data-id="lines_cvc_present"> <span class="ml-2">Central Line present (CVC/PICC/Vascath) (+5)</span></label><hr class="my-3"><div class="space-y-2"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bowels_issue"> <span class="ml-2">Bowels: Not opened >3 days / Ileus (+3)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="5" data-id="airway_altered" data-is-critical="true"> <span class="ml-2">Altered Airway (Tracheostomy/Laryngectomy) (+5)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="drains_high_risk"> <span class="ml-2">High-Risk Drain present (+3)</span></label></div><hr class="my-3"><div class="pt-2"><label class="flex items-center p-1"><input type="radio" name="concern_score" class="score-input" data-score="0" data-id="concern_0" value="0" checked> <span class="ml-2 text-gray-500">Nursing Concern: None</span></label><label class="flex items-center p-1"><input type="radio" name="concern_score" class="score-input" data-score="5" data-id="concern_present" value="5" data-is-critical="true"> <span class="ml-2">Nursing Concern Present</span> <span class="text-gray-600">(+5)</span></label><textarea id="nursingConcernText" class="mt-2 ml-6 w-full rounded-md border-gray-300 shadow-sm text-sm" rows="2" placeholder="Specify concern..." style="display: none;"></textarea></div></div></div>
+                        <div class="p-4 rounded-lg module-bg-e"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-red-200 text-red-800">Systemic</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="checkbox" id="losCheckbox" class="score-input" data-score="4" data-id="systemic_los"> <span class="ml-2">LOS > 3 days (+4)</span></label><label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="0" data-id="frailty_0" checked> <span class="ml-2 text-gray-500">Frailty: Not Frail</span></label><label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="2" data-id="frailty_mild"> <span class="ml-2">Frailty: Mild (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="4" data-id="frailty_mod"> <span class="ml-2">Frailty: Mod-Severe (+4)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" id="comorbiditiesCheckbox" data-id="systemic_comorbid"> <span class="ml-2"><span class="comorbidity-main-text">≥3 chronic comorbidities</span> <span class="text-gray-400 text-xs">(e.g. IHD, COPD, T2DM)</span> (+4)</span></label>
                         <div id="after_hours_container"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="0" data-id="systemic_after_hours" id="systemic_after_hours_checkbox"> <span class="ml-2">After-Hours Discharge (<24h)</span></label></div>
                         </div></div>
-                        <div id="receivingWardModule" class="p-4 rounded-lg module-bg-g"><h3 class="module-title bg-indigo-200 text-indigo-800">Receiving Ward and Staffing</h3><div class="space-y-4 p-4"><div><h4 class="sub-label mb-2">Bed Type</h4><label class="flex items-center p-1"><input type="radio" name="bed_type" class="score-input" data-score="0" data-id="env_unmonitored" checked> <span class="ml-2">Unmonitored Bed (+0)</span></label><label class="flex items-center p-1"><input type="radio" name="bed_type" class="score-input" data-score="-3" data-id="env_monitored"> <span class="ml-2">Monitored / Telemetry Bed (-3)</span></label></div><hr><div><h4 class="sub-label mb-2">Staffing</h4><label class="flex items-center p-1"><input type="radio" name="env_ratio" class="score-input" data-score="0" data-id="env_standard" checked> <span class="ml-2">Standard Ward Ratio (+0)</span></label><label class="flex items-center p-1"><input type="radio" name="env_ratio" class="score-input" data-score="-5" data-id="env_enhanced"> <span class="ml-2">Enhanced Ratio (e.g. 1:1, 1:2) (-5)</span></label></div></div></div>
+                        <div id="receivingWardModule" class="p-4 rounded-lg module-bg-g"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-indigo-200 text-indigo-800">Receiving Ward and Staffing</h3><div class="space-y-4 p-4"><div><h4 class="block text-sm font-medium text-gray-700 mb-2">Bed Type</h4><label class="flex items-center p-1"><input type="radio" name="bed_type" class="score-input" data-score="0" data-id="env_unmonitored" checked> <span class="ml-2">Unmonitored Bed (+0)</span></label><label class="flex items-center p-1"><input type="radio" name="bed_type" class="score-input" data-score="-3" data-id="env_monitored"> <span class="ml-2">Monitored / Telemetry Bed (-3)</span></label></div><hr><div><h4 class="block text-sm font-medium text-gray-700 mb-2">Staffing</h4><label class="flex items-center p-1"><input type="radio" name="env_ratio" class="score-input" data-score="0" data-id="env_standard" checked> <span class="ml-2">Standard Ward Ratio (+0)</span></label><label class="flex items-center p-1"><input type="radio" name="env_ratio" class="score-input" data-score="-5" data-id="env_enhanced"> <span class="ml-2">Enhanced Ratio (e.g. 1:1, 1:2) (-5)</span></label></div></div></div>
                    </div>
                </div>
             </div>
             
-            <!-- PICS Screening -->
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
                 <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">Post-ICU Syndrome (PICS) Screening</h2>
                 <div class="p-4 rounded-lg module-bg-f">
@@ -393,30 +363,28 @@
                             <label class="flex items-center text-sm"><input type="radio" name="pics_status" value="unable"> <span class="ml-2">Unable to assess</span></label>
                         </div>
                         <div id="pics_unable_details" class="hidden ml-6 mt-2">
-                            <label for="pics_unable_notes" class="sub-label">Reason:</label>
-                            <textarea id="pics_unable_notes" rows="2" class="form-textarea"></textarea>
+                            <label for="pics_unable_notes" class="block text-sm font-medium text-gray-700">Reason:</label>
+                            <textarea id="pics_unable_notes" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Final Score -->
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
                 <div class="final-score-bg text-white rounded-xl shadow-lg p-6">
                      <div class="flex flex-col sm:flex-row justify-between items-center text-center">
-                        <div class="mb-4 sm:mb-0"><span class="text-lg font-medium text-gray-400">TOTAL SCORE</span><div id="totalScore" class="text-5xl font-bold">0</div></div>
-                        <div class="w-full sm:w-auto"><span class="text-lg font-medium text-gray-400">FINAL CATEGORY & ACTION</span><div id="riskCategory" class="text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300">Category 2: Standard follow-up</div></div>
+                         <div class="mb-4 sm:mb-0"><span class="text-lg font-medium text-gray-400">TOTAL SCORE</span><div id="totalScore" class="text-5xl font-bold">0</div></div>
+                         <div class="w-full sm:w-auto"><span class="text-lg font-medium text-gray-400">FINAL CATEGORY & ACTION</span><div id="riskCategory" class="text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300">Category 2: Standard follow-up</div></div>
                     </div>
                 </div>
             </div>
             
-            <!-- DMR Details -->
             <div class="bg-white rounded-xl shadow-lg mb-6 p-4">
                 <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4 px-2 pt-2">Optional Narrative Details for DMR</h2>
                 <div class="space-y-8 text-sm px-2 pb-2">
-                    <div><label for="admissionReason" class="block font-medium text-gray-600">Reason for ICU Admission:</label><textarea id="admissionReason" rows="3" class="form-textarea"></textarea></div>
-                    <div><label for="pmh" class="block font-medium text-gray-600">Past Medical History (PMH):</label><textarea id="pmh" rows="5" class="form-textarea"></textarea></div>
-                    <div><label for="icuSummary" class="block font-medium text-gray-600">ICU Summary / Timeline:</label><textarea id="icuSummary" rows="10" class="form-textarea"></textarea></div>
+                    <div><label for="admissionReason" class="block font-medium text-gray-600">Reason for ICU Admission:</label><textarea id="admissionReason" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></textarea></div>
+                    <div><label for="pmh" class="block font-medium text-gray-600">Past Medical History (PMH):</label><textarea id="pmh" rows="5" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></textarea></div>
+                    <div><label for="icuSummary" class="block font-medium text-gray-600">ICU Summary / Timeline:</label><textarea id="icuSummary" rows="10" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></textarea></div>
                     
                     <div>
                         <label class="flex items-center font-medium text-gray-600">
@@ -424,7 +392,7 @@
                             Home Team Plan in Place
                         </label>
                         <div id="homeTeamPlanDetails" class="hidden mt-2">
-                             <textarea id="homeTeamPlanText" rows="3" class="form-textarea" placeholder="Enter details of home team plan..."></textarea>
+                             <textarea id="homeTeamPlanText" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150" placeholder="Enter details of home team plan..."></textarea>
                         </div>
                     </div>
 
@@ -453,21 +421,21 @@
                                     <label for="pacing_wires_present" class="ml-2">Pacing Wires Present</label>
                                 </div>
                                 <div id="pacing_wires_details" class="hidden mt-2 ml-6 space-y-2 p-3 bg-gray-100 rounded-md">
-                                    <label class="sub-label">Status:</label>
-                                    <select id="pacing_status" class="form-select">
+                                    <label class="block text-sm font-medium text-gray-700">Status:</label>
+                                    <select id="pacing_status" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
                                         <option value="capped">Capped & Secured</option>
                                         <option value="backup">Connected (Backup/Sensing)</option>
                                         <option value="pacing">Actively Pacing</option>
                                     </select>
                                     <div id="pacing_settings" class="hidden grid grid-cols-3 gap-2 pt-2">
-                                        <div><label class="sub-label">Mode</label><input type="text" id="pacing_mode" class="form-input"></div>
-                                        <div><label class="sub-label">Rate</label><input type="number" id="pacing_rate" class="form-input"></div>
-                                        <div><label class="sub-label">Output</label><input type="number" id="pacing_output" class="form-input"></div>
+                                        <div><label class="block text-sm font-medium text-gray-700">Mode</label><input type="text" id="pacing_mode" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
+                                        <div><label class="block text-sm font-medium text-gray-700">Rate</label><input type="number" id="pacing_rate" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
+                                        <div><label class="block text-sm font-medium text-gray-700">Output</label><input type="number" id="pacing_output" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                                 <div>
+                                  <div>
                                     <h4 class="font-medium text-gray-600 mb-2">Drains</h4>
                                     <div id="drains_container" class="space-y-4"></div>
                                     <button type="button" id="addDrainButton" class="mt-2 text-sm bg-teal-100 text-teal-800 hover:bg-teal-200 px-3 py-1 rounded-md">+ Add Drain</button>
@@ -481,11 +449,10 @@
                         </div>
                     </div>
                     
-                    <div><label for="emrAdditionalNotes" class="block font-medium text-gray-600">Additional Plan Notes:</label><textarea id="emrAdditionalNotes" rows="4" class="form-textarea"></textarea></div>
+                    <div><label for="emrAdditionalNotes" class="block font-medium text-gray-600">Additional Plan Notes:</label><textarea id="emrAdditionalNotes" rows="4" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150"></textarea></div>
                 </div>
             </div>
             
-            <!-- Summary Generator -->
             <div class="bg-white rounded-xl shadow-lg mt-6 p-6">
                 <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">DMR Summary Generator</h2>
                 <div class="flex space-x-4 mb-4"><button type="button" id="generateSummaryButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-1/2">Generate DMR Summary</button><button type="button" id="copySummaryButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors w-1/2">Copy to Clipboard</button></div>
@@ -495,7 +462,6 @@
         </form>
     </div>
     
-    <!-- Digital List Modal -->
     <div id="digitalListModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
@@ -509,10 +475,9 @@
         </div>
     </div>
 
-    <!-- Printout Container -->
     <div id="printoutContainer" class="hidden"></div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.2 - Fixes & Enhancements</div>
+    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.3.1 - Debugged & Completed</div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -585,46 +550,25 @@
         // --- State Management ---
         let patients = {};
         let activePatientId = null;
-        const LOCAL_STORAGE_KEY = 'alertToolPatientData';
+        const LOCAL_STORAGE_KEY = 'alertToolPatientData_v4';
         let currentAddsBreakdown = 'Normal Parameters';
         
         // --- Data Maps ---
-        const carePlanMap = {
-            'crit_met_post': 'CRITICAL: Patient is in MET criteria on the ward. Initiate immediate MET call as per local protocol and escalate to senior nursing and medical staff.',
-            'crit_met_pre': 'CRITICAL: Patient\'s current observations would trigger a MET call on the ward. This is a significant barrier to transfer. Liaise with ICU and home teams to create a clear mitigation plan before stepdown.',
-            'crit_adds4': 'CRITICAL: High ADDS score indicates significant physiological instability. Escalate for urgent medical review (<30 mins) and ensure adherence to the AORC escalation pathway.',
-            'crit_lactate_high': 'CRITICAL: Critically high lactate suggests potential tissue hypoperfusion. Escalate immediately to the medical team for urgent review.',
-            'crit_af': 'CRITICAL: Unstable AF (e.g., with hypotension, ischaemia) requires urgent intervention. Escalate for cardiology/medical review and prepare for 12-lead ECG.',
-            'crit_hb_drop': 'CRITICAL: Significant Hb drop or active bleeding requires urgent investigation. Escalate for urgent medical/surgical review, ensure IV access, and consider group and hold.',
-            'resp_increasing_o2': 'Respiratory Plan: Increasing O2 needs noted. Perform focused respiratory assessments (work of breathing) per AORC. Ensure clear documentation of Resp Rate and O2 requirements to monitor trends. Liaise with medical team to review.',
-            'resp_rapid_wean': 'Respiratory Plan: Recent rapid wean of respiratory support. Perform focused respiratory assessments (work of breathing) per AORC and ensure clear documentation of Resp Rate and O2 requirements to monitor for signs of fatigue.',
-            'bloods_electrolytes': 'Biochemical Plan: Significant electrolyte abnormalities noted. Escalate to medical officer for review and prescribing of replacement therapy. For severe K+ abnormalities, escalate to senior nursing staff and contact ALERT CNS for support regarding patient placement and monitoring.',
-            'bloods_lactate_mid': 'Biochemical Plan: Liaise with medical team for serial lactate measurement within 4 hours to ensure clearance. Continue to review fluid status and clinical signs of perfusion.',
-            'bloods_creatinine': 'Biochemical Plan: Maintain strict fluid balance chart. Ensure urine output remains >0.5ml/kg/hr and escalate to the medical team if it falls below this target. Liaise with pharmacy to review for nephrotoxic medications.',
-            'bloods_albumin': 'Nutrition Plan: Significant hypoalbuminaemia noted. Ensure active dietitian referral for nutritional assessment and planning. Monitor for oedema.',
-            'bloods_anaemia': 'Haematology Plan: Monitor for signs of occult bleeding or haemodynamic instability. Liaise with medical team to clarify transfusion threshold.',
-            'pain_pca': 'Pain Management: Pain appears poorly controlled. Perform comprehensive pain assessments (score 0-10) with each set of observations. Ensure prescribed analgesia is optimised and offered regularly. Escalate to the Acute Pain Service if pain remains severe.',
-            'fluid_sig': 'Fluid Management: Significant fluid imbalance identified. Maintain strict fluid balance chart and daily weights. Perform clinical fluid assessment (peripheral oedema, lung auscultation). Liaise with medical team to review fluid orders. Please contact ALERT CNS for support with assessment if required.',
-            'delirium_mod': 'Cognitive Support: Implement delirium prevention strategies (e.g., reorientation, day/night cycle, family presence). Liaise with the medical team and pharmacy to review for potential deliriogenic medications.',
-            'mobility_bedbound': 'Mobility & Pressure Care: Implement pressure injury prevention bundle: Regular turns, pressure-relieving mattress, skin assessment. Liaise with physiotherapy for in-bed exercise plan.',
-            'airway_altered': 'Airway Management: Ensure patient is in an appropriate bed location with trained staff. Confirm required emergency equipment (e.g., spare inner cannula, spare tracheostomy tube of same/smaller size, obturator, 10ml syringe, trach dilators) is present and checked at the bedside. Contact ALERT CNS for support if required.',
-            'lines_cvc_present': 'Line Management: Daily review of Central Line necessity with medical team (to minimise line days). Maintain strict ANTT for all access and monitor site for signs of infection (CLABSI bundle).',
-            'pivc_overdue_72h': 'Line Management: PIVC in situ >72 hours. Assess site using PIVAS score. Plan for removal and replacement as per institutional policy to reduce risk of phlebitis.',
-            'pivc_pivas_action': 'Line Management: PIVC site has a PIVAS score > 1. Escalate for review and consider immediate removal and replacement, especially for scores 4-5.',
-            'cvc_review_due': 'Line Management: Central line in situ for >7 days. Escalate to home team for review of ongoing necessity.',
-            'cvc_site_issue': 'Line Management: Central line site shows signs of inflammation/infection. Escalate immediately to the home team for assessment. Do not use line until reviewed.',
-            'drains_high_risk': 'Drain Management: Maintain close monitoring of drain patency, output characteristics, and volume. Escalate immediately to the home team for any sudden changes, particularly for outputs >100ml/hr of fresh blood, or signs of blockage.',
-            'bowels_issue': 'Bowel Management: Patient has not opened bowels >3 days. Monitor for signs of abdominal distension or discomfort. Escalate to the medical team for review and consideration of aperients.',
-            'concern_present': "Nursing Concerns: Articulate specific nursing concerns and escalate to senior nursing/medical staff for a 'fresh eyes' review of the patient's trajectory.",
-            'frailty_mod': 'Frailty Plan: Ensure referrals to Physiotherapy and Occupational Therapy are active to support mobility and function. Focus on falls prevention and nutritional support.',
-            'after_hours_high_risk': 'TRANSFER SAFETY ALERT: This high-risk patient had an after-hours discharge. Ensure handover to the ward team is exceptionally detailed, highlighting key risks for the first 24 hours.',
-            'after_hours_very_high_risk': 'CRITICAL RISK: This patient\'s high score combined with an after-hours discharge represents a significant risk of readmission. A direct, senior-level (Registrar or Consultant) discussion between ICU and the receiving home team is strongly recommended before transfer.'
-        };
+        const carePlanMap = { 'crit_met_post': 'CRITICAL: Patient is in MET criteria on the ward. Initiate immediate MET call as per local protocol and escalate to senior nursing and medical staff.', 'crit_met_pre': 'CRITICAL: Patient\'s current observations would trigger a MET call on the ward. This is a significant barrier to transfer. Liaise with ICU and home teams to create a clear mitigation plan before stepdown.', 'crit_adds4': 'CRITICAL: High ADDS score indicates significant physiological instability. Escalate for urgent medical review (<30 mins) and ensure adherence to the AORC escalation pathway.', 'crit_lactate_high': 'CRITICAL: Critically high lactate suggests potential tissue hypoperfusion. Escalate immediately to the medical team for urgent review.', 'crit_af': 'CRITICAL: Unstable AF (e.g., with hypotension, ischaemia) requires urgent intervention. Escalate for cardiology/medical review and prepare for 12-lead ECG.', 'crit_hb_drop': 'CRITICAL: Significant Hb drop or active bleeding requires urgent investigation. Escalate for urgent medical/surgical review, ensure IV access, and consider group and hold.', 'resp_increasing_o2': 'Respiratory Plan: Increasing O2 needs noted. Perform focused respiratory assessments (work of breathing) per AORC. Ensure clear documentation of Resp Rate and O2 requirements to monitor trends. Liaise with medical team to review.', 'resp_rapid_wean': 'Respiratory Plan: Recent rapid wean of respiratory support. Perform focused respiratory assessments (work of breathing) per AORC and ensure clear documentation of Resp Rate and O2 requirements to monitor for signs of fatigue.', 'bloods_electrolytes': 'Biochemical Plan: Significant electrolyte abnormalities noted. Escalate to medical officer for review and prescribing of replacement therapy. For severe K+ abnormalities, escalate to senior nursing staff and contact ALERT CNS for support regarding patient placement and monitoring.', 'bloods_lactate_mid': 'Biochemical Plan: Liaise with medical team for serial lactate measurement within 4 hours to ensure clearance. Continue to review fluid status and clinical signs of perfusion.', 'bloods_creatinine': 'Biochemical Plan: Maintain strict fluid balance chart. Ensure urine output remains >0.5ml/kg/hr and escalate to the medical team if it falls below this target. Liaise with pharmacy to review for nephrotoxic medications.', 'bloods_albumin': 'Nutrition Plan: Significant hypoalbuminaemia noted. Ensure active dietitian referral for nutritional assessment and planning. Monitor for oedema.', 'bloods_anaemia': 'Haematology Plan: Monitor for signs of occult bleeding or haemodynamic instability. Liaise with medical team to clarify transfusion threshold.', 'pain_pca': 'Pain Management: Pain appears poorly controlled. Perform comprehensive pain assessments (score 0-10) with each set of observations. Ensure prescribed analgesia is optimised and offered regularly. Escalate to the Acute Pain Service if pain remains severe.', 'fluid_sig': 'Fluid Management: Significant fluid imbalance identified. Maintain strict fluid balance chart and daily weights. Perform clinical fluid assessment (peripheral oedema, lung auscultation). Liaise with medical team to review fluid orders. Please contact ALERT CNS for support with assessment if required.', 'delirium_mod': 'Cognitive Support: Implement delirium prevention strategies (e.g., reorientation, day/night cycle, family presence). Liaise with the medical team and pharmacy to review for potential deliriogenic medications.', 'mobility_bedbound': 'Mobility & Pressure Care: Implement pressure injury prevention bundle: Regular turns, pressure-relieving mattress, skin assessment. Liaise with physiotherapy for in-bed exercise plan.', 'airway_altered': 'Airway Management: Ensure patient is in an appropriate bed location with trained staff. Confirm required emergency equipment (e.g., spare inner cannula, spare tracheostomy tube of same/smaller size, obturator, 10ml syringe, trach dilators) is present and checked at the bedside. Contact ALERT CNS for support if required.', 'lines_cvc_present': 'Line Management: Daily review of Central Line necessity with medical team (to minimise line days). Maintain strict ANTT for all access and monitor site for signs of infection (CLABSI bundle).', 'pivc_overdue_72h': 'Line Management: PIVC in situ >72 hours. Assess site using PIVAS score. Plan for removal and replacement as per institutional policy to reduce risk of phlebitis.', 'pivc_pivas_action': 'Line Management: PIVC site has a PIVAS score > 1. Escalate for review and consider immediate removal and replacement, especially for scores 4-5.', 'cvc_review_due': 'Line Management: Central line in situ for >7 days. Escalate to home team for review of ongoing necessity.', 'cvc_site_issue': 'Line Management: Central line site shows signs of inflammation/infection. Escalate immediately to the home team for assessment. Do not use line until reviewed.', 'drains_high_risk': 'Drain Management: Maintain close monitoring of drain patency, output characteristics, and volume. Escalate immediately to the home team for any sudden changes, particularly for outputs >100ml/hr of fresh blood, or signs of blockage.', 'bowels_issue': 'Bowel Management: Patient has not opened bowels >3 days. Monitor for signs of abdominal distension or discomfort. Escalate to the medical team for review and consideration of aperients.', 'concern_present': "Nursing Concerns: Articulate specific nursing concerns and escalate to senior nursing/medical staff for a 'fresh eyes' review of the patient's trajectory.", 'frailty_mod': 'Frailty Plan: Ensure referrals to Physiotherapy and Occupational Therapy are active to support mobility and function. Focus on falls prevention and nutritional support.', 'after_hours_high_risk': 'TRANSFER SAFETY ALERT: This high-risk patient had an after-hours discharge. Ensure handover to the ward team is exceptionally detailed, highlighting key risks for the first 24 hours.', 'after_hours_very_high_risk': 'CRITICAL RISK: This patient\'s high score combined with an after-hours discharge represents a significant risk of readmission. A direct, senior-level (Registrar or Consultant) discussion between ICU and the receiving home team is strongly recommended before transfer.' };
         const assessmentNarrativeMap = {'crit_met':'currently in MET criteria','crit_adds4':'a high ADDS score','crit_lactate_high':'a critically high lactate','crit_af':'unstable atrial fibrillation','crit_hb_drop':'a significant drop in haemoglobin or active bleeding','adds_worsening':'a worsening trend in observations','resp_increasing_o2':'increasing oxygen requirements','resp_rapid_wean':'a recent rapid wean of respiratory support','bloods_lactate_mid':'a moderately elevated lactate','bloods_creatinine':'a significant renal impairment','bloods_albumin':'hypoalbuminaemia, indicating nutritional risk','bloods_crp':'a significant inflammatory response (CRP > 100)','pain_pca':'poorly controlled pain requiring advanced analgesia','fluid_sig':'a significant fluid imbalance','diet_nbm':'is receiving no oral nutrition (NBM/NG/TPN)','delirium_mod':'moderate to severe delirium','mobility_bedbound':'is currently bed-bound with significant mobility deficits', 'mobility_limited':'mobility is limited by devices/attachments', 'airway_altered':'a surgically altered airway (tracheostomy/laryngectomy)','concern_present':'specific concerns raised by the bedside nurse'};
         const standardScores = { getRrScore(rr) { let s=0,m=false; if(rr>=36||rr<5)m=true;else if(rr>=30&&rr<=35)s=3;else if(rr>=25&&rr<=29)s=2;else if(rr>=21&&rr<=24)s=1;else if(rr>=5&&rr<=9)s=3; return {score:s, isMet:m}; }, getSpo2Score(spo2) { let s=0,m=false; if(spo2<=84)m=true;else if(spo2>=85&&spo2<=90)s=2;else if(spo2>=91&&spo2<=93)s=1; return {score:s, isMet:m}; }, getO2Score(o2Flow, o2Unit) { let s=0; if(o2Unit==='lpm'){if(o2Flow>10)s=3;else if(o2Flow>=5&&o2Flow<=9)s=2;else if(o2Flow>=2&&o2Flow<=4)s=1}else{if(o2Flow>=40)s=3;else if(o2Flow>=29)s=2;else if(o2Flow>=21)s=1} return {score:s, isMet:false}; }, getHrScore(hr) { let s=0,m=false; if(hr>=140||hr<30)m=true;else if(hr>=130&&hr<=139)s=3;else if(hr>=120&&hr<=129)s=2;else if(hr>=100&&hr<=119)s=1;else if(hr>=40&&hr<=49)s=1;else if(hr>=30&&hr<=39)s=2; return {score:s, isMet:m}; }, getSbpScore(sbp) { let s=0,m=false; if(sbp<90)m=true;else if(sbp>=190&&sbp<=199)s=3;else if(sbp>=180&&sbp<=189)s=2;else if(sbp>=150&&sbp<=179)s=1;else if(sbp>=80&&sbp<=99)s=1;else if(sbp>=70&&sbp<=79)s=2; return {score:s, isMet:m}; } };
         
         
-        // --- CORE LOGIC FUNCTIONS (DECLARED FIRST) ---
+        // --- HELPER FUNCTIONS ---
+        const safeGet = (id) => document.getElementById(id)?.value || '';
+        const safeIsChecked = (id) => document.getElementById(id)?.checked || false;
+        const getSelectText = (selectEl) => selectEl ? (selectEl.options[selectEl.selectedIndex]?.text || '') : '';
+        const setVal = (id, value) => { const el = document.getElementById(id); if (el) el.value = value || ''; };
+        const setChecked = (id, value) => { const el = document.getElementById(id); if (el) el.checked = value || false; };
+        const setRadio = (name, value) => { const el = document.querySelector(`input[name="${name}"][value="${value}"]`); if (el) el.checked = true; };
+        
+        // --- ALL FUNCTIONS DECLARED HERE ---
+        
         function resetForm(){
             assessmentForm.reset();
             document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], textarea').forEach(el => el.value = '');
@@ -658,329 +602,49 @@
             calculateADDS();
         }
 
-        const safeGet = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
-        const safeIsChecked = (id) => { const el = document.getElementById(id); return el ? el.checked : false; };
-        
-        const getTrendText = (current, previous, higherIsWorse) => {
-            const curr = parseFloat(current);
-            const prev = parseFloat(previous);
-            if (isNaN(curr)) return '';
-            if (isNaN(prev)) return ' (new)';
-            if (curr > prev) return higherIsWorse ? ' (rising)' : ' (falling)';
-            if (curr < prev) return higherIsWorse ? ' (falling)' : ' (rising)';
-            return ' (stable)';
-        };
-
-        const getSelectText = (selectElement) => {
-             if (selectElement && selectElement.selectedIndex > -1) { 
-                return selectElement.options[selectElement.selectedIndex].text; 
-            }
-            return '';
-        };
-
-        const getDaysSinceStepdown = () => {
-            const dateStr = safeGet('icuStepdownDate');
-            if (!dateStr) return -1;
-            const stepdownDate = new Date(dateStr);
-            const today = new Date();
-            stepdownDate.setHours(0, 0, 0, 0);
-            today.setHours(0, 0, 0, 0);
-            const diffTime = today - stepdownDate;
-            if (diffTime < 0) return -1;
-            return Math.round(diffTime / (1000 * 60 * 60 * 24));
-        };
-        const getHoursSinceStepdown = () => {
-            const dateStr = safeGet('icuStepdownDate');
-            const timeStr = safeGet('icuStepdownTime');
-            if (!dateStr || !timeStr) return -1;
-            const stepdownDateTime = new Date(`${dateStr}T${timeStr}`);
-            if (isNaN(stepdownDateTime)) return -1;
-            const now = new Date();
-            const diffMillis = now - stepdownDateTime;
-            return Math.round(diffMillis / (1000 * 60 * 60));
-        };
-        const roundTimeToNearest10Mins = (date) => {
-            const minutes = date.getMinutes();
-            const roundedMinutes = Math.round(minutes / 10) * 10;
-            const newDate = new Date(date.getTime());
-            newDate.setMinutes(roundedMinutes, 0, 0);
-            return newDate.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
-        };
-        
-        function generateImpression(data = getFormData()) {
-            const narratives = [];
-            document.querySelectorAll('.score-input').forEach(input => {
-                const id = input.id;
-                if (data[id] === true && input.dataset.score !== "0") {
-                    const dataId = input.dataset.id;
-                    if (assessmentNarrativeMap[dataId]) {
-                        narratives.push(assessmentNarrativeMap[dataId]);
-                    }
+        function calculateScore() {
+            let totalScore = 0;
+            scoreInputs.forEach(input => {
+                if (input.checked) {
+                    totalScore += parseInt(input.dataset.score, 10) || 0;
                 }
             });
-
-            if (narratives.length === 0) return 'Patient appears clinically stable with no major risk factors identified on review. Continue routine ward monitoring.';
-            let impression = `Patient presents with an elevated risk score, primarily driven by: ${narratives.join(', ')}. `;
-            const concernText = data.nursingConcernText?.trim();
-            if (data.concern_score === "5" && concernText) {
-                impression += `Bedside team has also flagged specific concerns regarding: "${concernText}". `;
-            }
-            impression += 'Requires close monitoring and adherence to the plan below to mitigate risk of deterioration.';
-            return impression;
-        };
-
-        function generateSummary() {
-             try {
-                const output = [];
-                const los = safeGet('losDays');
-                const now = new Date();
-                const score = parseInt(totalScoreEl.textContent, 10);
-                const isPreReview = reviewTypeSelect.value === 'pre';
-                
-                const getDischargeCategory = () => {
-                    if (score > 40) return 'Critical Risks Identified - Immediate Senior Review';
-                    if (score >= 30) return 'Cat 1 - Escalation to Medical Team';
-                    if (score >= 10) return 'Cat 1';
-                    if (score >= 4) return 'Cat 2';
-                    return 'Cat 3';
-                };
-
-                output.push(isPreReview ? 'ALERT CNS pre-stepdown review' : 'ALERT CNS post ICU review');
-                if (los) output.push(`ICU LOS: ${los}`);
-                output.push(getDischargeCategory());
-                
-                if (isPreReview) {
-                    output.push(`Time of review: ${roundTimeToNearest10Mins(now)}`);
-                } else {
-                    const hours = getHoursSinceStepdown();
-                    if (hours >= 0 && hours < 24) {
-                        const roundedHours = Math.ceil(hours / 6) * 6;
-                        output.push(`(~${roundedHours} hours on ward)`);
-                    } else if (hours >= 24) {
-                        output.push(`(Day ${Math.floor(hours / 24)} on ward)`);
-                    }
-                }
-                output.push('');
-                
-                const admissionReason = safeGet('admissionReason').trim();
-                const pmh = safeGet('pmh').trim();
-                if (admissionReason) output.push(`Reason for admission: ${admissionReason}`);
-                if (pmh) output.push(`PMH: ${pmh}`);
-                output.push(`Impression: ${generateImpression()}`);
-                
-                const goc = safeGet('goc');
-                if (goc) {
-                    let gocLine = `Goals of Care: ${goc}`;
-                    if (['B', 'C'].includes(goc)) {
-                        const specifics = safeGet('gocSpecifics').trim();
-                        if (specifics) gocLine += ` (${specifics})`;
-                    }
-                    output.push(gocLine);
-                }
-
-                const allergies = [];
-                if (safeIsChecked('nkdaCheckbox')) {
-                    allergies.push('NKDA');
-                } else {
-                    allergiesContainer.querySelectorAll('.allergy-row').forEach(row => {
-                        const drug = row.querySelector('[data-type="allergy_drug"]').value.trim();
-                        const reaction = row.querySelector('[data-type="allergy_reaction"]').value.trim();
-                        if (drug) allergies.push(`${drug} (${reaction || 'reaction not specified'})`);
-                    });
-                    if(allergies.length === 0) allergies.push('Not Documented');
-                }
-                output.push(`Allergies: ${allergies.join(', ')}`);
-
-                const precautions = [...precautionCheckboxes].filter(cb => cb.checked).map(cb => cb.value);
-                if (precautions.length > 0) {
-                    let precautionLine = `Infection Control: ${precautions.join(', ')} Precautions`;
-                    const reason = safeGet('infectionControlReason').trim();
-                    if (reason) precautionLine += ` for ${reason}`;
-                    output.push(precautionLine);
-                }
-                
-                output.push('\n');
-
-                // ==== ADDS/MODS ====
-                let addsLine = `ADDS: ${calculatedADDSEl.textContent}`;
-                if (currentAddsBreakdown && currentAddsBreakdown !== 'Normal Parameters') {
-                    addsLine += ` (Triggers: ${currentAddsBreakdown})`;
-                }
-                output.push(addsLine);
-                if (safeIsChecked('addsModificationCheckbox')) {
-                    output.push(`MODS Active: ${safeGet('addsModificationText') || 'Rationale not specified.'}`);
-                }
-                output.push('\n');
-                
-                // ==== SYSTEMS REVIEW ====
-                output.push('---- SYSTEMS REVIEW ----');
-
-                const airway = safeGet('airway_input');
-                const rr = safeGet('rr_input'), spo2 = safeGet('spo2_input'), o2_flow = safeGet('o2_flow_input'), o2_unit = safeGet('o2_unit_input');
-                let o2_delivery = 'on Room Air.';
-                if (o2_flow && parseFloat(o2_flow) > 0) {
-                    o2_delivery = `on ${o2_flow}${o2_unit === 'lpm' ? 'L via Nasal Prongs' : '% FiO2'}.`;
-                }
-                const hr = safeGet('hr_input'), sbp = safeGet('sbp_input'), dbp = safeGet('dbp_input');
-                const consciousness = getSelectText(document.getElementById('consciousness_input'));
-                const temp = safeGet('temp_input');
-                const amt = getSelectText(document.getElementById('amt_score_input'));
-                
-                output.push('Clinical Observations:');
-                output.push(`  A: ${airway}`);
-                output.push(`  B: RR ${rr || 'N/A'}, SpO2 ${spo2 || 'N/A'}% ${o2_delivery}`);
-                output.push(`  C: HR ${hr || 'N/A'}, BP ${sbp || 'N/A'}/${dbp || 'N/A'} mmHg.`);
-                output.push(`  D: AVPU-${consciousness}. AMT ${amt}.`);
-                output.push(`  E: Temp ${temp || 'N/A'} C.`);
-                
-                const bloods = [];
-                const formatBlood = (label, currId, prevId, unit, higherIsWorse = true, normalRange = null, replacedId = null) => {
-                    const curr = safeGet(currId), prev = safeGet(prevId);
-                    if (!curr) return;
-                    let interpretation = '';
-                    if (normalRange) {
-                        const val = parseFloat(curr);
-                        if (!isNaN(val)) {
-                            if (val < normalRange[0]) interpretation = ' (low)';
-                            if (val > normalRange[1]) interpretation = ' (high)';
-                        }
-                    }
-                    const replacedText = replacedId && safeIsChecked(replacedId) ? ' (replaced)' : '';
-                    bloods.push(`  - ${label}: ${curr}${unit}${getTrendText(curr, prev, higherIsWorse)}${interpretation}${replacedText}`);
-                };
-                formatBlood('Lactate', 'lactate_input', 'lactate_input_prev', ' mmol/L', true, [0.5, 2.0]);
-                formatBlood('Hb', 'hb_input', 'hb_input_prev', ' g/L', false, [115, 165]);
-                formatBlood('K+', 'k_input', 'k_input_prev', ' mmol/L', true, [3.5, 5.2], 'k_replaced_checkbox');
-                formatBlood('Mg++', 'mg_input', 'mg_input_prev', ' mmol/L', true, [0.7, 1.0], 'mg_replaced_checkbox');
-                formatBlood('Creatinine', 'creatinine_input', 'creatinine_input_prev', ' umol/L', true, [60, 110]);
-                formatBlood('CRP', 'crp_input', 'crp_input_prev', ' mg/L', true, [0, 5]);
-                formatBlood('Albumin', 'albumin_input', 'albumin_input_prev', ' g/L', false, [25, 50]);
-                if (bloods.length > 0) {
-                    output.push('Bloods:');
-                    output.push(...bloods);
-                }
-                
-                const fbc24 = safeGet('fbc_24hr_input'), fbcTotal = safeGet('fbc_total_input');
-                if (fbc24 || fbcTotal) {
-                    let fluidText = 'Fluid Balance: ';
-                    if (fbc24) fluidText += `24hr: ${parseFloat(fbc24) >= 0 ? '+' : ''}${fbc24}mL. `;
-                    if (fbcTotal) fluidText += `Cumulative: ${parseFloat(fbcTotal) >= 0 ? '+' : ''}${fbcTotal}mL.`;
-                    output.push(fluidText);
-                }
-                
-                // ... (Device Summary Logic) ...
-
-                const picsStatus = document.querySelector('input[name="pics_status"]:checked').value;
-                if (picsStatus !== 'negative') {
-                    let picsLine = 'PICS Screen: Positive.';
-                    if (picsStatus === 'unable') picsLine = `PICS Screen: Unable to assess. Reason: ${safeGet('pics_unable_notes') || 'Not specified.'}`;
-                    output.push(picsLine);
-                }
-
-                if(safeIsChecked('homeTeamPlanCheckbox')) {
-                    const planText = safeGet('homeTeamPlanText').trim();
-                    output.push(`Home Team Plan: In place.${planText ? ` Details: ${planText}` : ''}`);
-                }
-
-                output.push('\n');
-                
-                // ==== PLAN ====
-                // ... (Plan generation logic) ...
-
-                 emrSummaryEl.value = output.join('\n');
-            } catch (error) {
-                emrSummaryEl.value = `An error occurred while generating the summary. Please check your inputs.\n\nError: ${error.message}`;
-                console.error("Summary generation failed:", error);
-            }
+            totalScoreEl.textContent = totalScore;
+            updateRiskCategory(totalScore);
         }
-        
-        function handleAfterHoursLogic() {
-            const reviewType = reviewTypeSelect.value;
-            if (reviewType === 'pre') {
-                afterHoursContainer.classList.remove('hidden');
-                const currentHour = new Date().getHours();
-                afterHoursCheckbox.checked = (currentHour >= 18 || currentHour < 6);
-                afterHoursCheckbox.disabled = true;
+
+        function updateRiskCategory(score) {
+            let categoryText = '';
+            let categoryClass = '';
+
+            if (score >= 25) {
+                categoryText = 'UNSAFE FOR WARD: Immediate senior review required';
+                categoryClass = 'unsafe';
+            } else if (score >= 15) {
+                categoryText = 'Category 1 - High Risk: Escalate to senior RN/MO';
+                categoryClass = 'category-1-high';
+            } else if (score >= 10) {
+                categoryText = 'Category 1: Requires close monitoring & review';
+                categoryClass = 'category-1';
             } else {
-                afterHoursCheckbox.disabled = false;
-                const daysSince = getDaysSinceStepdown();
-                if (daysSince === 0) {
-                    afterHoursContainer.classList.remove('hidden');
-                    const timeEl = document.getElementById('icuStepdownTime');
-                    afterHoursCheckbox.checked = timeEl.options[timeEl.selectedIndex].dataset.ooh === 'true';
-                } else {
-                    afterHoursContainer.classList.add('hidden');
-                    afterHoursCheckbox.checked = false;
-                }
+                categoryText = 'Category 2: Standard follow-up';
+                categoryClass = 'category-2';
             }
-            afterHoursCheckbox.dispatchEvent(new Event('change'));
+            riskCategoryEl.textContent = categoryText;
+            riskCategoryEl.className = `text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300 ${categoryClass}`;
         }
 
-        function handleBloodInputs() {
-            const getF = (id) => parseFloat(safeGet(id));
-            const check = (id, condition) => { const el = document.getElementById(id); if (el) el.checked = condition; };
-            const isCardiac = safeIsChecked('cts_cardiac_checkbox');
-            const flagger = (inputId, labelId, isCritical) => {
-                document.getElementById(inputId).classList.toggle('input-critical-alert', isCritical);
-                document.getElementById(labelId).classList.toggle('critical-input-label', isCritical);
-            };
-
-            const lactate = getF('lactate_input');
-            flagger('lactate_input', 'lactate_label', lactate >= 2.0);
-            if (!isNaN(lactate)) { check('crit_lactate_high_checkbox', lactate >= 3.5); check('bloods_lactate_mid_checkbox', lactate >= 2.0 && lactate < 3.5); }
-            
-            const hb = getF('hb_input'), hb_prev = getF('hb_input_prev');
-            const isAnemic = hb < 80;
-            const isDropping = !isNaN(hb) && !isNaN(hb_prev) && (hb_prev - hb) > 20;
-            flagger('hb_input', 'hb_label', isAnemic || isDropping);
-            if (!isNaN(hb)) check('bloods_anaemia_checkbox', isAnemic);
-            check('crit_hb_drop_checkbox', isDropping);
-
-            const creatinine = getF('creatinine_input');
-            const isHighCreatinine = creatinine > 200;
-            flagger('creatinine_input', 'creatinine_label', isHighCreatinine);
-            if(!isNaN(creatinine)) check('bloods_creatinine_checkbox', isHighCreatinine);
-            
-            const crp = getF('crp_input');
-            const isHighCrp = crp > 100;
-            flagger('crp_input', 'crp_label', isHighCrp);
-            if(!isNaN(crp)) check('bloods_crp_checkbox', isHighCrp);
-
-            const albumin = getF('albumin_input');
-            const isLowAlbumin = albumin < 25;
-            flagger('albumin_input', 'albumin_label', isLowAlbumin);
-            if(!isNaN(albumin)) check('bloods_albumin_checkbox', isLowAlbumin);
-            
-            const k = getF('k_input');
-            let k_abnormal = !isNaN(k) && ((isCardiac && (k < 4.0 || k > 5.0)) || (!isCardiac && (k < 3.5 || k > 5.2)));
-            flagger('k_input', 'k_label', k_abnormal);
-            
-            const mg = getF('mg_input');
-            let mg_abnormal = !isNaN(mg) && ((isCardiac && (mg < 0.8 || mg > 1.0)) || (!isCardiac && (mg < 0.7 || mg > 1.0)));
-            flagger('mg_input', 'mg_label', mg_abnormal);
-
-            check('bloods_electrolytes', k_abnormal || mg_abnormal);
-            calculateScore();
-        }
-        
         function calculateADDS() {
             let adds = 0; let met = false;
             const breakdownReasons = [];
             const modsActive = safeIsChecked('addsModificationCheckbox');
-            const getMod = (name) => modsActive && document.querySelector(`input[name="mod_param"][value="${name}"]`)?.checked;
             
             const processVital = (param, value, scoreFn) => {
                 if (isNaN(value)) return;
-                let applyScore = true;
-                if(getMod(param.toUpperCase())) {
-                    // Modification logic... (simplified for brevity)
-                }
-                if (applyScore) {
-                    const res = scoreFn(value);
-                    adds += res.score;
-                    met = met || res.isMet;
-                    if (res.score > 0) breakdownReasons.push(`${param.toUpperCase()} ${value} (+${res.score})`);
-                }
+                const res = scoreFn(value);
+                adds += res.score;
+                met = met || res.isMet;
+                if (res.score > 0) breakdownReasons.push(`${param.toUpperCase()} ${value} (+${res.score})`);
             };
             
             processVital('rr', parseInt(safeGet('rr_input'), 10), standardScores.getRrScore);
@@ -1013,382 +677,611 @@
             calculateScore();
         }
         
-        function calculateScore(){let total=0;scoreInputs.forEach(input=>{if(input.checked){total+=parseInt(input.dataset.score,10)}});totalScoreEl.textContent=total;updateRiskCategory(total)}
-        
-        function updateRiskCategory(score) {
-            riskCategoryEl.classList.remove('category-2', 'category-1', 'category-1-high', 'unsafe');
-            const reviewType = reviewTypeSelect.value;
-            const daysSince = getDaysSinceStepdown();
-            let actionText, categoryClass;
+        function handleBloodInputs() {
+            const getF = (id) => parseFloat(safeGet(id));
+            const check = (id, condition) => { const el = document.getElementById(id); if (el) el.checked = condition; };
+            const isCardiac = safeIsChecked('cts_cardiac_checkbox');
+            const flagger = (inputId, labelId, isCritical) => {
+                document.getElementById(inputId)?.classList.toggle('input-critical-alert', isCritical);
+                document.getElementById(labelId)?.classList.toggle('critical-input-label', isCritical);
+            };
 
-            if (score > 40) {
-                categoryClass = 'unsafe';
-                actionText = 'Critical Risks Identified - Immediate Senior Review';
-            } else if (score >= 30) {
-                categoryClass = 'category-1-high';
-                actionText = 'Category 1: High Risk - Escalate to ALERT Medical Team for Review';
-            } else if (score >= 10) {
-                categoryClass = 'category-1';
-                actionText = (reviewType === 'pre' || daysSince < 3) ? 'Continue daily ward reviews for up to 72 hours.' : "72hr review complete. Use clinical judgment to discharge or continue support.";
-            } else if (score >= 4) {
-                categoryClass = 'category-2';
-                actionText = (reviewType === 'pre' || daysSince === 0) ? 'Requires follow up, review again in 24 hours.' : "Use clinical judgment: If improving, discharge. If concerns remain, review again in 24hr.";
-            } else {
-                categoryClass = 'category-2';
-                actionText = reviewType === 'pre' ? 'Single sign-off review required post-ward transfer.' : 'If no clinical concerns, safe to sign-off and discharge from ALERT service.';
-            }
+            const k = getF('k_input');
+            let k_abnormal = !isNaN(k) && ((isCardiac && (k < 4.0 || k > 5.0)) || (!isCardiac && (k < 3.5 || k > 5.2)));
+            flagger('k_input', 'k_label', k_abnormal);
+            const k_replaced = safeIsChecked('k_replaced_checkbox');
+            if (k_replaced) k_abnormal = false;
 
-            riskCategoryEl.textContent = actionText;
-            riskCategoryEl.classList.add(categoryClass);
+            const mg = getF('mg_input');
+            let mg_abnormal = !isNaN(mg) && ((isCardiac && (mg < 0.8 || mg > 1.0)) || (!isCardiac && (mg < 0.7 || mg > 1.0)));
+            flagger('mg_input', 'mg_label', mg_abnormal);
+            const mg_replaced = safeIsChecked('mg_replaced_checkbox');
+            if (mg_replaced) mg_abnormal = false;
+
+            const lactate = getF('lactate_input');
+            flagger('lactate_input', 'lactate_label', lactate >= 2.0);
+            if (!isNaN(lactate)) { check('crit_lactate_high_checkbox', lactate >= 3.5); check('bloods_lactate_mid_checkbox', lactate >= 2.0 && lactate < 3.5); }
+            
+            const hb = getF('hb_input'), hb_prev = getF('hb_input_prev');
+            const isAnemic = !isNaN(hb) && hb < 80;
+            const isDropping = !isNaN(hb) && !isNaN(hb_prev) && (hb_prev - hb) > 20;
+            flagger('hb_input', 'hb_label', isAnemic || isDropping);
+            check('bloods_anaemia_checkbox', isAnemic);
+            check('crit_hb_drop_checkbox', isDropping);
+
+            const creatinine = getF('creatinine_input');
+            const isHighCreatinine = !isNaN(creatinine) && creatinine > 200;
+            flagger('creatinine_input', 'creatinine_label', isHighCreatinine);
+            check('bloods_creatinine_checkbox', isHighCreatinine);
+            
+            const crp = getF('crp_input');
+            const isHighCrp = !isNaN(crp) && crp > 100;
+            flagger('crp_input', 'crp_label', isHighCrp);
+            check('bloods_crp_checkbox', isHighCrp);
+
+            const albumin = getF('albumin_input');
+            const isLowAlbumin = !isNaN(albumin) && albumin < 25;
+            flagger('albumin_input', 'albumin_label', isLowAlbumin);
+            check('bloods_albumin_checkbox', isLowAlbumin);
+
+            check('bloods_electrolytes', k_abnormal || mg_abnormal);
+            calculateScore();
         }
 
-        function copySummary(){emrSummaryEl.select();try{document.execCommand('copy');copySummaryButton.textContent='Copied!';setTimeout(()=>{copySummaryButton.textContent='Copy to Clipboard'},2000)}catch(err){alert('Could not copy text.')}}
-        function handleFluidBalance(){const fbc24=parseFloat(safeGet('fbc_24hr_input')),fbcTotal=parseFloat(safeGet('fbc_total_input')),isSig=(!isNaN(fbc24)&&Math.abs(fbc24)>2000)||(!isNaN(fbcTotal)&&Math.abs(fbcTotal)>2000),isMild=(!isNaN(fbc24)&&Math.abs(fbc24)>1000)||(!isNaN(fbcTotal)&&Math.abs(fbcTotal)>1000);if(isSig)document.getElementById('fluid_sig_radio').checked=true;else if(isMild)document.getElementById('fluid_mild_radio').checked=true;else document.getElementById('fluid_0_radio').checked=true;calculateScore()}
-        
-        // --- Dynamic Input Creation Functions ---
-        function createAllergyInput(data = {}) {
-            const row = document.createElement('div');
-            row.className = 'flex items-center space-x-2 allergy-row';
-            row.innerHTML = `
-                <input type="text" data-type="allergy_drug" placeholder="Drug/Substance" class="form-input text-sm flex-grow" value="${data.drug || ''}">
-                <input type="text" data-type="allergy_reaction" placeholder="Reaction" class="form-input text-sm flex-grow" value="${data.reaction || ''}">
-                <button type="button" class="remove-btn">✖</button>
-            `;
-            allergiesContainer.appendChild(row);
-        };
-        
-        function updateLineDay(e) {
-            const row = e.target.closest('.device-row');
-            if (!row) return;
-            // ... (update logic for flags - this function needs to be defined for CVADs)
-        };
+        function handleFluidBalance(){
+            const fbc24hr = parseFloat(safeGet('fbc_24hr_input'));
+            const fbcTotal = parseFloat(safeGet('fbc_total_input'));
 
-        function createCentralLineInput(data = {}) {
-            const row = document.createElement('div');
-            row.className = 'device-row p-3 bg-gray-100 rounded-lg border space-y-2 transition-all';
-            row.innerHTML = `
-                <div class="flex items-center justify-between">
-                     <div class="flex items-center">
-                        <select data-type="type" class="form-select text-sm mr-2 w-28"></select>
-                        <input type="text" data-type="site" placeholder="Insertion Site" class="form-input text-sm flex-grow" value="${data.site || ''}">
-                     </div>
-                     <button type="button" class="remove-btn">✖</button>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                    <div><label class="sub-label">Insertion Date</label><input type="date" data-type="date" class="form-input" value="${data.date || ''}"></div>
-                    <div><label class="sub-label">Ext. Length (cm)</label><input type="number" data-type="external_length" class="form-input" value="${data.external_length || ''}"></div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm items-end">
-                    <div><label class="sub-label">Site Appearance</label><select data-type="appearance" class="form-select"></select></div>
-                    <div class="flex items-center pb-2 h-full"><span data-type="days" class="font-bold">Day 0</span><span data-type="flag" class="ml-2"></span></div>
-                </div>
-                 <div data-type="action-text" class="text-xs text-red-600 font-semibold hidden"></div>`;
-
-            const typeSelect = row.querySelector('[data-type="type"]');
-            ['CVC', 'PICC', 'Vascath'].forEach(opt => typeSelect.add(new Option(opt, opt, false, opt === data.type)));
+            const isSig = (!isNaN(fbc24hr) && Math.abs(fbc24hr) > 1000) || (!isNaN(fbcTotal) && Math.abs(fbcTotal) > 2000);
+            const isMild = (!isNaN(fbc24hr) && Math.abs(fbc24hr) > 500) || (!isNaN(fbcTotal) && Math.abs(fbcTotal) > 1000);
             
-            const appearanceSelect = row.querySelector('[data-type="appearance"]');
-            ['Healthy', 'Erythema', 'Oedema', 'Oozing', 'Purulence'].forEach(opt => appearanceSelect.add(new Option(opt, opt, false, opt === data.appearance)));
+            if(isSig) {
+                document.getElementById('fluid_sig_radio').checked = true;
+            } else if (isMild) {
+                 document.getElementById('fluid_mild_radio').checked = true;
+            } else {
+                 document.getElementById('fluid_0_radio').checked = true;
+            }
+            calculateScore();
+        }
 
-            centralLinesContainer.appendChild(row);
-            row.querySelector('[data-type="date"]').addEventListener('change', updateLineDay);
-            row.querySelector('[data-type="appearance"]').addEventListener('change', updateLineDay);
-            row.querySelector('[data-type="date"]').dispatchEvent(new Event('change'));
-        };
+        function handleAfterHoursLogic() {
+            if (safeGet('reviewType') === 'pre') {
+                afterHoursContainer.classList.add('hidden');
+                afterHoursCheckbox.checked = false;
+                afterHoursCheckbox.dataset.score = "0";
+                calculateScore();
+                return;
+            }
+            
+            afterHoursContainer.classList.remove('hidden');
+            const dateStr = safeGet('icuStepdownDate');
+            const timeStr = safeGet('icuStepdownTime');
+            const isOOH = document.querySelector(`#icuStepdownTime option[value="${timeStr}"]`)?.dataset.ooh === 'true';
+
+            if (!dateStr || !timeStr) {
+                afterHoursCheckbox.checked = false;
+                afterHoursCheckbox.dataset.score = "0";
+                calculateScore();
+                return;
+            }
+            
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const [hour, minute] = timeStr.split(':').map(Number);
+            const dischargeDateTime = new Date(year, month - 1, day, hour, minute);
+            const now = new Date();
+            const hoursSinceDischarge = (now - dischargeDateTime) / (1000 * 60 * 60);
+
+            if (isOOH && hoursSinceDischarge > 0 && hoursSinceDischarge <= 24) {
+                afterHoursCheckbox.checked = true;
+                const currentScore = parseInt(totalScoreEl.textContent, 10);
+                // Dynamically assign score based on risk
+                afterHoursCheckbox.dataset.score = currentScore >= 10 ? "5" : "2"; 
+            } else {
+                afterHoursCheckbox.checked = false;
+                afterHoursCheckbox.dataset.score = "0";
+            }
+            calculateScore();
+        }
+
+        function createDynamicInput(container, templateFunction) {
+            const div = document.createElement('div');
+            div.innerHTML = templateFunction(container.children.length);
+            container.appendChild(div.firstChild);
+        }
+
+        const createAllergyInput = () => createDynamicInput(allergiesContainer, i => `
+            <div class="allergy-row flex items-center space-x-2 p-2 bg-gray-100 rounded-md">
+                <input type="text" placeholder="Allergen" class="allergen-name mt-1 block w-1/2 rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                <input type="text" placeholder="Reaction" class="allergen-reaction mt-1 block w-1/2 rounded-md border-2 border-gray-300 bg-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 text-sm transition-colors duration-150">
+                <button type="button" class="remove-btn text-red-500 hover:text-red-700 font-bold">X</button>
+            </div>
+        `);
+
+        const createCentralLineInput = () => createDynamicInput(centralLinesContainer, i => `
+            <div class="device-row border border-rose-200 p-3 rounded-lg bg-rose-50 space-y-2">
+                <div class="flex justify-between items-center"> <h5 class="font-semibold text-rose-800">CVAD ${i+1}</h5> <button type="button" class="remove-btn text-red-500 hover:text-red-700 font-bold text-lg">&times;</button> </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <select class="cvad-type mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option>CVC</option><option>PICC</option><option>Vascath</option></select>
+                    <input type="text" placeholder="Location" class="cvad-location mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                    <input type="date" title="Insertion Date" class="cvad-date mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                    <input type="text" placeholder="Site appearance" class="cvad-site mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                </div>
+            </div>
+        `);
+
+        const createPivcInput = () => createDynamicInput(pivcsContainer, i => `
+            <div class="device-row border border-blue-200 p-3 rounded-lg bg-blue-50 space-y-2">
+                <div class="flex justify-between items-center"> <h5 class="font-semibold text-blue-800">PIVC ${i+1}</h5> <button type="button" class="remove-btn text-red-500 hover:text-red-700 font-bold text-lg">&times;</button> </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="Location" class="pivc-location mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                     <input type="date" title="Insertion Date" class="pivc-date mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                     <input type="number" min="0" max="5" placeholder="PIVAS (0-5)" class="pivc-pivas mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                </div>
+            </div>
+        `);
+
+        const createNgTubeInput = () => createDynamicInput(ngTubesContainer, i => `
+            <div class="device-row border border-green-200 p-3 rounded-lg bg-green-50 space-y-2">
+                 <div class="flex justify-between items-center"> <h5 class="font-semibold text-green-800">Enteral Device ${i+1}</h5> <button type="button" class="remove-btn text-red-500 hover:text-red-700 font-bold text-lg">&times;</button> </div>
+                 <div class="grid grid-cols-2 gap-2">
+                    <select class="ng-type mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option>NG</option><option>NJ</option><option>PEG</option></select>
+                    <input type="text" placeholder="Use (e.g. Feeds, Drainage)" class="ng-use mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                 </div>
+            </div>
+        `);
         
-        // --- Data Persistence Functions ---
+        const createDrainInput = () => createDynamicInput(drainsContainer, i => `
+            <div class="device-row border border-teal-200 p-3 rounded-lg bg-teal-50 space-y-2">
+                 <div class="flex justify-between items-center"> <h5 class="font-semibold text-teal-800">Drain ${i+1}</h5> <button type="button" class="remove-btn text-red-500 hover:text-red-700 font-bold text-lg">&times;</button> </div>
+                 <div class="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="Type / Location" class="drain-type mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                    <input type="text" placeholder="Output (type/volume)" class="drain-output mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                 </div>
+            </div>
+        `);
+        
+        const createWoundInput = () => createDynamicInput(woundsContainer, i => `
+            <div class="device-row border border-pink-200 p-3 rounded-lg bg-pink-50 space-y-2">
+                 <div class="flex justify-between items-center"> <h5 class="font-semibold text-pink-800">Wound ${i+1}</h5> <button type="button" class="remove-btn text-red-500 hover:text-red-700 font-bold text-lg">&times;</button> </div>
+                 <div class="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="Location" class="wound-location mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                    <input type="text" placeholder="Dressing / Status" class="wound-status mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                 </div>
+            </div>
+        `);
+
+
+        // --- Summary & Copy Functions ---
+        function generateSummary() {
+            let summary = `--- ALERT LIAISON NURSE REVIEW ---\n\n`;
+            summary += `PATIENT: ${safeGet('patientInitials')} (${safeGet('urnLast4')}), ${safeGet('wardAndRoom')}\n`;
+            summary += `REVIEW TYPE: ${getSelectText(reviewTypeSelect)}\n`;
+            summary += `ICU LOS: ${safeGet('losDays')} days\n`;
+            if (safeGet('reviewType') === 'post') {
+                summary += `ICU Stepdown: ${safeGet('icuStepdownDate')} (${getSelectText(document.getElementById('icuStepdownTime'))})\n`;
+            }
+            summary += `GOALS OF CARE: ${safeGet('goc') || 'Not documented'}${safeGet('gocSpecifics') ? ` (${safeGet('gocSpecifics')})` : ''}\n\n`;
+            
+            summary += `ASSESSMENT (A-E):\n`;
+            summary += `- Airway: ${safeGet('airway_input')}\n`;
+            summary += `- Breathing: RR ${safeGet('rr_input')}, SpO2 ${safeGet('spo2_input')}% on ${safeGet('o2_flow_input') || 'RA'}${safeGet('o2_flow_input') ? (safeGet('o2_unit_input') === 'lpm' ? 'L/min' : '% FiO2') : ''}\n`;
+            summary += `- Circulation: HR ${safeGet('hr_input')}, BP ${safeGet('sbp_input')}/${safeGet('dbp_input')}\n`;
+            summary += `- Disability: ${getSelectText(document.getElementById('consciousness_input'))}\n`;
+            summary += `- Exposure: Temp ${safeGet('temp_input')}°C\n`;
+            summary += `- ADDS Score: ${calculatedADDSEl.textContent} (${currentAddsBreakdown})\n\n`;
+            
+            summary += `RISK ASSESSMENT SCORE: ${totalScoreEl.textContent}\n`;
+            summary += `CATEGORY: ${riskCategoryEl.textContent}\n\n`;
+            
+            summary += `KEY ISSUES & PLAN:\n`;
+            const carePlanItems = [];
+            document.querySelectorAll('.score-input:checked').forEach(input => {
+                const id = input.dataset.id;
+                let planKey = id;
+                if (id === 'crit_met') {
+                    planKey = safeGet('reviewType') === 'pre' ? 'crit_met_pre' : 'crit_met_post';
+                }
+                if (carePlanMap[planKey]) {
+                    carePlanItems.push(`- ${carePlanMap[planKey]}`);
+                }
+            });
+            
+            if (carePlanItems.length > 0) {
+                summary += carePlanItems.join('\n') + '\n\n';
+            } else {
+                summary += "- No critical issues identified. Continue standard ward-based care.\n\n";
+            }
+            
+            if (safeGet('emrAdditionalNotes')) {
+                 summary += `ADDITIONAL NOTES:\n${safeGet('emrAdditionalNotes')}\n\n`;
+            }
+            
+            summary += `For queries, please contact the ALERT Liaison Nurse on pager 4233.\n`;
+            summary += `--- END OF REVIEW ---`;
+            
+            emrSummaryEl.value = summary;
+        }
+        
+        function copySummary() {
+            if (!emrSummaryEl.value) {
+                alert("Please generate the summary first.");
+                return;
+            }
+            navigator.clipboard.writeText(emrSummaryEl.value).then(() => {
+                copySummaryButton.textContent = 'Copied!';
+                setTimeout(() => { copySummaryButton.textContent = 'Copy to Clipboard'; }, 2000);
+            }, () => alert('Failed to copy summary.'));
+        }
+        
+        // --- PATIENT MANAGEMENT ---
+
         function getFormData() {
             const data = {};
             assessmentForm.querySelectorAll('input, select, textarea').forEach(el => {
-                 if (el.type === 'checkbox') { data[el.id] = el.checked; } 
-                 else if (el.type === 'radio') { if (el.checked) data[el.name] = el.value; }
-                 else if (el.id) { data[el.id] = el.value; }
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    if (el.id) data[el.id] = el.checked;
+                } else {
+                    if (el.id) data[el.id] = el.value;
+                }
             });
             
-            data.totalScore = totalScoreEl.textContent;
-            
             data.allergies = Array.from(allergiesContainer.querySelectorAll('.allergy-row')).map(row => ({
-                drug: row.querySelector('[data-type="allergy_drug"]').value,
-                reaction: row.querySelector('[data-type="allergy_reaction"]').value
+                name: row.querySelector('.allergen-name').value,
+                reaction: row.querySelector('.allergen-reaction').value
             }));
-            data.centralLines = Array.from(centralLinesContainer.querySelectorAll('.device-row')).map(row => ({
-                type: row.querySelector('[data-type="type"]').value,
-                site: row.querySelector('[data-type="site"]').value,
-                date: row.querySelector('[data-type="date"]').value,
-                external_length: row.querySelector('[data-type="external_length"]').value,
-                appearance: row.querySelector('[data-type="appearance"]').value
-            }));
-            // Add similar savers for PIVCs, NGs, Drains, Wounds...
+
+            // Generic device saver
+            const saveDevices = (container, selectors) => Array.from(container.querySelectorAll('.device-row')).map(row => {
+                const deviceData = {};
+                for (const key in selectors) {
+                    deviceData[key] = row.querySelector(selectors[key])?.value;
+                }
+                return deviceData;
+            });
+
+            data.centralLines = saveDevices(centralLinesContainer, { type: '.cvad-type', location: '.cvad-location', date: '.cvad-date', site: '.cvad-site' });
+            data.pivcs = saveDevices(pivcsContainer, { location: '.pivc-location', date: '.pivc-date', pivas: '.pivc-pivas' });
+            data.ngTubes = saveDevices(ngTubesContainer, { type: '.ng-type', use: '.ng-use' });
+            data.drains = saveDevices(drainsContainer, { type: '.drain-type', output: '.drain-output' });
+            data.wounds = saveDevices(woundsContainer, { location: '.wound-location', status: '.wound-status' });
+
             return data;
         }
-
-        function setFormData(data) {
+        
+        function loadFormData(data) {
             if (!data) return;
             resetForm();
             for (const key in data) {
-                if(typeof data[key] === 'object' && data[key] !== null) continue; 
-                const element = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
-                if (element) {
-                    if (element.type === 'checkbox') { element.checked = data[key]; } 
-                    else if (element.type === 'radio') {
-                        const radioToSelect = document.querySelector(`[name="${key}"][value="${data[key]}"]`);
-                        if(radioToSelect) radioToSelect.checked = true;
+                const el = document.getElementById(key);
+                if (el) {
+                    if (el.type === 'checkbox' || el.type === 'radio') {
+                        el.checked = data[key];
+                    } else {
+                        el.value = data[key];
                     }
-                    else { element.value = data[key]; }
                 }
             }
 
-            if(data.allergies) data.allergies.forEach(createAllergyInput);
-            if(data.centralLines) data.centralLines.forEach(createCentralLineInput);
-            
-            document.querySelectorAll('select, input').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+            // Restore dynamic elements
+            if (data.allergies) { data.allergies.forEach(a => { createAllergyInput(); const lastRow = allergiesContainer.lastChild.querySelector('.allergy-row'); lastRow.querySelector('.allergen-name').value = a.name; lastRow.querySelector('.allergen-reaction').value = a.reaction; }); }
+            if (data.centralLines) { data.centralLines.forEach(d => { createCentralLineInput(); const lastRow = centralLinesContainer.lastChild.querySelector('.device-row'); for(const k in d) lastRow.querySelector(`.cvad-${k}`).value = d[k]; }); }
+            if (data.pivcs) { data.pivcs.forEach(d => { createPivcInput(); const lastRow = pivcsContainer.lastChild.querySelector('.device-row'); for(const k in d) lastRow.querySelector(`.pivc-${k}`).value = d[k]; }); }
+            if (data.ngTubes) { data.ngTubes.forEach(d => { createNgTubeInput(); const lastRow = ngTubesContainer.lastChild.querySelector('.device-row'); for(const k in d) lastRow.querySelector(`.ng-${k}`).value = d[k]; }); }
+            if (data.drains) { data.drains.forEach(d => { createDrainInput(); const lastRow = drainsContainer.lastChild.querySelector('.device-row'); for(const k in d) lastRow.querySelector(`.drain-${k}`).value = d[k]; }); }
+            if (data.wounds) { data.wounds.forEach(d => { createWoundInput(); const lastRow = woundsContainer.lastChild.querySelector('.device-row'); for(const k in d) lastRow.querySelector(`.wound-${k}`).value = d[k]; }); }
+
+            // Trigger change events to update UI
+            assessmentForm.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+            assessmentForm.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('input', { bubbles: true })));
+        }
+
+        function saveState() {
+            const dataToSave = {
+                patients: patients,
+                activePatientId: activePatientId
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+        }
+
+        function loadAllData() {
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                patients = parsedData.patients || {};
+                activePatientId = parsedData.activePatientId;
+            }
+            if (Object.keys(patients).length === 0) {
+                addPatient(false); // don't save state yet
+            } else {
+                if (!activePatientId || !patients[activePatientId]) {
+                    activePatientId = Object.keys(patients)[0];
+                }
+                renderTabs();
+                switchPatient(activePatientId);
+            }
         }
         
         function saveActivePatientData() {
             if (!activePatientId) return;
-            patients[activePatientId] = getFormData();
-            saveAllData();
-        }
-
-        function saveAllData() {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(patients));
+            const patientData = getFormData();
+            const patientName = patientData.patientInitials || `Patient ${Object.keys(patients).length}`;
+            patients[activePatientId] = {
+                id: activePatientId,
+                name: patientName,
+                score: totalScoreEl.textContent,
+                category: riskCategoryEl.textContent,
+                data: patientData
+            };
+            saveState();
             renderTabs();
         }
 
-        function loadAllData() {
-            const data = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (data) {
-                patients = JSON.parse(data);
-                const patientIds = Object.keys(patients);
-                if (patientIds.length > 0) activePatientId = patientIds[0];
-            }
-            if (!activePatientId) addPatient();
-            else setFormData(patients[activePatientId]);
-        }
-
-        function addPatient() {
-            if(activePatientId) saveActivePatientData();
+        function addPatient(doSave = true) {
             const newId = `patient_${Date.now()}`;
+            const newPatientName = `Patient ${Object.keys(patients).length + 1}`;
+            patients[newId] = {
+                id: newId,
+                name: newPatientName,
+                score: 0,
+                category: 'Category 2: Standard follow-up',
+                data: {}
+            };
             activePatientId = newId;
-            resetForm(); 
-            const patientCount = Object.keys(patients).length + 1;
-            document.getElementById('patientInitials').value = `Patient ${patientCount}`;
-            patients[newId] = getFormData();
-            saveAllData();
-        }
-        
-        function switchPatient(newId) {
-            if (activePatientId === newId) return;
-            saveActivePatientData();
-            activePatientId = newId;
-            setFormData(patients[newId]);
+            if(doSave) saveState();
+            renderTabs();
+            switchPatient(newId);
         }
 
         function deletePatient(idToDelete) {
-            const patientIdentifier = patients[idToDelete]?.patientInitials || `this patient`;
-            if (!confirm(`Are you sure you want to delete ${patientIdentifier}? This cannot be undone.`)) return;
-            
-            delete patients[idToDelete];
-            
-            if (activePatientId === idToDelete) {
-                const remainingIds = Object.keys(patients);
-                activePatientId = remainingIds.length > 0 ? remainingIds[0] : null;
+            if(Object.keys(patients).length <= 1) {
+                alert("Cannot delete the last patient.");
+                return;
             }
-
-            if (activePatientId) setFormData(patients[activePatientId]);
-            else addPatient();
-            
-            saveAllData();
+            if(confirm(`Are you sure you want to delete patient ${patients[idToDelete].name}?`)) {
+                delete patients[idToDelete];
+                if (activePatientId === idToDelete) {
+                    activePatientId = Object.keys(patients)[0];
+                }
+                saveState();
+                renderTabs();
+                switchPatient(activePatientId);
+            }
         }
-        
+
+        function switchPatient(newId) {
+            if (activePatientId) {
+                saveActivePatientData(); // Save current before switching
+            }
+            activePatientId = newId;
+            const patient = patients[newId];
+            loadFormData(patient.data);
+            renderTabs();
+        }
+
         function renderTabs() {
             patientTabsContainer.innerHTML = '';
-            const patientIds = Object.keys(patients);
-            if (patientIds.length === 0) return;
-
-            patientIds.forEach(id => {
+            Object.values(patients).forEach(patient => {
                 const tab = document.createElement('div');
                 tab.className = 'patient-tab';
-                tab.dataset.id = id;
-                const patientName = patients[id]?.patientInitials || `Patient ${id.slice(-4)}`;
-                
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = patientName;
-                tab.appendChild(nameSpan);
-
-                if (id === activePatientId) {
+                if (patient.id === activePatientId) {
                     tab.classList.add('active');
-                    const deleteBtn = document.createElement('span');
-                    deleteBtn.className = 'delete-patient-btn';
-                    deleteBtn.innerHTML = '&times;';
-                    deleteBtn.title = 'Delete Patient';
-                    deleteBtn.onclick = (e) => { e.stopPropagation(); deletePatient(id); };
-                    tab.appendChild(deleteBtn);
                 }
+                tab.textContent = `${patient.name || 'New Patient'} (Score: ${patient.score || 0})`;
+                tab.dataset.id = patient.id;
+
+                const deleteBtn = document.createElement('span');
+                deleteBtn.textContent = 'x';
+                deleteBtn.className = 'delete-patient-btn';
+                deleteBtn.title = `Delete ${patient.name}`;
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deletePatient(patient.id);
+                };
                 
-                tab.onclick = () => switchPatient(id);
+                tab.appendChild(deleteBtn);
+                tab.onclick = () => switchPatient(patient.id);
                 patientTabsContainer.appendChild(tab);
             });
         }
         
-        // --- List Generation Functions ---
+        // --- LIST GENERATION ---
         function generateDigitalList() {
-            let content = `<h1>ALERT Ward List - ${new Date().toLocaleDateString('en-AU')}</h1>`;
-            Object.values(patients).forEach(p => {
-                const score = p.totalScore || 'N/A';
-                const impression = generateImpression(p) || 'Calculation needed.';
-                const consciousnessEl = document.querySelector(`#consciousness_input option[value="${p.consciousness_input || '0'}"]`);
-                const consciousnessText = consciousnessEl ? consciousnessEl.textContent : 'Alert';
+            let listHtml = '<h1>ALERT Liaison Nurse Ward List</h1>';
+            listHtml += `<p>Generated: ${new Date().toLocaleString()}</p><hr>`;
 
-                content += `<div style="border-bottom: 1px solid #ccc; padding-bottom: 1rem; margin-bottom: 1rem;">
-                    <h3>${p.patientInitials || 'N/A'} - ${p.wardAndRoom || 'N/A'} (URN: ${p.urnLast4 || 'N/A'})</h3>
-                    <p><strong>Risk Score:</strong> ${score} | <strong>GoC:</strong> ${p.goc || 'N/A'}</p>
-                    <p><strong>A-E:</strong> RR:${p.rr_input || '-'} SpO2:${p.spo2_input || '-'}% O2:${p.o2_flow_input || 'RA'} HR:${p.hr_input || '-'} SBP:${p.sbp_input || '-'} Consc:${consciousnessText}</p>
-                    <p><strong>Key Issues:</strong> ${impression}</p>
-                </div>`;
+            const sortedPatients = Object.values(patients).sort((a,b) => b.score - a.score);
+
+            sortedPatients.forEach(p => {
+                const data = p.data;
+                listHtml += `
+                    <div style="border-left: 5px solid ${p.score >= 15 ? '#F97316' : p.score >= 10 ? '#F6E05E' : '#4FD1C5'}; padding-left: 10px; margin-bottom: 20px;">
+                        <h3>${data.patientInitials || p.name} (${data.urnLast4 || 'N/A'}) - ${data.wardAndRoom || 'N/A'}</h3>
+                        <p><strong>Risk Score: ${p.score}</strong> (${p.category})</p>
+                        <p><strong>ICU LOS:</strong> ${data.losDays || 'N/A'} days. <strong>GOC:</strong> ${data.goc || 'N/A'}</p>
+                        <p><strong>Key Issues:</strong></p>
+                        <ul>
+                `;
+                const issues = [];
+                const pData = p.data;
+                // A simplified loop to find key issues for the list
+                for (const key in assessmentNarrativeMap) {
+                    const elId = key.endsWith('_checkbox') || key.endsWith('_radio') ? key : `${key}_checkbox`;
+                     if (pData[elId] || (pData[`${key}_radio`] && pData[`${key}_radio`])) {
+                         issues.push(assessmentNarrativeMap[key]);
+                     }
+                }
+                if (issues.length > 0) {
+                     issues.forEach(issue => listHtml += `<li>${issue.charAt(0).toUpperCase() + issue.slice(1)}</li>`);
+                } else {
+                    listHtml += `<li>No major risk factors identified.</li>`;
+                }
+
+                listHtml += `</ul></div>`;
             });
-            digitalListContent.innerHTML = content;
+            digitalListContent.innerHTML = listHtml;
             digitalListModal.classList.remove('hidden');
             digitalListModal.classList.add('flex');
         }
-
+        
         function generatePrintList() {
-             let content = `<style>
-                body { font-family: sans-serif; font-size: 10pt; }
-                .print-patient-card { page-break-inside: avoid; border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-                h2, h3 { margin: 0 0 8px 0; }
-                table { border-collapse: collapse; width: 100%; }
-                td, th { border: 1px solid #ddd; padding: 4px; text-align: left;}
-                .notes { border: 1px solid #ccc; height: 100px; margin-top: 8px; padding: 4px; }
-            </style>
-            <h2>ALERT Ward Handover - ${new Date().toLocaleDateString('en-AU')}</h2>`;
+            // Very similar to digital list but styled for printing
+            let printHtml = `
+                <style>
+                    body { font-family: sans-serif; }
+                    h1, h2, h3 { color: #333; }
+                    .patient-entry { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; border-radius: 5px; page-break-inside: avoid; }
+                    .patient-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
+                    .patient-name { font-size: 1.2em; font-weight: bold;}
+                    .patient-score { font-size: 1.1em; font-weight: bold; }
+                    ul { margin-top: 5px; padding-left: 20px;}
+                </style>
+                <h1>ALERT Liaison Nurse Ward List</h1>
+                <h2>Generated: ${new Date().toLocaleString()}</h2><hr>
+            `;
+            const sortedPatients = Object.values(patients).sort((a,b) => b.score - a.score);
 
-             Object.values(patients).forEach(p => {
-                 const score = p.totalScore || 'N/A';
-                 const allergiesText = p.nkdaCheckbox ? 'NKDA' : (p.allergies?.map(a => `${a.drug || ''}: ${a.reaction || ''}`).join(', ') || 'N/A');
-                 content += `<div class="print-patient-card">
-                    <h3>${p.patientInitials || 'N/A'} - ${p.wardAndRoom || 'N/A'} (URN: ${p.urnLast4 || 'N/A'}) - Score: ${score}</h3>
-                    <table>
-                        <tr><th>ICU LOS</th><td>${p.losDays || ''} days</td><th>GoC</th><td>${p.goc || 'N/A'}</td></tr>
-                        <tr><th>Allergies</th><td colspan="3">${allergiesText}</td></tr>
-                        <tr><th>Reason for Admission</th><td colspan="3">${p.admissionReason || ''}</td></tr>
-                    </table>
-                    <h3>Key Assessment</h3>
-                    <table>
-                        <tr><th>RR</th><td>${p.rr_input || ''}</td><th>SpO2</th><td>${p.spo2_input || ''}% on ${p.o2_flow_input || 'RA'}</td></tr>
-                        <tr><th>HR</th><td>${p.hr_input || ''}</td><th>SBP</th><td>${p.sbp_input || ''}</td></tr>
-                    </table>
-                     <h3>Bedside Assessment Notes:</h3>
-                     <div class="notes"></div>
-                     <h3>Plan for Shift:</h3>
-                     <div class="notes"></div>
-                 </div>`;
-             });
-             printoutContainer.innerHTML = content;
-             window.print();
+            sortedPatients.forEach(p => {
+                const data = p.data;
+                const issues = [];
+                for (const key in assessmentNarrativeMap) {
+                    const elId = key.endsWith('_checkbox') || key.endsWith('_radio') ? key : `${key}_checkbox`;
+                    if (data[elId] || (data[`${key}_radio`] && data[`${key}_radio`])) {
+                        issues.push(assessmentNarrativeMap[key]);
+                    }
+                }
+                
+                printHtml += `
+                    <div class="patient-entry">
+                        <div class="patient-header">
+                            <span class="patient-name">${data.patientInitials || p.name} (${data.wardAndRoom || 'N/A'})</span>
+                            <span class="patient-score">Score: ${p.score}</span>
+                        </div>
+                        <p><strong>ICU LOS:</strong> ${data.losDays || 'N/A'} days | <strong>GOC:</strong> ${data.goc || 'N/A'}</p>
+                        <strong>Key Issues:</strong>
+                        <ul>
+                           ${issues.length > 0 ? issues.map(i => `<li>${i.charAt(0).toUpperCase() + i.slice(1)}</li>`).join('') : '<li>No major risk factors identified.</li>'}
+                        </ul>
+                    </div>
+                `;
+            });
+
+            printoutContainer.innerHTML = printHtml;
+            window.print();
         }
 
-        // --- Event Listeners ---
-        resetButton.addEventListener('click', () => { if(confirm('Are you sure you want to reset the form for this patient?')) { resetForm(); saveActivePatientData(); } });
-        generateSummaryButton.addEventListener('click', generateSummary);
-        copySummaryButton.addEventListener('click', copySummary);
-        bloodInputs.forEach(input => input.addEventListener('input', handleBloodInputs));
-        scoreInputs.forEach(input => input.addEventListener('change', (e) => {
-            const target = e.target;
-            const parentLabel = target.closest('label');
-            if (target.type === 'radio') {
-                document.querySelectorAll(`input[name="${target.name}"]`).forEach(radio => radio.closest('label').classList.remove('risk-item-selected-critical'));
-            }
-            if (target.dataset.isCritical === 'true') {
-                parentLabel.classList.toggle('risk-item-selected-critical', target.checked);
-            }
-            calculateScore();
-        }));
-        nursingConcernRadios.forEach(radio => radio.addEventListener('change', () => { nursingConcernText.style.display = document.querySelector('input[name="concern_score"]:checked').value === "5" ? 'block' : 'none'; if (document.querySelector('input[name="concern_score"]:checked').value !== "5") nursingConcernText.value = ''; }));
-        addsModCheckbox.addEventListener('change', () => { addsModDetails.classList.toggle('hidden', !addsModCheckbox.checked); calculateADDS(); });
-        picsRadios.forEach(radio => radio.addEventListener('change', (e) => { picsUnableDetails.classList.toggle('hidden', e.target.value !== 'unable'); }));
-        modParamCheckboxes.forEach(cb => { cb.addEventListener('change', (e) => { e.target.closest('.space-y-1').querySelector('.mod-details').classList.toggle('hidden', !e.target.checked); calculateADDS(); }); });
-        modOperators.forEach(op => op.addEventListener('change', (e) => {
-            const param = e.target.dataset.param;
-            const val1Input = document.getElementById(`mod_${param}_val1`);
-            const val2Container = document.getElementById(`mod_${param}_val2_container`);
-            val2Container.style.display = e.target.value === 'between' ? 'inline' : 'none';
-            val1Input.placeholder = e.target.value === 'between' ? 'Min' : 'Value';
-            calculateADDS();
-        }));
-        vitalInputs.forEach(i=>i.addEventListener('input', calculateADDS));
-        document.getElementById('losDays').addEventListener('input', () => { const days = parseFloat(safeGet('losDays')); document.getElementById('losCheckbox').checked = days > 3; calculateScore(); });
-        document.querySelectorAll('.fluid-input').forEach(i=>i.addEventListener('input', handleFluidBalance));
-        timeInputs.forEach(input => input.addEventListener('input', handleAfterHoursLogic));
-        reviewTypeSelect.addEventListener('change', (e) => { postStepdownFields.classList.toggle('hidden', e.target.value === 'pre'); handleAfterHoursLogic(); calculateScore(); });
-        gocSelect.addEventListener('change', () => {
-            const showSpecifics = ['B', 'C'].includes(gocSelect.value);
-            gocSpecificsContainer.classList.toggle('hidden', !showSpecifics);
-            if (!showSpecifics) document.getElementById('gocSpecifics').value = '';
-        });
-        addAllergyButton.addEventListener('click', () => createAllergyInput());
-        allergiesSection.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) e.target.closest('.allergy-row').remove(); });
-        nkdaCheckbox.addEventListener('change', () => {
-            const isChecked = nkdaCheckbox.checked;
-            if(isChecked) allergiesContainer.innerHTML = '';
-            allergiesContainer.style.display = isChecked ? 'none' : 'block';
-            addAllergyButton.style.display = isChecked ? 'none' : 'block';
-        });
-        precautionCheckboxes.forEach(cb => {
-            cb.addEventListener('change', () => {
-                const anyChecked = [...precautionCheckboxes].some(c => c.checked);
-                infectionControlDetails.classList.toggle('hidden', !anyChecked);
-                if(!anyChecked) document.getElementById('infectionControlReason').value = '';
+        function initializeApp() {
+            // Setup all event listeners
+            resetButton.addEventListener('click', () => { if(confirm('Are you sure you want to reset the form for this patient?')) { resetForm(); saveActivePatientData(); } });
+            generateSummaryButton.addEventListener('click', generateSummary);
+            copySummaryButton.addEventListener('click', copySummary);
+            bloodInputs.forEach(input => input.addEventListener('input', handleBloodInputs));
+            scoreInputs.forEach(input => input.addEventListener('change', (e) => {
+                const target = e.target;
+                const parentLabel = target.closest('label');
+                if (!parentLabel) return;
+                
+                if (target.type === 'radio') {
+                    document.querySelectorAll(`input[name="${target.name}"]`).forEach(radio => radio.closest('label')?.classList.remove('risk-item-selected-critical'));
+                }
+                if (target.dataset.isCritical === 'true') {
+                    parentLabel.classList.toggle('risk-item-selected-critical', target.checked);
+                }
+                calculateScore();
+            }));
+            nursingConcernRadios.forEach(radio => radio.addEventListener('change', () => { nursingConcernText.style.display = document.querySelector('input[name="concern_score"]:checked').value === "5" ? 'block' : 'none'; if (document.querySelector('input[name="concern_score"]:checked').value !== "5") nursingConcernText.value = ''; }));
+            addsModCheckbox.addEventListener('change', () => { addsModDetails.classList.toggle('hidden', !addsModCheckbox.checked); calculateADDS(); });
+            picsRadios.forEach(radio => radio.addEventListener('change', (e) => { picsUnableDetails.classList.toggle('hidden', e.target.value !== 'unable'); }));
+            modParamCheckboxes.forEach(cb => { cb.addEventListener('change', (e) => { e.target.closest('.space-y-1').querySelector('.mod-details').classList.toggle('hidden', !e.target.checked); calculateADDS(); }); });
+            modOperators.forEach(op => op.addEventListener('change', (e) => {
+                const param = e.target.dataset.param;
+                const val1Input = document.getElementById(`mod_${param}_val1`);
+                const val2Container = document.getElementById(`mod_${param}_val2_container`);
+                if(val2Container) val2Container.style.display = e.target.value === 'between' ? 'inline' : 'none';
+                if(val1Input) val1Input.placeholder = e.target.value === 'between' ? 'Min' : 'Value';
+                calculateADDS();
+            }));
+            vitalInputs.forEach(i=>i.addEventListener('input', calculateADDS));
+            document.getElementById('losDays').addEventListener('input', () => { const days = parseFloat(safeGet('losDays')); document.getElementById('losCheckbox').checked = days > 3; calculateScore(); });
+            document.querySelectorAll('.fluid-input').forEach(i=>i.addEventListener('input', handleFluidBalance));
+            timeInputs.forEach(input => input.addEventListener('input', handleAfterHoursLogic));
+            reviewTypeSelect.addEventListener('change', (e) => { postStepdownFields.classList.toggle('hidden', e.target.value === 'pre'); handleAfterHoursLogic(); calculateScore(); });
+            gocSelect.addEventListener('change', () => {
+                const showSpecifics = ['B', 'C'].includes(gocSelect.value);
+                gocSpecificsContainer.classList.toggle('hidden', !showSpecifics);
+                if (!showSpecifics) document.getElementById('gocSpecifics').value = '';
             });
-        });
-        addCentralLineButton.addEventListener('click', () => createCentralLineInput());
-        //addPivcButton.addEventListener('click', createPivcInput);
-        //addNgTubeButton.addEventListener('click', createNgTubeInput);
-        //addDrainButton.addEventListener('click', createDrainInput);
-        //addWoundButton.addEventListener('click', createWoundButton);
-        [centralLinesContainer, pivcsContainer, ngTubesContainer, drainsContainer, woundsContainer].forEach(c => {
-            c.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) e.target.closest('.device-row').remove(); });
-        });
-        pacingWiresPresentCheckbox.addEventListener('change', () => { pacingWiresDetailsDiv.classList.toggle('hidden', !pacingWiresPresentCheckbox.checked); });
-        pacingStatusSelect.addEventListener('change', () => { pacingSettingsDiv.classList.toggle('hidden', pacingStatusSelect.value === 'capped'); });
+            addAllergyButton.addEventListener('click', () => createAllergyInput());
+            allergiesSection.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) e.target.closest('.allergy-row').remove(); });
+            nkdaCheckbox.addEventListener('change', () => {
+                const isChecked = nkdaCheckbox.checked;
+                if(isChecked) allergiesContainer.innerHTML = '';
+                allergiesContainer.style.display = isChecked ? 'none' : 'block';
+                addAllergyButton.style.display = isChecked ? 'none' : 'block';
+            });
+            precautionCheckboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const anyChecked = [...precautionCheckboxes].some(c => c.checked);
+                    infectionControlDetails.classList.toggle('hidden', !anyChecked);
+                    if(!anyChecked) document.getElementById('infectionControlReason').value = '';
+                });
+            });
+            
+            addCentralLineButton.addEventListener('click', () => createCentralLineInput());
+            addPivcButton.addEventListener('click', () => createPivcInput());
+            addNgTubeButton.addEventListener('click', () => createNgTubeInput());
+            addDrainButton.addEventListener('click', () => createDrainInput());
+            addWoundButton.addEventListener('click', () => createWoundInput());
 
-        homeTeamPlanCheckbox.addEventListener('change', () => {
-            homeTeamPlanDetails.classList.toggle('hidden', !homeTeamPlanCheckbox.checked);
-            if(!homeTeamPlanCheckbox.checked) {
-                document.getElementById('homeTeamPlanText').value = '';
-            }
-        });
-        
-        // Patient Management Listeners
-        addPatientBtn.addEventListener('click', addPatient);
-        clearDataBtn.addEventListener('click', () => {
-            if(confirm('ARE YOU SURE you want to delete ALL patient data from this browser? This is permanent.')) {
-                 if(confirm('Second confirmation: This will delete everything.')) {
-                    localStorage.removeItem(LOCAL_STORAGE_KEY);
-                    patients = {}; 
-                    activePatientId = null; 
-                    addPatient();
-                 }
-            }
-        });
-        printListBtn.addEventListener('click', generatePrintList);
-        digitalListBtn.addEventListener('click', generateDigitalList);
-        closeDigitalListModalBtn.addEventListener('click', () => digitalListModal.classList.add('hidden'));
-        copyDigitalListBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(digitalListContent.innerText).then(() => {
-                copyDigitalListBtn.textContent = 'Copied!';
-                setTimeout(() => { copyDigitalListBtn.textContent = 'Copy to Clipboard'; }, 2000);
-            }, () => alert('Failed to copy.'));
-        });
+            [centralLinesContainer, pivcsContainer, ngTubesContainer, drainsContainer, woundsContainer].forEach(c => {
+                c.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) e.target.closest('.device-row, .allergy-row').remove(); });
+            });
+            pacingWiresPresentCheckbox.addEventListener('change', () => { pacingWiresDetailsDiv.classList.toggle('hidden', !pacingWiresPresentCheckbox.checked); });
+            pacingStatusSelect.addEventListener('change', () => { pacingSettingsDiv.classList.toggle('hidden', pacingStatusSelect.value === 'capped'); });
 
-        // Debounce autosave
-        let saveTimeout;
-        assessmentForm.addEventListener('input', () => { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveActivePatientData, 500); });
-        
-        // --- Initialise Application ---
-        loadAllData();
+            homeTeamPlanCheckbox.addEventListener('change', () => {
+                homeTeamPlanDetails.classList.toggle('hidden', !homeTeamPlanCheckbox.checked);
+                if(!homeTeamPlanCheckbox.checked) {
+                    document.getElementById('homeTeamPlanText').value = '';
+                }
+            });
+            
+            // Patient Management Listeners
+            addPatientBtn.addEventListener('click', () => addPatient());
+            clearDataBtn.addEventListener('click', () => {
+                if(confirm('ARE YOU SURE you want to delete ALL patient data from this browser? This is permanent.')) {
+                     if(confirm('Second confirmation: This will delete everything.')) {
+                         localStorage.removeItem(LOCAL_STORAGE_KEY);
+                         patients = {}; 
+                         activePatientId = null; 
+                         addPatient();
+                     }
+                }
+            });
+            printListBtn.addEventListener('click', generatePrintList);
+            digitalListBtn.addEventListener('click', generateDigitalList);
+            closeDigitalListModalBtn.addEventListener('click', () => {
+                digitalListModal.classList.add('hidden');
+                digitalListModal.classList.remove('flex');
+            });
+            copyDigitalListBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(digitalListContent.innerText).then(() => {
+                    copyDigitalListBtn.textContent = 'Copied!';
+                    setTimeout(() => { copyDigitalListBtn.textContent = 'Copy to Clipboard'; }, 2000);
+                }, () => alert('Failed to copy.'));
+            });
+
+            // Debounce autosave
+            let saveTimeout;
+            assessmentForm.addEventListener('input', () => { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveActivePatientData, 500); });
+            assessmentForm.addEventListener('change', () => { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveActivePatientData, 500); }); // also save on change for checkboxes/radios
+            
+            // --- Initialise Application ---
+            loadAllData();
+        }
+
+        initializeApp();
     });
     </script>
 </body>
 </html>
-
