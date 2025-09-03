@@ -161,29 +161,29 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
-                <h2 class="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">Part 1: Initial Risk Score</h2>
-
+                
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Patient Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                        <div>
-                            <label for="patientInitials" class="block font-medium text-gray-700">Patient Initials:</label>
-                            <input type="text" id="patientInitials" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                        </div>
-                        <div>
-                            <label for="urnLast4" class="block font-medium text-gray-700">Last 4 Digits of URN:</label>
-                            <input type="text" id="urnLast4" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                        </div>
-                        <div>
-                            <label for="wardAndRoom" class="block font-medium text-gray-700">Ward & Room No.:</label>
-                            <input type="text" id="wardAndRoom" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                        </div>
                         <div>
                             <label for="reviewType" class="block font-medium text-gray-700">Type of Review:</label>
                             <select id="reviewType" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
                                 <option value="post">Post-ICU stepdown review on ward</option>
                                 <option value="pre">Pre-ICU stepdown review</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-1"></div>
+                        <div>
+                            <label for="patientInitials" class="block font-medium text-gray-700">Patient Initials:</label>
+                            <input type="text" id="patientInitials" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                        </div>
+                        <div>
+                            <label for="wardAndRoom" class="block font-medium text-gray-700">Ward & Room No.:</label>
+                            <input type="text" id="wardAndRoom" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                        </div>
+                        <div>
+                            <label for="urnLast4" class="block font-medium text-gray-700">Last 4 Digits of URN:</label>
+                            <input type="text" id="urnLast4" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
                         </div>
                         <div id="postStepdownFields" class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                             <div>
@@ -201,31 +201,42 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                    <h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                        <div><label class="block text-sm font-medium text-gray-700" id="lactate_label">Lactate</label><div class="flex gap-x-2"><input type="number" step="0.1" id="lactate_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="lactate_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
-                        <div><label class="block text-sm font-medium text-gray-700" id="hb_label">Hb</label><div class="flex gap-x-2"><input type="number" id="hb_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="hb_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
+                    <div class="mt-6 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700" id="k_label">K+</label>
-                            <div class="flex gap-x-2"><input type="number" step="0.1" id="k_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div>
-                            <label class="flex items-center mt-2 text-xs"><input type="checkbox" id="k_replaced_checkbox" class="h-3 w-3 mr-1 blood-input"> Replaced since sample</label>
+                             <label for="goc" class="block text-sm font-medium text-gray-700">Goals of Care:</label>
+                             <select id="goc" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                 <option value="">Not Documented</option>
+                                 <option value="A">A</option>
+                                 <option value="B">B</option>
+                                 <option value="C">C</option>
+                             </select>
+                             <div id="gocSpecificsContainer" class="hidden mt-2">
+                                 <label for="gocSpecifics" class="block text-sm font-medium text-gray-700">Specifics:</label>
+                                 <input type="text" id="gocSpecifics" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700" id="mg_label">Mg++</label>
-                            <div class="flex gap-x-2"><input type="number" step="0.1" id="mg_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div>
-                            <label class="flex items-center mt-2 text-xs"><input type="checkbox" id="mg_replaced_checkbox" class="h-3 w-3 mr-1 blood-input"> Replaced since sample</label>
+                        <div id="allergies-section">
+                             <label class="block text-sm font-medium text-gray-700">Allergies:</label>
+                             <div class="mt-2 space-y-2">
+                                 <div class="flex items-center">
+                                     <input type="checkbox" id="nkdaCheckbox" class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                                     <label for="nkdaCheckbox" class="ml-2 block text-sm text-gray-900">No Known Drug Allergies (NKDA)</label>
+                                 </div>
+                                 <div id="allergies_container" class="space-y-2"></div>
+                                 <button type="button" id="addAllergyButton" class="mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add Allergy</button>
+                             </div>
                         </div>
-                        <div><label class="block text-sm font-medium text-gray-700" id="creatinine_label">Creatinine</label><div class="flex gap-x-2"><input type="number" id="creatinine_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="creatinine_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
-                        <div><label class="block text-sm font-medium text-gray-700" id="crp_label">CRP</label><div class="flex gap-x-2"><input type="number" id="crp_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="crp_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
-                        <div><label class="block text-sm font-medium text-gray-700" id="albumin_label">Albumin</label><div class="flex gap-x-2"><input type="number" id="albumin_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="albumin_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
-                        <div class="sm:col-span-2 mt-2 pt-2 border-t">
-                            <label class="flex items-center">
-                                <input type="checkbox" id="cts_cardiac_checkbox" class="blood-input">
-                                <span class="ml-2 text-sm font-medium text-gray-700">CTS/Cardiac Patient (apply stricter K+/Mg++ targets)</span>
-                            </label>
+                        <div class="md:col-span-2">
+                             <label class="block text-sm font-medium text-gray-700">Infection Control Precautions:</label>
+                             <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Contact" value="Contact"> <span class="ml-2">Contact</span></label>
+                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Droplet" value="Droplet"> <span class="ml-2">Droplet</span></label>
+                                 <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Airborne" value="Airborne"> <span class="ml-2">Airborne</span></label>
+                             </div>
+                             <div id="infectionControlDetails" class="hidden mt-2">
+                                 <label for="infectionControlReason" class="block text-sm font-medium text-gray-700">Reason:</label>
+                                 <input type="text" id="infectionControlReason" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -260,181 +271,201 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
-                <h2 class="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">Part 2: Detailed Assessment for DMR Note</h2>
-                
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Detailed Clinical Parameters</h3>
-                    <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h4 class="font-semibold text-gray-700 mb-4">ADDS</h4>
-                        <div class="space-y-4">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Airway</label>
-                                <div class="sm:col-span-2">
-                                    <select id="airway_input" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                        <option>Patent</option>
-                                        <option>At Risk</option>
-                                        <option>Tracheostomy</option>
-                                        <option>Laryngectomy</option>
-                                    </select>
+            <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Reason for ICU Admission:</h3>
+                    <textarea id="admissionReason" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
+                </div>
+                 <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">ICU Summary / Timeline:</h3>
+                    <textarea id="icuSummary" rows="10" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Past Medical History (PMH):</h3>
+                    <textarea id="pmh" rows="5" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-4">Device, Drain & Wound Assessment</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-medium text-gray-600 mb-2">Central Vascular Access Devices (CVADs)</h4>
+                            <div id="central_lines_container" class="space-y-4"></div>
+                            <button type="button" id="addCentralLineButton" class="mt-2 text-sm bg-rose-100 text-rose-800 hover:bg-rose-200 px-3 py-1 rounded-md">+ Add CVAD</button>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-600 mb-2">Peripheral IV Cannulas (PIVCs)</h4>
+                            <div id="pivcs_container" class="space-y-4"></div>
+                            <button type="button" id="addPivcButton" class="mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add PIVC</button>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-600 mb-2">GI / Enteral Devices</h4>
+                            <div id="ng_tubes_container" class="space-y-4"></div>
+                            <button type="button" id="addNgTubeButton" class="mt-2 text-sm bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 rounded-md">+ Add Enteral Device</button>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-600 mb-2">Epicardial Pacing Wires</h4>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="pacing_wires_present">
+                                <label for="pacing_wires_present" class="ml-2">Pacing Wires Present</label>
+                            </div>
+                            <div id="pacing_wires_details" class="hidden mt-2 ml-6 space-y-2 p-3 bg-gray-100 rounded-md">
+                                <label class="block text-sm font-medium text-gray-700">Status:</label>
+                                <select id="pacing_status" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                    <option value="capped">Capped & Secured</option>
+                                    <option value="backup">Connected (Backup/Sensing)</option>
+                                    <option value="pacing">Actively Pacing</option>
+                                </select>
+                                <div id="pacing_settings" class="hidden grid grid-cols-3 gap-2 pt-2">
+                                    <div><label class="block text-sm font-medium text-gray-700">Mode</label><input type="text" id="pacing_mode" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-gray-700">Rate</label><input type="number" id="pacing_rate" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-gray-700">Output</label><input type="number" id="pacing_output" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
                                 </div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Resp Rate</label>
-                                <div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">SpO2 (%)</label>
-                                <div class="sm:col-span-2"><input type="number" id="spo2_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Oxygen Delivery</label>
-                                <div class="sm:col-span-2 flex items-center space-x-2">
-                                    <input type="number" id="o2_flow_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Value">
-                                    <select id="o2_unit_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="lpm">L/min</option><option value="fio2">% FiO2</option></select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Heart Rate</label>
-                                <div class="sm:col-span-2"><input type="number" id="hr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">SBP (mmHg)</label>
-                                <div class="sm:col-span-2"><input type="number" id="sbp_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">DBP (mmHg)</label>
-                                <div class="sm:col-span-2"><input type="number" id="dbp_input" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Consciousness</label>
-                                <div class="sm:col-span-2"><select id="consciousness_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Temp (°C)</label>
-                                <div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
                             </div>
                         </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                              <div>
+                                <h4 class="font-medium text-gray-600 mb-2">Drains</h4>
+                                <div id="drains_container" class="space-y-4"></div>
+                                <button type="button" id="addDrainButton" class="mt-2 text-sm bg-teal-100 text-teal-800 hover:bg-teal-200 px-3 py-1 rounded-md">+ Add Drain</button>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-600 mb-2">Wounds</h4>
+                                <div id="wounds_container" class="space-y-4"></div>
+                                <button type="button" id="addWoundButton" class="mt-2 text-sm bg-pink-100 text-pink-800 hover:bg-pink-200 px-3 py-1 rounded-md">+ Add Wound</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mt-6 bg-gray-100 p-4 rounded-lg border border-gray-300">
-                             <label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox" class="vital-input"> <span class="ml-2 text-sm font-medium text-gray-800">Apply MODS to ADDS</span></label>
-                             <div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4">
-                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
-                                     <div class="space-y-1">
-                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="RR"> <span class="ml-2 font-medium">Resp Rate</span></label>
-                                         <div class="hidden mod-details space-y-2 pl-5 pt-2">
-                                             <select data-param="rr" class="mod-operator mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
-                                             <div class="flex items-center space-x-2">
-                                                 <input type="number" data-param="rr_val1" placeholder="Value" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                                 <span class="mod-val2-container" style="display:none;"><input type="number" data-param="rr_val2" placeholder="Max" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></span>
-                                             </div>
+            <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6">
+                <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-4">ADDS</h3>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Airway</label>
+                            <div class="sm:col-span-2">
+                                <select id="airway_input" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                    <option>Patent</option>
+                                    <option>At Risk</option>
+                                    <option>Tracheostomy</option>
+                                    <option>Laryngectomy</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Resp Rate</label>
+                            <div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">SpO2 (%)</label>
+                            <div class="sm:col-span-2"><input type="number" id="spo2_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Oxygen Delivery</label>
+                            <div class="sm:col-span-2 flex items-center space-x-2">
+                                <input type="number" id="o2_flow_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Value">
+                                <select id="o2_unit_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="lpm">L/min</option><option value="fio2">% FiO2</option></select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Heart Rate</label>
+                            <div class="sm:col-span-2"><input type="number" id="hr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">SBP (mmHg)</label>
+                            <div class="sm:col-span-2"><input type="number" id="sbp_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">DBP (mmHg)</label>
+                            <div class="sm:col-span-2"><input type="number" id="dbp_input" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Consciousness</label>
+                            <div class="sm:col-span-2"><select id="consciousness_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Temp (°C)</label>
+                            <div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 bg-gray-100 p-4 rounded-lg border border-gray-300">
+                         <label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox" class="vital-input"> <span class="ml-2 text-sm font-medium text-gray-800">Apply MODS to ADDS</span></label>
+                         <div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4">
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+                                 <div class="space-y-1">
+                                     <label class="flex items-center"><input type="checkbox" name="mod_param" value="RR"> <span class="ml-2 font-medium">Resp Rate</span></label>
+                                     <div class="hidden mod-details space-y-2 pl-5 pt-2">
+                                         <select data-param="rr" class="mod-operator mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
+                                         <div class="flex items-center space-x-2">
+                                             <input type="number" data-param="rr_val1" placeholder="Value" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                             <span class="mod-val2-container" style="display:none;"><input type="number" data-param="rr_val2" placeholder="Max" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></span>
                                          </div>
                                      </div>
-                                      <div class="space-y-1">
-                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="HR"> <span class="ml-2 font-medium">Heart Rate</span></label>
-                                         <div class="hidden mod-details space-y-2 pl-5 pt-2">
-                                             <select data-param="hr" class="mod-operator mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
-                                             <div class="flex items-center space-x-2">
-                                                 <input type="number" data-param="hr_val1" placeholder="Value" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                                 <span class="mod-val2-container" style="display:none;"><input type="number" data-param="hr_val2" placeholder="Max" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></span>
-                                             </div>
+                                 </div>
+                                  <div class="space-y-1">
+                                     <label class="flex items-center"><input type="checkbox" name="mod_param" value="HR"> <span class="ml-2 font-medium">Heart Rate</span></label>
+                                     <div class="hidden mod-details space-y-2 pl-5 pt-2">
+                                         <select data-param="hr" class="mod-operator mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
+                                         <div class="flex items-center space-x-2">
+                                             <input type="number" data-param="hr_val1" placeholder="Value" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                             <span class="mod-val2-container" style="display:none;"><input type="number" data-param="hr_val2" placeholder="Max" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></span>
                                          </div>
                                      </div>
-                                     <div class="space-y-1">
-                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="SpO2"> <span class="ml-2 font-medium">SpO2</span></label>
-                                         <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
-                                             <span class="font-semibold">Target &gt;</span>
-                                             <input type="number" data-param="spo2_lower" placeholder="e.g. 88" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                             <span>%</span>
-                                         </div>
+                                 </div>
+                                 <div class="space-y-1">
+                                     <label class="flex items-center"><input type="checkbox" name="mod_param" value="SpO2"> <span class="ml-2 font-medium">SpO2</span></label>
+                                     <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
+                                         <span class="font-semibold">Target &gt;</span>
+                                         <input type="number" data-param="spo2_lower" placeholder="e.g. 88" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                         <span>%</span>
                                      </div>
-                                     <div class="space-y-1">
-                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="SBP"> <span class="ml-2 font-medium">SBP</span></label>
-                                         <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
-                                             <span class="font-semibold">Target &gt;</span>
-                                             <input type="number" data-param="sbp_lower" placeholder="e.g. 90" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                         </div>
+                                 </div>
+                                 <div class="space-y-1">
+                                     <label class="flex items-center"><input type="checkbox" name="mod_param" value="SBP"> <span class="ml-2 font-medium">SBP</span></label>
+                                     <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
+                                         <span class="font-semibold">Target &gt;</span>
+                                         <input type="number" data-param="sbp_lower" placeholder="e.g. 90" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
                                      </div>
-                                     <div class="space-y-1 md:col-span-2">
-                                        <label class="flex items-center"><input type="checkbox" name="mod_param" value="Consciousness"> <span class="ml-2 font-medium">Consciousness</span></label>
-                                        <div class="hidden mod-details space-y-2 pl-5 pt-2">
-                                            <label class="block text-xs font-medium text-gray-600">Consider 'Normal' if at or better than:</label>
-                                            <select data-param="consciousness_baseline" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                                <option value="0">Alert</option>
-                                                <option value="1">Voice</option>
-                                                <option value="2">Pain</option>
-                                            </select>
-                                            <label class="block text-xs font-medium text-gray-600 mt-2">Notes (e.g., GCS target):</label>
-                                            <input type="text" data-param="consciousness_notes" placeholder="e.g. GCS E4V5M6" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                        </div>
+                                 </div>
+                                 <div class="space-y-1 md:col-span-2">
+                                    <label class="flex items-center"><input type="checkbox" name="mod_param" value="Consciousness"> <span class="ml-2 font-medium">Consciousness</span></label>
+                                    <div class="hidden mod-details space-y-2 pl-5 pt-2">
+                                        <label class="block text-xs font-medium text-gray-600">Consider 'Normal' if at or better than:</label>
+                                        <select data-param="consciousness_baseline" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                            <option value="0">Alert</option>
+                                            <option value="1">Voice</option>
+                                            <option value="2">Pain</option>
+                                        </select>
+                                        <label class="block text-xs font-medium text-gray-600 mt-2">Notes (e.g., GCS target):</label>
+                                        <input type="text" data-param="consciousness_notes" placeholder="e.g. GCS E4V5M6" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
                                     </div>
-                                 </div>
-                                 <div class="pt-4">
-                                     <label for="addsModificationText" class="block text-sm font-medium text-gray-700">Modification Rationale:</label>
-                                     <textarea id="addsModificationText" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></textarea>
-                                 </div>
+                                </div>
                              </div>
-                        </div>
-
-                        <div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border border-teal-200">
-                            <span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span>
-                            <div id="calculatedADDSScore" class="font-bold text-5xl text-teal-600 my-2">0</div>
-                            <div id="addsBreakdown" class="text-xs text-gray-600 min-h-[3em]">Normal Parameters</div>
-                        </div>
-                    </div>
-
-                    <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h4 class="font-semibold text-gray-700 mb-2">Fluid Balance</h4>
-                        <div class="flex flex-col space-y-4">
-                            <div><label class="block text-sm font-medium text-gray-700">24hr Fluid Balance (mL)</label><input type="number" id="fbc_24hr_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="500"></div>
-                            <div><label class="block text-sm font-medium text-gray-700">Total ICU Balance (mL)</label><input type="number" id="fbc_total_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="500"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mb-6 space-y-6">
-                         <h3 class="text-lg font-semibold text-gray-700 mb-4">Detailed Patient Information</h3>
-                         <div class="md:col-span-2 space-y-4">
-                              <div>
-                                   <label for="goc" class="block text-sm font-medium text-gray-700">Goals of Care:</label>
-                                   <select id="goc" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                       <option value="">Not Documented</option>
-                                       <option value="A">A</option>
-                                       <option value="B">B</option>
-                                       <option value="C">C</option>
-                                   </select>
-                                   <div id="gocSpecificsContainer" class="hidden mt-2">
-                                       <label for="gocSpecifics" class="block text-sm font-medium text-gray-700">Specifics:</label>
-                                       <input type="text" id="gocSpecifics" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                   </div>
-                              </div>
-                              <div id="allergies-section">
-                                   <label class="block text-sm font-medium text-gray-700">Allergies:</label>
-                                   <div class="mt-2 space-y-2">
-                                       <div class="flex items-center">
-                                           <input type="checkbox" id="nkdaCheckbox" class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                                           <label for="nkdaCheckbox" class="ml-2 block text-sm text-gray-900">No Known Drug Allergies (NKDA)</label>
-                                       </div>
-                                       <div id="allergies_container" class="space-y-2"></div>
-                                       <button type="button" id="addAllergyButton" class="mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add Allergy</button>
-                                   </div>
-                              </div>
-                              <div>
-                                   <label class="block text-sm font-medium text-gray-700">Infection Control Precautions:</label>
-                                   <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-                                       <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Contact" value="Contact"> <span class="ml-2">Contact</span></label>
-                                       <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Droplet" value="Droplet"> <span class="ml-2">Droplet</span></label>
-                                       <label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" id="precaution-Airborne" value="Airborne"> <span class="ml-2">Airborne</span></label>
-                                   </div>
-                                   <div id="infectionControlDetails" class="hidden mt-2">
-                                       <label for="infectionControlReason" class="block text-sm font-medium text-gray-700">Reason:</label>
-                                       <input type="text" id="infectionControlReason" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                   </div>
-                              </div>
+                             <div class="pt-4">
+                                 <label for="addsModificationText" class="block text-sm font-medium text-gray-700">Modification Rationale:</label>
+                                 <textarea id="addsModificationText" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></textarea>
+                             </div>
                          </div>
+                    </div>
+
+                    <div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border border-teal-200">
+                        <span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span>
+                        <div id="calculatedADDSScore" class="font-bold text-5xl text-teal-600 my-2">0</div>
+                        <div id="addsBreakdown" class="text-xs text-gray-600 min-h-[3em]">Normal Parameters</div>
+                    </div>
                 </div>
 
-                <div class="mb-6">
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-2">Fluid Balance</h3>
+                    <div class="flex flex-col space-y-4">
+                        <div><label class="block text-sm font-medium text-gray-700">24hr Fluid Balance (mL)</label><input type="number" id="fbc_24hr_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="500"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">Total ICU Balance (mL)</label><input type="number" id="fbc_total_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="500"></div>
+                    </div>
+                </div>
+
+                <div>
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">Post-ICU Syndrome (PICS)</h3>
                     <div class="p-4 rounded-lg module-bg-f">
                         <div class="space-y-2 p-4">
@@ -450,79 +481,18 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="bg-white rounded-xl shadow-lg mb-6 p-4">
-                <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4 px-2 pt-2">Narrative Details for DMR</h2>
-                <div class="space-y-8 text-sm px-2 pb-2">
-                    <div><label for="admissionReason" class="block font-medium text-gray-600">Reason for ICU Admission:</label><textarea id="admissionReason" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea></div>
-                    <div><label for="pmh" class="block font-medium text-gray-600">Past Medical History (PMH):</label><textarea id="pmh" rows="5" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea></div>
-                    <div><label for="icuSummary" class="block font-medium text-gray-600">ICU Summary / Timeline:</label><textarea id="icuSummary" rows="10" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea></div>
-                    
-                    <div>
-                        <label class="flex items-center font-medium text-gray-600">
-                            <input type="checkbox" id="homeTeamPlanCheckbox" class="mr-2">
-                            Home Team Plan in Place
-                        </label>
-                        <div id="homeTeamPlanDetails" class="hidden mt-2">
-                             <textarea id="homeTeamPlanText" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Enter details of home team plan..."></textarea>
-                        </div>
+                 <div>
+                    <label class="flex items-center font-medium text-gray-600">
+                        <input type="checkbox" id="homeTeamPlanCheckbox" class="mr-2">
+                        Home Team Plan in Place
+                    </label>
+                    <div id="homeTeamPlanDetails" class="hidden mt-2">
+                         <textarea id="homeTeamPlanText" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Enter details of home team plan..."></textarea>
                     </div>
-
-                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h3 class="font-semibold text-gray-700 mb-4">Device, Drain & Wound Assessment</h3>
-                        <div class="space-y-6">
-                            <div>
-                                <h4 class="font-medium text-gray-600 mb-2">Central Vascular Access Devices (CVADs)</h4>
-                                <div id="central_lines_container" class="space-y-4"></div>
-                                <button type="button" id="addCentralLineButton" class="mt-2 text-sm bg-rose-100 text-rose-800 hover:bg-rose-200 px-3 py-1 rounded-md">+ Add CVAD</button>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-gray-600 mb-2">Peripheral IV Cannulas (PIVCs)</h4>
-                                <div id="pivcs_container" class="space-y-4"></div>
-                                <button type="button" id="addPivcButton" class="mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add PIVC</button>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-gray-600 mb-2">GI / Enteral Devices</h4>
-                                <div id="ng_tubes_container" class="space-y-4"></div>
-                                <button type="button" id="addNgTubeButton" class="mt-2 text-sm bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 rounded-md">+ Add Enteral Device</button>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-gray-600 mb-2">Epicardial Pacing Wires</h4>
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="pacing_wires_present">
-                                    <label for="pacing_wires_present" class="ml-2">Pacing Wires Present</label>
-                                </div>
-                                <div id="pacing_wires_details" class="hidden mt-2 ml-6 space-y-2 p-3 bg-gray-100 rounded-md">
-                                    <label class="block text-sm font-medium text-gray-700">Status:</label>
-                                    <select id="pacing_status" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                        <option value="capped">Capped & Secured</option>
-                                        <option value="backup">Connected (Backup/Sensing)</option>
-                                        <option value="pacing">Actively Pacing</option>
-                                    </select>
-                                    <div id="pacing_settings" class="hidden grid grid-cols-3 gap-2 pt-2">
-                                        <div><label class="block text-sm font-medium text-gray-700">Mode</label><input type="text" id="pacing_mode" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
-                                        <div><label class="block text-sm font-medium text-gray-700">Rate</label><input type="number" id="pacing_rate" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
-                                        <div><label class="block text-sm font-medium text-gray-700">Output</label><input type="number" id="pacing_output" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                                  <div>
-                                    <h4 class="font-medium text-gray-600 mb-2">Drains</h4>
-                                    <div id="drains_container" class="space-y-4"></div>
-                                    <button type="button" id="addDrainButton" class="mt-2 text-sm bg-teal-100 text-teal-800 hover:bg-teal-200 px-3 py-1 rounded-md">+ Add Drain</button>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium text-gray-600 mb-2">Wounds</h4>
-                                    <div id="wounds_container" class="space-y-4"></div>
-                                    <button type="button" id="addWoundButton" class="mt-2 text-sm bg-pink-100 text-pink-800 hover:bg-pink-200 px-3 py-1 rounded-md">+ Add Wound</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div><label for="emrAdditionalNotes" class="block font-medium text-gray-600">Additional Plan Notes:</label><textarea id="emrAdditionalNotes" rows="4" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea></div>
+                </div>
+                 <div>
+                    <label for="emrAdditionalNotes" class="block font-medium text-gray-600">Additional Plan Notes:</label>
+                    <textarea id="emrAdditionalNotes" rows="4" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
                 </div>
             </div>
             
@@ -550,7 +520,7 @@
 
     <div id="printoutContainer" class="hidden"></div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm">Version 4.9.0 - MODS & UI Update</div>
+    <div class="text-center mt-8 text-gray-500 text-sm">Version 5.0.0 - Workflow & Print Update</div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -588,7 +558,7 @@
         // --- State Management ---
         let patients = {};
         let activePatientId = null;
-        const LOCAL_STORAGE_KEY = 'alertToolPatientData_v4.9'; 
+        const LOCAL_STORAGE_KEY = 'alertToolPatientData_v5.0'; 
         let currentAddsBreakdown = 'Normal Parameters';
 
         const categoryColorMap = {
@@ -724,13 +694,12 @@
 
             const createModifiedFn = (param, originalFn) => (val) => {
                 const mod = mods[param];
-                if (!mod || isNaN(mod.val1)) return originalFn(val);
+                if (mod === undefined || isNaN(mod.val1)) return originalFn(val);
                 if (mod.op === 'less_than' && val < mod.val1) return { score: 0, isMet: false };
                 if (mod.op === 'greater_than' && val > mod.val1) return { score: 0, isMet: false };
                 if (mod.op === 'between' && !isNaN(mod.val2) && val >= mod.val1 && val <= mod.val2) return { score: 0, isMet: false };
-                if (param === 'spo2' && val >= mod.val1) return { score: 0, isMet: false };
-                if (param === 'sbp' && val >= mod.val1) return { score: 0, isMet: false };
-                if (param === 'consciousness' && val <= mod.val1) return { score: 0, isMet: false }; // <= because lower AVPU value is better
+                if ((param === 'spo2' || param === 'sbp') && val >= mod.val1) return { score: 0, isMet: false };
+                if (param === 'consciousness' && val <= mod.val1) return { score: 0, isMet: false }; 
                 return originalFn(val);
             };
 
@@ -1087,8 +1056,8 @@
             if (data.wounds) { data.wounds.forEach(d => { createWoundInput(); const lastRow = woundsContainer.lastChild; if (lastRow) { lastRow.querySelector('.wound-location').value = d.location; if(d.location === 'Other') { lastRow.querySelector('.wound-location-other').value = d.other; lastRow.querySelector('.wound-location-other').classList.remove('hidden'); } lastRow.querySelector('.wound-status').value = d.status;} }); }
             
             // Explicitly set visibility for dynamic sections
-            nursingConcernText.style.display = safeIsChecked('concern_present') ? 'block' : 'none';
-            picsDetailsContainer.classList.toggle('hidden', safeGet('pics_status') === 'negative');
+            document.querySelectorAll('input[name="concern_score"]').forEach(radio => { if(radio.checked) radio.dispatchEvent(new Event('change')) });
+            document.querySelectorAll('input[name="pics_status"]').forEach(radio => { if(radio.checked) radio.dispatchEvent(new Event('change')) });
 
             assessmentForm.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('input', { bubbles: true })));
             assessmentForm.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
@@ -1189,7 +1158,7 @@
                     deleteBtn.innerHTML = '&times;';
                     deleteBtn.className = 'delete-patient-btn';
                     deleteBtn.title = `Delete ${patient.name}`;
-                    deleteBtn.onclick = (e) => { e.stopPropagation(); deletePatient(patient.id); };
+                    deleteBtn.dataset.id = patient.id;
                     tab.append(scoreBadge, nameSpan, deleteBtn);
                     tab.onclick = () => switchPatient(patient.id);
                     patientTabsContainer.appendChild(tab);
@@ -1229,7 +1198,7 @@
                     <div class="ward-list-section">
                         <h4>Key Concerns</h4>
                         ${keyConcerns.length > 0 ? `<ul>${keyConcerns.map(c => `<li>${c}</li>`).join('')}</ul>` : '<p>None identified.</p>'}
-                        ${d.concern_present && d.nursingConcernText ? `<p><strong>Staff Concern:</strong> ${d.nursingConcernText}</p>` : ''}
+                        ${d['concern_score-5'] && d.nursingConcernText ? `<p><strong>Staff Concern:</strong> ${d.nursingConcernText}</p>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -1287,7 +1256,7 @@
                 'pacing_status': { event: 'change', handler: (e) => { pacingSettingsDiv.classList.toggle('hidden', e.target.value === 'capped'); } },
                 'homeTeamPlanCheckbox': { event: 'change', handler: (e) => { homeTeamPlanDetails.classList.toggle('hidden', !e.target.checked); if(!e.target.checked) document.getElementById('homeTeamPlanText').value = ''; } },
                 'addPatientBtn': { event: 'click', handler: () => addPatient() },
-                'clearDataBtn': { event: 'click', handler: () => { if(confirm('ARE YOU SURE you want to delete ALL patient data?')) { if(confirm('Second confirmation: This will delete everything.')) { localStorage.removeItem(LOCAL_STORAGE_KEY); patients = {}; activePatientId = null; addPatient(false); } } } },
+                'clearDataBtn': { event: 'click', handler: () => { if(confirm('Confirm delete all inputted data from ALERT Nursing Risk Assessment Tool')) { if(confirm('Second confirmation - this will delete all of your inputted data from the ALERT Nursing Risk Assessment Tool, are you sure?')) { localStorage.removeItem(LOCAL_STORAGE_KEY); patients = {}; activePatientId = null; addPatient(false); } } } },
                 'printListBtn': { event: 'click', handler: generatePrintList },
                 'digitalListBtn': { event: 'click', handler: generateDigitalList },
                 'closeDigitalListModalBtn': { event: 'click', handler: () => { digitalListModal.classList.add('hidden'); digitalListModal.classList.remove('flex'); } },
@@ -1299,10 +1268,20 @@
                 const el = document.getElementById(id);
                 if (el) el.addEventListener(eventListeners[id].event, eventListeners[id].handler);
             }
+            
+            patientTabsContainer.addEventListener('click', e => {
+                 if (e.target.classList.contains('delete-patient-btn')) {
+                    e.stopPropagation();
+                    const idToDelete = e.target.dataset.id;
+                    if(confirm(`Are you sure you want to delete patient ${patients[idToDelete]?.name || 'this patient'}?`)){
+                        deletePatient(idToDelete);
+                    }
+                }
+            });
 
             document.querySelectorAll('.blood-input, .vital-input, .fluid-input, .time-input, .mod-value, .mod-operator').forEach(input => input.addEventListener('input', () => { handleBloodInputs(); calculateADDS(); handleFluidBalance(); handleAfterHoursLogic(); }));
             document.querySelectorAll('.score-input').forEach(input => input.addEventListener('change', (e) => { const target = e.target, parentLabel = target.closest('label'); if (!parentLabel) return; if (target.type === 'radio') { document.querySelectorAll(`input[name="${target.name}"]`).forEach(radio => radio.closest('label')?.classList.remove('risk-item-selected-critical')); } if (target.dataset.isCritical === 'true') { parentLabel.classList.toggle('risk-item-selected-critical', target.checked); } calculateScore(); }));
-            document.querySelectorAll('input[name="concern_score"]').forEach(radio => radio.addEventListener('change', (e) => { nursingConcernText.style.display = e.target.value === '5' ? 'block' : 'none'; if(e.target.value !== '5') nursingConcernText.value = ''; }));
+            document.querySelectorAll('input[name="concern_score"]').forEach(radio => radio.addEventListener('change', (e) => { nursingConcernText.style.display = e.target.value === '5' && e.target.checked ? 'block' : 'none'; if(!e.target.checked || e.target.value !== '5') nursingConcernText.value = ''; }));
             document.querySelectorAll('input[name="pics_status"]').forEach(radio => radio.addEventListener('change', (e) => { picsDetailsContainer.classList.toggle('hidden', e.target.value === 'negative'); }));
             document.querySelectorAll('.precaution-cb').forEach(cb => { cb.addEventListener('change', () => { const anyChecked = [...document.querySelectorAll('.precaution-cb')].some(c => c.checked); infectionControlDetails.classList.toggle('hidden', !anyChecked); if(!anyChecked) document.getElementById('infectionControlReason').value = ''; }); });
             document.querySelectorAll('input[name="mod_param"]').forEach(cb => cb.addEventListener('change', e => { e.target.closest('.space-y-1').querySelector('.mod-details').classList.toggle('hidden', !e.target.checked); calculateADDS(); }));
