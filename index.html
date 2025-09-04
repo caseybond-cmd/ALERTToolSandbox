@@ -1282,7 +1282,14 @@
                     <select class="pivc-location mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="">Location...</option><option>R Hand</option><option>L Hand</option><option>R Wrist</option><option>L Wrist</option><option>R Forearm</option><option>L Forearm</option><option>R Antecubital</option><option>L Antecubital</option></select>
                     <div><label class="text-xs text-gray-600">Date Inserted</label><input type="date" title="Insertion Date" class="pivc-date device-date-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
                     <select class="pivc-gauge mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="">Gauge/Colour...</option><option>20G (Pink)</option><option>22G (Blue)</option><option>18G (Green)</option><option>16G (Grey)</option><option>24G (Yellow)</option></select>
-                    <input type="number" min="0" max="5" placeholder="PIVAS (0-5)" class="pivc-pivas mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                    <select class="pivc-pivas mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                        <option value="0">0 - No signs of phlebitis</option>
+                        <option value="1">1 - Possible first sign of phlebitis</option>
+                        <option value="2">2 - Early stage of phlebitis</option>
+                        <option value="3">3 - Medium stage of phlebitis</option>
+                        <option value="4">4 - Advanced stage of phlebitis</option>
+                        <option value="5">5 - Advanced thrombophlebitis</option>
+                    </select>
                 </div>
             </div>
         `);
