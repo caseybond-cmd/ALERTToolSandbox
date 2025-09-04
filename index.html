@@ -1774,6 +1774,61 @@
             return prunedData;
         }
 
+        // HELPER FUNCTION TO SHRINK QR CODE DATA TO ONLY ESSENTIAL FIELDS
+        function getPrunedDataForQRCode() {
+            // This is the final, specific list of fields to include in the QR code.
+            const fieldsToInclude = [
+                // Patient Demographics & History
+                'patientInitials', 'wardAndRoom', 'losDays', 'icuStepdownDate', 
+                'icuStepdownTime', 'allergies', 'nkdaCheckbox', 'goc', 'gocSpecifics',
+                'admissionReason', 'icuSummary', 'pmh',
+
+                // Blood Results
+                'lactate_input', 'lactate_input_prev',
+                'hb_input', 'hb_input_prev',
+                'k_input', 'k_input_prev', 'k_replaced_checkbox', 'k_planned_checkbox',
+                'mg_input', 'mg_input_prev', 'mg_replaced_checkbox', 'mg_planned_checkbox',
+                'creatinine_input', 'creatinine_input_prev',
+                'crp_input', 'crp_input_prev',
+                'albumin_input', 'albumin_input_prev',
+                'cts_cardiac_checkbox'
+            ];
+
+            const prunedData = {
+                patients: {},
+                activePatientId: activePatientId
+            };
+
+            for (const patientId in patients) {
+                const originalPatient = patients[patientId];
+                const prunedPatientData = {};
+
+                // Instead of iterating over all data, we only check for the fields in our whitelist.
+                for (const key of fieldsToInclude) {
+                    if (originalPatient.data.hasOwnProperty(key)) {
+                        const value = originalPatient.data[key];
+
+                        // Check if the value is meaningful before including it
+                        if (Array.isArray(value) && value.length > 0) {
+                            prunedPatientData[key] = value;
+                        } else if (typeof value === 'boolean' && value === true) {
+                            prunedPatientData[key] = true;
+                        } else if (typeof value === 'string' && value.trim() !== '') {
+                            prunedPatientData[key] = value;
+                        } else if (typeof value === 'number') {
+                            prunedPatientData[key] = value;
+                        }
+                    }
+                }
+                
+                prunedData.patients[patientId] = {
+                    ...originalPatient,
+                    data: prunedPatientData
+                };
+            }
+            return prunedData;
+        }
+
         // UPDATED FUNCTION TO USE THE NEW HELPER
         function generateAndShowQrCode() {
             saveActivePatientData(); // Ensure current data is saved before generating
