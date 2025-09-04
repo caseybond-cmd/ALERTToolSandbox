@@ -327,7 +327,7 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6">
+<div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6">
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Patient & Review Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
@@ -405,6 +405,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div>
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">Reason for ICU Admission:</h3>
                     <textarea id="admissionReason" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
@@ -442,6 +443,166 @@
                         </div>
                     </div>
                     <div id="bloods_summary_container" class="mt-4 pt-2 border-t text-sm space-y-1 font-bold text-red-600"></div>
+                </div>
+
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">ALERT Nurse Assessment</h2>
+                    <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-2">ADDS</h3>
+                        <p class="text-xs italic text-gray-500 mb-4">Entering observations here will calculate a new ADDS and update the final score.</p>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Airway</label>
+                                <div class="sm:col-span-2">
+                                    <select id="airway_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                        <option>Patent</option>
+                                        <option>At Risk</option>
+                                        <option>Tracheostomy</option>
+                                        <option>Laryngectomy</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Resp Rate</label>
+                                <div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">SpO2 (%)</label>
+                                <div class="sm:col-span-2"><input type="number" id="spo2_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Oxygen Delivery</label>
+                                <div class="sm:col-span-2 flex items-center space-x-2">
+                                    <input type="number" id="o2_flow_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Value">
+                                    <select id="o2_unit_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="lpm">L/min</option><option value="fio2">% FiO2</option></select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Heart Rate</label>
+                                <div class="sm:col-span-2"><input type="number" id="hr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">SBP (mmHg)</label>
+                                <div class="sm:col-span-2"><input type="number" id="sbp_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">DBP (mmHg)</label>
+                                <div class="sm:col-span-2"><input type="number" id="dbp_input" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Consciousness</label>
+                                <div class="sm:col-span-2"><select id="consciousness_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
+                                <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Temp (°C)</label>
+                                <div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-gray-100 p-4 rounded-lg border border-gray-300">
+                             <label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox" class="vital-input"> <span class="ml-2 text-sm font-medium text-gray-800">Apply MODS to ADDS</span></label>
+                             <div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4">
+                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+                                     <div class="space-y-1">
+                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="RR"> <span class="ml-2 font-medium">Resp Rate</span></label>
+                                         <div class="hidden mod-details space-y-2 pl-5 pt-2">
+                                             <select data-param="rr" class="mod-operator mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
+                                             <div class="flex items-center space-x-2">
+                                                 <input type="number" data-param="rr_val1" placeholder="Value" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                                 <span class="mod-val2-container" style="display:none;"><input type="number" data-param="rr_val2" placeholder="Max" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></span>
+                                             </div>
+                                         </div>
+                                     </div>
+                                      <div class="space-y-1">
+                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="HR"> <span class="ml-2 font-medium">Heart Rate</span></label>
+                                         <div class="hidden mod-details space-y-2 pl-5 pt-2">
+                                             <select data-param="hr" class="mod-operator mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="less_than">Less than</option><option value="greater_than">Greater than</option><option value="between">Between</option></select>
+                                             <div class="flex items-center space-x-2">
+                                                 <input type="number" data-param="hr_val1" placeholder="Value" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                                 <span class="mod-val2-container" style="display:none;"><input type="number" data-param="hr_val2" placeholder="Max" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></span>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div class="space-y-1">
+                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="SpO2"> <span class="ml-2 font-medium">SpO2</span></label>
+                                         <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
+                                             <span class="font-semibold">Target ></span>
+                                             <input type="number" data-param="spo2_lower" placeholder="e.g. 88" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                             <span>%</span>
+                                         </div>
+                                     </div>
+                                      <div class="space-y-1">
+                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="SBP"> <span class="ml-2 font-medium">SBP</span></label>
+                                         <div class="hidden mod-details flex items-center space-x-2 pl-5 pt-2">
+                                             <span class="font-semibold">Target ></span>
+                                             <input type="number" data-param="sbp_lower" placeholder="e.g. 90" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                         </div>
+                                     </div>
+                                     <div class="space-y-1 md:col-span-2">
+                                         <label class="flex items-center"><input type="checkbox" name="mod_param" value="Consciousness"> <span class="ml-2 font-medium">Consciousness</span></label>
+                                         <div class="hidden mod-details space-y-2 pl-5 pt-2">
+                                             <label class="block text-xs font-medium text-gray-600">Consider 'Normal' if at or better than:</label>
+                                             <select data-param="consciousness_baseline" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                                 <option value="0">Alert</option>
+                                                 <option value="1">Voice</option>
+                                                 <option value="2">Pain</option>
+                                                 <option value="3">Unresponsive</option>
+                                             </select>
+                                             <label class="block text-xs font-medium text-gray-600 mt-2">Notes (e.g., GCS target):</label>
+                                             <input type="text" data-param="consciousness_notes" placeholder="e.g. GCS E4V5M6" class="mod-value mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                                         </div>
+                                     </div>
+                                 </div>
+                                  <div class="pt-4">
+                                      <label for="addsModificationText" class="block text-sm font-medium text-gray-700">Modification Rationale:</label>
+                                      <textarea id="addsModificationText" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></textarea>
+                                  </div>
+                             </div>
+                        </div>
+                        <div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border border-teal-200">
+                            <span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span>
+                            <div id="calculatedADDSScore" class="font-bold text-5xl text-teal-600 my-2">0</div>
+                            <div id="addsBreakdown" class="text-xs text-gray-600 min-h-[3em]">Normal Parameters</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-2">Fluid Balance</h3>
+                        <div class="flex flex-col space-y-4">
+                            <div><label class="block text-sm font-medium text-gray-700">24hr Fluid Balance (mL)</label><input type="number" id="fbc_24hr_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="500"></div>
+                            <div><label class="block text-sm font-medium text-gray-700">Total ICU Balance (mL)</label><input type="number" id="fbc_total_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="500"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Post-ICU Syndrome (PICS)</h3>
+                        <div class="p-4 rounded-lg module-bg-f">
+                            <div class="space-y-2 p-4">
+                                <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                                    <label class="flex items-center text-sm"><input type="radio" name="pics_status" value="negative" checked> <span class="ml-2">Negative</span></label>
+                                    <label class="flex items-center text-sm"><input type="radio" name="pics_status" value="positive"> <span class="ml-2">Positive</span></label>
+                                    <label class="flex items-center text-sm"><input type="radio" name="pics_status" value="unable"> <span class="ml-2">Unable to assess</span></label>
+                                </div>
+                                <div id="pics_details_container" class="hidden ml-6 mt-2">
+                                    <label for="pics_notes" class="block text-sm font-medium text-gray-700">Information / Plan:</label>
+                                    <textarea id="pics_notes" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Information/Plan..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <div>
+                          <label class="flex items-center font-medium text-gray-600">
+                              <input type="checkbox" id="homeTeamPlanCheckbox" class="mr-2">
+                              Home Team Plan in Place
+                          </label>
+                          <div id="homeTeamPlanDetails" class="hidden mt-2">
+                               <textarea id="homeTeamPlanText" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Enter details of home team plan..."></textarea>
+                          </div>
+                     </div>
+                     <div>
+                          <label for="emrAdditionalNotes" class="block font-medium text-gray-600">Additional Notes:</label>
+                          <textarea id="emrAdditionalNotes" rows="4" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
+                     </div>
                 </div>
 
                 <details class="bg-gray-50 p-4 rounded-lg border border-gray-200" open>
@@ -487,7 +648,6 @@
                     </div>
                 </details>
             </div>
-
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
                  <div id="scoringContainer">
                      <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2>
