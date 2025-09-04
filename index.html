@@ -1736,9 +1736,53 @@
              document.getElementById('qr-scan-result').textContent = '';
         }
 
+        // NEW HELPER FUNCTION TO SHRINK QR CODE DATA
+        function getPrunedDataForQRCode() {
+            const prunedData = {
+                patients: {},
+                activePatientId: activePatientId
+            };
+
+            for (const patientId in patients) {
+                const originalPatient = patients[patientId];
+                const prunedPatientData = {};
+
+                // Iterate over the patient's form data
+                for (const key in originalPatient.data) {
+                    const value = originalPatient.data[key];
+
+                    // Check if the value is meaningful
+                    // It's meaningful if it's a non-empty array, a checked box (true), 
+                    // a non-empty string, or a number (including 0).
+                    if (Array.isArray(value) && value.length > 0) {
+                        prunedPatientData[key] = value;
+                    } else if (typeof value === 'boolean' && value === true) {
+                        prunedPatientData[key] = true;
+                    } else if (typeof value === 'string' && value.trim() !== '') {
+                        prunedPatientData[key] = value;
+                    } else if (typeof value === 'number') {
+                         prunedPatientData[key] = value;
+                    }
+                }
+                
+                // Reconstruct the patient object with only the pruned data
+                prunedData.patients[patientId] = {
+                    ...originalPatient,
+                    data: prunedPatientData
+                };
+            }
+            return prunedData;
+        }
+
+        // UPDATED FUNCTION TO USE THE NEW HELPER
         function generateAndShowQrCode() {
             saveActivePatientData(); // Ensure current data is saved before generating
-            const dataToEncode = JSON.stringify({ patients, activePatientId });
+            
+            // Use the new helper function to get only the necessary data
+            const dataToEncode = JSON.stringify(getPrunedDataForQRCode());
+            
+            console.log(`QR Code data size reduced to ${dataToEncode.length} characters.`); // For debugging
+
             qrcodeContainer.innerHTML = ''; // Clear previous QR code
             new QRCode(qrcodeContainer, {
                 text: dataToEncode,
@@ -1746,12 +1790,11 @@
                 height: 256,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.L // Low correction for more data
+                correctLevel : QRCode.CorrectLevel.L // Use Low correction level for max data capacity
             });
             qrCodeModal.classList.remove('hidden');
             qrCodeModal.classList.add('flex');
         }
-
         function startFromScratch() {
             launchScreenModal.classList.add('hidden');
             mainContent.style.visibility = 'visible';
