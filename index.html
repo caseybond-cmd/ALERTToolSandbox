@@ -124,7 +124,85 @@
             border-radius: 8px;
             overflow: hidden;
         }
+/* Styles for mobile-friendly scoring buttons */
+        .score-group {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .score-group-title {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .score-option {
+            display: block; /* Makes the whole label a block */
+            border: 2px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #ffffff;
+        }
+        /* Hides the original radio/checkbox circle */
+        .score-option input {
+            display: none;
+        }
+        /* Style for the text inside the button */
+        .option-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1rem;
+        }
+         /* The magic: style the label when its hidden input is checked */
+        .score-option input:checked + .option-label {
+            font-weight: 600;
+            color: #047857; /* Teal color for selected text */
+        }
+        .score-option input:checked + .option-label::before {
+            content: '✔'; /* Add a checkmark for feedback */
+            font-weight: bold;
+            color: #047857;
+        }
+        /* Style the whole button when its input is checked */
+        .score-option:has(input:checked) {
+            border-color: #059669; /* Teal border for selected */
+            background-color: #f0fdfa;
+        }
 
+        /* For horizontal segmented controls */
+        .segmented-control {
+            display: flex;
+            width: 100%;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 2px solid #d1d5db;
+        }
+        .segmented-control .score-option {
+            flex-grow: 1; /* Each option takes equal space */
+            text-align: center;
+            border: none;
+            margin: 0;
+            border-radius: 0;
+            border-right: 2px solid #d1d5db; /* Separator line */
+        }
+        .segmented-control .score-option:last-child {
+            border-right: none;
+        }
+        .segmented-control .option-label {
+            justify-content: center; /* Center text in the button */
+        }
+        .segmented-control .score-option input:checked + .option-label::before {
+            display: none; /* No checkmark needed in this style */
+        }
+        .segmented-control .score-option:has(input:checked) {
+            background-color: #0d9488; /* Solid background for selected */
+        }
+         .segmented-control .score-option:has(input:checked) .option-label {
+            color: #ffffff;
+        }
         @media print {
             .no-print { display: none !important; }
             body > *:not(#printoutContainer):not(.print-this) { display: none !important; }
@@ -414,54 +492,133 @@
                  <div id="scoringContainer">
                      <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2>
                       <div class="space-y-8">
-                           <div class="rounded-lg module-bg-b"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-blue-200 text-blue-800">Physiological & Respiratory Stability</h3><div class="space-y-2 p-4">
-                                <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="15" data-id="crit_met" data-is-critical="true"> <span class="ml-2">Patient is in MET Criteria</span> <span class="text-gray-600">(+15)</span></label>
-                                <hr class="my-3">
-                                <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_adds4" id="crit_adds4_checkbox" data-is-critical="true"> <span class="ml-2">ADDS Score ≥ 4</span> <span class="text-gray-600">(+10)</span></label>
-                                <label class="flex items-center p-1"><input type="radio" name="adds_score" class="score-input" data-score="5" data-id="adds_3" id="adds_3_radio" data-is-amber="true"> <span class="ml-2">ADDS Score 3</span> <span class="text-gray-600">(+5)</span></label>
-                                <label class="flex items-center p-1"><input type="radio" name="adds_score" class="score-input" data-score="1" data-id="adds_0-2" id="adds_0-2_radio" > <span class="ml-2">ADDS Score 0-2</span> <span class="text-gray-600">(+1)</span></label>
-                                <hr class="my-3">
-                                <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="5" data-id="adds_worsening" data-is-amber="true"> <span class="ml-2">Worsening ADDS Trend (last 12-24h) (+5)</span></label>
-                                <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="resp_increasing_o2" data-is-amber="true"> <span class="ml-2">Increasing O2 requirements in last 12h</span> <span class="text-gray-600">(+10)</span></label>
-                                <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="6" data-id="resp_rapid_wean" data-is-amber="true"> <span class="ml-2">Rapid weaning of resp support (e.g. FiO2, NIV, HFNP) in last 4h (+6)</span></label>
-                            </div></div>
-                           <div class="p-4 rounded-lg module-bg-d"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-yellow-200 text-yellow-800">Clinical</h3><div class="space-y-2 p-4"><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="0" data-id="pain_0" checked> <span class="ml-2 text-gray-500">Pain: None or Well Controlled</span></label><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="3" data-id="pain_iv"> <span class="ml-2">Pain: Requires regular IV or potent analgesia (+3)</span></label><label class="flex items-center p-1"><input type="radio" name="pain_score" class="score-input" data-score="5" data-id="pain_pca"> <span class="ml-2">Pain: Poorly controlled or PCA (+5)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="0" data-id="fluid_0" id="fluid_0_radio" checked> <span class="ml-2 text-gray-500">Fluid Status: Euvolaemic</span></label><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="2" data-id="fluid_mild" id="fluid_mild_radio"> <span class="ml-2">Mild dehydration or overload (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="fluid_status_score" class="score-input" data-score="4" data-id="fluid_sig" id="fluid_sig_radio" data-is-critical="true"> <span class="ml-2">Significant dehydration or overload (+4)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="0" data-id="diet_0" checked> <span class="ml-2 text-gray-500">Diet: Normal</span></label><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="2" data-id="diet_modified"> <span class="ml-2">Diet: Supplements or Modified (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="diet_score" class="score-input" data-score="4" data-id="diet_nbm"> <span class="ml-2">Diet: NBM, NG, or TPN (+4)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="0" data-id="delirium_0" checked> <span class="ml-2 text-gray-500">Delirium: None</span></label><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="4" data-id="delirium_mild"> <span class="ml-2">Delirium: Mild or Subsyndromal (+4)</span></label><label class="flex items-center p-1"><input type="radio" name="delirium_score" class="score-input" data-score="8" data-id="delirium_mod" data-is-critical="true"> <span class="ml-2">Delirium: Moderate to Severe</span> <span class="text-gray-600">(+8)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="0" data-id="mobility_0" checked> <span class="ml-2 text-gray-500">Mobility: At Baseline</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="1" data-id="mobility_limited"> <span class="ml-2">Mobility: Limited by devices or attachments (+1)</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="2" data-id="mobility_assisted"> <span class="ml-2">Mobility: Assisted (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="mobility_score" class="score-input" data-score="5" data-id="mobility_bedbound"> <span class="ml-2">Mobility: Bed-bound (+5)</span></label><hr class="my-2"><label class="flex items-center p-1"><input type="radio" name="lines_score" class="score-input" data-score="0" data-id="lines_0" checked> <span class="ml-2 text-gray-500">Lines: None or PIVC only</span></label><label class="flex items-center p-1"><input type="radio" name="lines_score" class="score-input" data-score="5" data-id="lines_cvc_present"> <span class="ml-2">Central Line present (CVC/PICC/Vascath) (+5)</span></label><hr class="my-3">
-                                <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="10" data-id="crit_af" data-is-critical="true"> <span class="ml-2">Unstable Atrial Fibrillation</span> <span class="text-gray-600">(+10)</span></label>
-                                <div class="p-2 border-t mt-2">
-                                    <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="bowels_issue" id="bowels_issue_checkbox"> <span class="ml-2">Bowels not opened >3 days or Ileus (+3)</span></label>
-                                    <div class="grid grid-cols-2 gap-x-4 pl-8 text-sm mt-1">
-                                        <div>
-                                            <label for="bowel_last_open" class="block font-medium text-gray-600">Last Bowel Movement:</label>
-                                            <input type="date" id="bowel_last_open" class="bowel-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white p-1 text-sm">
-                                        </div>
-                                        <div>
-                                            <label for="bowel_type" class="block font-medium text-gray-600">Type:</label>
-                                            <select id="bowel_type" class="bowel-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white p-1 text-sm">
-                                                <option value="">Select...</option>
-                                                <option>Normal</option>
-                                                <option>Diarrhoea</option>
-                                                <option>Constipated</option>
-                                                <option>Ileus / Not passed flatus</option>
-                                                <option>Stoma Active</option>
-                                            </select>
-                                        </div>
+                           <div class="rounded-lg module-bg-b p-4">
+                                <h3 class="font-bold text-xl mb-3 text-blue-800">Physiological & Respiratory Stability</h3>
+                                <label class="score-option">
+                                    <input type="checkbox" class="score-input" data-score="15" data-id="crit_met" data-is-critical="true">
+                                    <span class="option-label"><span>Patient is in MET Criteria</span><span class="text-gray-600">(+15)</span></span>
+                                </label>
+                                <div class="score-group">
+                                    <div class="score-group-title">ADDS Score</div>
+                                    <label class="score-option">
+                                        <input type="checkbox" class="score-input" data-score="10" data-id="crit_adds4" id="crit_adds4_checkbox" data-is-critical="true">
+                                        <span class="option-label"><span>ADDS Score ≥ 4</span><span class="text-gray-600">(+10)</span></span>
+                                    </label>
+                                    <label class="score-option">
+                                        <input type="radio" name="adds_score" class="score-input" data-score="5" data-id="adds_3" id="adds_3_radio" data-is-amber="true">
+                                        <span class="option-label"><span>ADDS Score 3</span><span class="text-gray-600">(+5)</span></span>
+                                    </label>
+                                    <label class="score-option">
+                                        <input type="radio" name="adds_score" class="score-input" data-score="1" data-id="adds_0-2" id="adds_0-2_radio">
+                                        <span class="option-label"><span>ADDS Score 0-2</span><span class="text-gray-600">(+1)</span></span>
+                                    </label>
+                                </div>
+                                <div class="score-group">
+                                    <div class="score-group-title">Respiratory Trend</div>
+                                     <label class="score-option">
+                                        <input type="checkbox" class="score-input" data-score="5" data-id="adds_worsening" data-is-amber="true">
+                                        <span class="option-label"><span>Worsening ADDS Trend (last 12-24h)</span><span class="text-gray-600">(+5)</span></span>
+                                    </label>
+                                    <label class="score-option">
+                                        <input type="checkbox" class="score-input" data-score="10" data-id="resp_increasing_o2" data-is-amber="true">
+                                        <span class="option-label"><span>Increasing O₂ requirements in last 12h</span><span class="text-gray-600">(+10)</span></span>
+                                    </label>
+                                    <label class="score-option">
+                                        <input type="checkbox" class="score-input" data-score="6" data-id="resp_rapid_wean" data-is-amber="true">
+                                        <span class="option-label"><span>Rapid wean of resp support in last 4h</span><span class="text-gray-600">(+6)</span></span>
+                                    </label>
+                                </div>
+                           </div>
+                           
+                           <div class="p-4 rounded-lg module-bg-d">
+                                <h3 class="font-bold text-xl mb-3 text-yellow-800">Clinical</h3>
+                                <div class="score-group">
+                                    <div class="score-group-title">Pain Score</div>
+                                    <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="0" data-id="pain_0" checked><span class="option-label"><span>None or Well Controlled</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="3" data-id="pain_iv"><span class="option-label"><span>Requires regular IV analgesia</span><span class="text-gray-500">(+3)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="5" data-id="pain_pca"><span class="option-label"><span>Poorly controlled or PCA</span><span class="text-gray-500">(+5)</span></span></label>
+                                </div>
+                                <div class="score-group">
+                                    <div class="score-group-title">Fluid Status</div>
+                                    <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="0" data-id="fluid_0" id="fluid_0_radio" checked><span class="option-label"><span>Euvolaemic</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="2" data-id="fluid_mild" id="fluid_mild_radio"><span class="option-label"><span>Mild dehydration or overload</span><span class="text-gray-500">(+2)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="4" data-id="fluid_sig" id="fluid_sig_radio" data-is-critical="true"><span class="option-label"><span>Significant dehydration or overload</span><span class="text-gray-500">(+4)</span></span></label>
+                                </div>
+                                 <div class="score-group">
+                                    <div class="score-group-title">Diet</div>
+                                    <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="0" data-id="diet_0" checked><span class="option-label"><span>Normal</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="2" data-id="diet_modified"><span class="option-label"><span>Supplements or Modified</span><span class="text-gray-500">(+2)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="4" data-id="diet_nbm"><span class="option-label"><span>NBM, NG, or TPN</span><span class="text-gray-500">(+4)</span></span></label>
+                                </div>
+                                <div class="score-group">
+                                    <div class="score-group-title">Delirium</div>
+                                    <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="0" data-id="delirium_0" checked><span class="option-label"><span>None</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="4" data-id="delirium_mild"><span class="option-label"><span>Mild or Subsyndromal</span><span class="text-gray-500">(+4)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="8" data-id="delirium_mod" data-is-critical="true"><span class="option-label"><span>Moderate to Severe</span><span class="text-gray-500">(+8)</span></span></label>
+                                </div>
+                                <div class="score-group">
+                                    <div class="score-group-title">Mobility</div>
+                                    <div class="segmented-control">
+                                        <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="0" data-id="mobility_0" checked><span class="option-label">Baseline</span></label>
+                                        <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="1" data-id="mobility_limited"><span class="option-label">Limited</span></label>
+                                        <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="2" data-id="mobility_assisted"><span class="option-label">Assisted</span></label>
+                                        <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="5" data-id="mobility_bedbound"><span class="option-label">Bed-bound</span></label>
                                     </div>
                                 </div>
-                                <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="5" data-id="airway_altered" data-is-critical="true"> <span class="ml-2">Altered Airway (Tracheostomy/Laryngectomy) (+5)</span></label>
-                                <label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="3" data-id="drains_high_risk"> <span class="ml-2">High-Risk Drain present <span class="text-gray-400 text-xs">(e.g., chest/subcostal, complex abdo, high output)</span> (+3)</span></label>
-                            </div></div>
-                           <div class="p-4 rounded-lg module-bg-e"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-red-200 text-red-800">Systemic</h3><div class="space-y-2 p-4">
-                                <label class="flex items-center p-1"><input type="checkbox" id="losCheckbox" class="score-input" data-score="4" data-id="systemic_los"> <span class="ml-2">ICU LOS > 3 days</span> <span class="text-gray-600">(+4)</span></label>
-                                <hr class="my-3">
-                                <label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="0" data-id="frailty_0" checked> <span class="ml-2 text-gray-500">Frailty: Not Frail <span class="text-xs italic">(pre-hospital baseline)</span></span></label><label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="2" data-id="frailty_mild"> <span class="ml-2">Frailty: Mild <span class="text-xs italic">(pre-hospital baseline)</span> (+2)</span></label><label class="flex items-center p-1"><input type="radio" name="frailty_score" class="score-input" data-score="4" data-id="frailty_mod"> <span class="ml-2">Frailty: Mod-Severe <span class="text-xs italic">(pre-hospital baseline)</span> (+4)</span></label><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="4" id="comorbiditiesCheckbox" data-id="systemic_comorbid"> <span class="ml-2"><span class="comorbidity-main-text">≥3 chronic comorbidities</span> <span class="text-gray-400 text-xs">(e.g. IHD, COPD, T2DM)</span> (+4)</span></label>
-                            <div id="after_hours_container"><label class="flex items-center p-1"><input type="checkbox" class="score-input" data-score="0" data-id="systemic_after_hours" id="systemic_after_hours_checkbox" data-is-amber="true"> <span class="ml-2">After-Hours Discharge <span class="text-gray-400 text-xs">(only applies in first 24h)</span></span></label></div>
-                           </div></div>
-                           <div id="receivingWardModule" class="p-4 rounded-lg module-bg-g"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-indigo-200 text-indigo-800">Receiving Ward and Staffing</h3><div class="space-y-4 p-4"><div><h4 class="block text-sm font-medium text-gray-700 mb-2">Bed Type</h4><label class="flex items-center p-1"><input type="radio" name="bed_type" class="score-input" data-score="0" data-id="env_unmonitored" checked> <span class="ml-2">Unmonitored Bed (+0)</span></label><label class="flex items-center p-1"><input type="radio" name="bed_type" class="score-input" data-score="-3" data-id="env_monitored"> <span class="ml-2">Monitored / Telemetry Bed (-3)</span></label></div><hr><div><h4 class="block text-sm font-medium text-gray-700 mb-2">Staffing</h4><label class="flex items-center p-1"><input type="radio" name="env_ratio" class="score-input" data-score="0" data-id="env_standard" checked> <span class="ml-2">Standard Ward Ratio (+0)</span></label><label class="flex items-center p-1"><input type="radio" name="env_ratio" class="score-input" data-score="-5" data-id="env_enhanced"> <span class="ml-2">Enhanced Ratio (e.g. 1:1, 1:2) (-5)</span></label></div></div></div>
-                           <div class="p-4 rounded-lg module-bg-d"><h3 class="font-bold text-xl mb-3 p-3 rounded-t-lg bg-yellow-200 text-yellow-800">Nursing Concern</h3><div class="pt-2 p-4"><label class="flex items-center p-1"><input type="radio" name="concern_score" class="score-input" data-score="0" data-id="concern_0" value="0" checked> <span class="ml-2 text-gray-500">Nursing Concern: None</span></label><label class="flex items-center p-1"><input type="radio" name="concern_score" class="score-input" data-score="5" data-id="concern_present" value="5" data-is-critical="true"> <span class="ml-2">Nursing Concern Present</span> <span class="text-gray-600">(+5)</span></label><textarea id="nursingConcernText" class="mt-2 ml-6 w-full rounded-md border-gray-300 shadow-sm text-sm" rows="2" placeholder="Specify concern..." style="display: none;"></textarea></div></div>
+                                <div class="score-group">
+                                    <div class="score-group-title">Lines, Drains, and Attachments</div>
+                                    <label class="score-option"><input type="radio" name="lines_score" class="score-input" data-score="0" data-id="lines_0" checked><span class="option-label"><span>None or PIVC only</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="lines_score" class="score-input" data-score="5" data-id="lines_cvc_present"><span class="option-label"><span>Central Line present</span><span class="text-gray-500">(+5)</span></span></label>
+                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="10" data-id="crit_af" data-is-critical="true"><span class="option-label"><span>Unstable Atrial Fibrillation</span><span class="text-gray-500">(+10)</span></span></label>
+                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="5" data-id="airway_altered" data-is-critical="true"><span class="option-label"><span>Altered Airway (Trach/Lary)</span><span class="text-gray-500">(+5)</span></span></label>
+                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="3" data-id="drains_high_risk"><span class="option-label"><span>High-Risk Drain present</span><span class="text-gray-500">(+3)</span></span></label>
+                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="3" data-id="bowels_issue" id="bowels_issue_checkbox"><span class="option-label"><span>Bowels not opened >3 days or Ileus</span><span class="text-gray-500">(+3)</span></span></label>
+                                    <div class="grid grid-cols-2 gap-x-4 p-2 text-sm">
+                                        <div><label for="bowel_last_open" class="block font-medium text-gray-600">Last Bowel Movement:</label><input type="date" id="bowel_last_open" class="bowel-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white p-1 text-sm"></div>
+                                        <div><label for="bowel_type" class="block font-medium text-gray-600">Type:</label><select id="bowel_type" class="bowel-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white p-1 text-sm"><option value="">Select...</option><option>Normal</option><option>Diarrhoea</option><option>Constipated</option><option>Ileus / Not passed flatus</option><option>Stoma Active</option></select></div>
+                                    </div>
+                                </div>
+                           </div>
 
-                     </div>
-                 </div>
+                           <div class="p-4 rounded-lg module-bg-e"><h3 class="font-bold text-xl mb-3 text-red-800">Systemic</h3>
+                                <div class="score-group">
+                                    <div class="score-group-title">Patient Factors</div>
+                                    <label class="score-option"><input type="checkbox" id="losCheckbox" class="score-input" data-score="4" data-id="systemic_los"><span class="option-label"><span>ICU LOS > 3 days</span><span class="text-gray-600">(+4)</span></span></label>
+                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="4" id="comorbiditiesCheckbox" data-id="systemic_comorbid"><span class="option-label"><span>≥3 chronic comorbidities</span><span class="text-gray-600">(+4)</span></span></label>
+                                </div>
+                                <div class="score-group">
+                                    <div class="score-group-title">Frailty (pre-hospital baseline)</div>
+                                    <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="0" data-id="frailty_0" checked><span class="option-label"><span>Not Frail</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="2" data-id="frailty_mild"><span class="option-label"><span>Mild</span><span class="text-gray-500">(+2)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="4" data-id="frailty_mod"><span class="option-label"><span>Moderate to Severe</span><span class="text-gray-500">(+4)</span></span></label>
+                                </div>
+                                <div id="after_hours_container" class="score-group">
+                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="0" data-id="systemic_after_hours" id="systemic_after_hours_checkbox" data-is-amber="true"><span class="option-label"><span>After-Hours Discharge (first 24h)</span><span class="text-gray-500">(+2 or +5)</span></span></label>
+                                </div>
+                           </div>
 
+                           <div id="receivingWardModule" class="p-4 rounded-lg module-bg-g"><h3 class="font-bold text-xl mb-3 text-indigo-800">Receiving Ward and Staffing</h3>
+                                <div class="score-group">
+                                    <div class="score-group-title">Bed Type</div>
+                                    <label class="score-option"><input type="radio" name="bed_type" class="score-input" data-score="0" data-id="env_unmonitored" checked><span class="option-label"><span>Unmonitored Bed</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="bed_type" class="score-input" data-score="-3" data-id="env_monitored"><span class="option-label"><span>Monitored / Telemetry Bed</span><span class="text-gray-500">(-3)</span></span></label>
+                                </div>
+                                <div class="score-group">
+                                    <div class="score-group-title">Staffing</div>
+                                    <label class="score-option"><input type="radio" name="env_ratio" class="score-input" data-score="0" data-id="env_standard" checked><span class="option-label"><span>Standard Ward Ratio</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="env_ratio" class="score-input" data-score="-5" data-id="env_enhanced"><span class="option-label"><span>Enhanced Ratio (e.g. 1:1, 1:2)</span><span class="text-gray-500">(-5)</span></span></label>
+                                </div>
+                           </div>
+
+                           <div class="p-4 rounded-lg module-bg-d"><h3 class="font-bold text-xl mb-3 text-yellow-800">Nursing Concern</h3>
+                                <div class="score-group">
+                                    <label class="score-option"><input type="radio" name="concern_score" class="score-input" data-score="0" data-id="concern_0" value="0" checked><span class="option-label"><span>No Concerns</span><span class="text-gray-500">(+0)</span></span></label>
+                                    <label class="score-option"><input type="radio" name="concern_score" class="score-input" data-score="5" data-id="concern_present" value="5" data-is-critical="true"><span class="option-label"><span>Nursing Concern Present</span><span class="text-gray-500">(+5)</span></span></label>
+                                    <textarea id="nursingConcernText" class="mt-2 w-full rounded-md border-gray-300 shadow-sm text-sm" rows="2" placeholder="Specify concern..." style="display: none;"></textarea>
+                                </div>
+                           </div>
+                      </div>
+                 </div>                
                 <div class="final-score-bg text-white rounded-xl shadow-lg p-6 mt-8">
                     <div class="flex flex-col sm:flex-row justify-between items-center text-center">
                         <div class="mb-4 sm:mb-0">
