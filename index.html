@@ -327,42 +327,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Pre-Review Observations (last documented on DMR or Metavision)</h3>
-                    <div class="space-y-2 text-sm">
-                        <label class="flex items-center p-1"><input type="radio" name="pre_review_method" value="calculate" checked> <span class="ml-2">Calculate from Observations</span></label>
-                        <label class="flex items-center p-1"><input type="radio" name="pre_review_method" value="direct"> <span class="ml-2">Enter Documented ADDS</span></label>
-                    </div>
-                    <div id="pre_review_direct_container" class="hidden mt-4 pl-6 space-y-3">
-                        <div>
-                            <label for="initialAdds" class="block text-sm font-medium text-gray-700">Last Documented ADDS:</label>
-                            <input type="number" id="initialAdds" class="mt-1 block w-full md:w-1/2 rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                        </div>
-                        <div>
-                             <label class="flex items-center text-sm"><input type="checkbox" id="initialAddsModified"> <span class="ml-2">ADDS is modified</span></label>
-                             <textarea id="initialAddsRationale" rows="2" class="hidden mt-2 w-full md:w-1/2 rounded-md border-2 border-gray-300 bg-white p-2 text-sm" placeholder="modification details/rationale..."></textarea>
-                        </div>
-                    </div>
-                    <div id="pre_review_calculate_container" class="mt-4 pl-6 space-y-3">
-                        <p class="text-xs italic text-gray-500">Enter the latest observations to get a preliminary score.</p>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm">
-                             <div><label>RR</label><input type="number" id="pre_rr" class="pre-obs-input mt-1 block w-full rounded-md border-2 border-gray-300 p-1"></div>
-                             <div><label>SpO2</label><input type="number" id="pre_spo2" class="pre-obs-input mt-1 block w-full rounded-md border-2 border-gray-300 p-1"></div>
-                             <div><label>O2 Flow</label><input type="number" id="pre_o2" class="pre-obs-input mt-1 block w-full rounded-md border-2 border-gray-300 p-1"></div>
-                             <div><label>O2 Unit</label><select id="pre_o2_unit" class="pre-obs-input mt-1 block w-full rounded-md border-2 border-gray-300 p-1"><option value="lpm">L/min</option><option value="fio2">%</option></select></div>
-                             <div><label>HR</label><input type="number" id="pre_hr" class="pre-obs-input mt-1 block w-full rounded-md border-2 border-gray-300 p-1"></div>
-                             <div><label>SBP</label><input type="number" id="pre_sbp" class="pre-obs-input mt-1 block w-full rounded-md border-2 border-gray-300 p-1"></div>
-                             <div><label>Temp</label><input type="number" id="pre_temp" step="0.1" class="pre-obs-input mt-1 block w-full rounded-md border-2 border-gray-300 p-1"></div>
-                             <div class="col-span-1 md:col-span-1"><label>Consciousness</label><select id="pre_consciousness" class="pre-obs-input mt-1 block w-full rounded-md border-2 border-gray-300 p-1"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div>
-                        </div>
-                        <div class="mt-2 text-sm">
-                            <span class="font-semibold">Calculated ADDS: <span id="pre_calculated_adds">0</span></span>
-                             <label class="flex items-center mt-2"><input type="checkbox" id="preAddsModified"> <span class="ml-2">Manually modify pre-review ADDS</span></label>
-                        </div>
-                    </div>
-                </div>
-
                 <div>
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">Reason for ICU Admission:</h3>
                     <textarea id="admissionReason" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
@@ -922,45 +886,36 @@
             const breakdownReasons = [];
             const isModsActive = safeIsChecked('addsModificationCheckbox');
             const scoringFunctions = isModsActive ? applyMods() : standardScores;
-            const preReviewMethod = document.querySelector('input[name="pre_review_method"]:checked').value;
-            
-            if(preReviewMethod === 'direct' && safeGet('initialAdds') !== ''){
-                adds = safeGetNum('initialAdds');
-                breakdownReasons.push(`Direct Entry`);
-            } else {
-                 const getVital = (id_pre, id_main) => {
-                      const val_pre = safeGet(id_pre);
-                      const val_main = safeGet(id_main);
-                      return val_main !== '' ? val_main : val_pre;
-                 };
 
-                 const processVital = (param, value, scoreFn) => {
-                      if (value === '' || value === null || isNaN(value)) return;
-                      const res = scoreFn(value);
-                      adds += res.score;
-                      met = met || res.isMet;
-                      if (res.score > 0) breakdownReasons.push(`${param.toUpperCase()} ${value} (+${res.score})`);
-                 };
+            const processVital = (param, value, scoreFn) => {
+                if (value === '' || value === null || isNaN(value)) return;
+                const res = scoreFn(value);
+                adds += res.score;
+                met = met || res.isMet;
+                if (res.score > 0) breakdownReasons.push(`${param.toUpperCase()} ${value} (+${res.score})`);
+            };
 
-                 processVital('rr', parseInt(getVital('pre_rr', 'rr_input'), 10), scoringFunctions.getRrScore);
-                 processVital('hr', parseInt(getVital('pre_hr', 'hr_input'), 10), scoringFunctions.getHrScore);
-                 processVital('sbp', parseInt(getVital('pre_sbp', 'sbp_input'), 10), scoringFunctions.getSbpScore);
-                 processVital('spo2', parseInt(getVital('pre_spo2', 'spo2_input'), 10), scoringFunctions.getSpo2Score);
-                 processVital('consciousness', parseInt(getVital('pre_consciousness', 'consciousness_input'), 10), scoringFunctions.getConsciousnessScore);
+            processVital('rr', parseInt(safeGet('rr_input'), 10), scoringFunctions.getRrScore);
+            processVital('hr', parseInt(safeGet('hr_input'), 10), scoringFunctions.getHrScore);
+            processVital('sbp', parseInt(safeGet('sbp_input'), 10), scoringFunctions.getSbpScore);
+            processVital('spo2', parseInt(safeGet('spo2_input'), 10), scoringFunctions.getSpo2Score);
+            processVital('consciousness', parseInt(safeGet('consciousness_input'), 10), scoringFunctions.getConsciousnessScore);
 
-                 const o2Flow = parseFloat(getVital('pre_o2', 'o2_flow_input'));
-                 if (!isNaN(o2Flow) && o2Flow > 0) {
-                      const o2Unit = getVital('pre_o2_unit', 'o2_unit_input');
-                      const res = scoringFunctions.getO2Score(o2Flow, o2Unit);
-                      adds += res.score;
-                      if(res.score > 0) breakdownReasons.push(`O2 ${o2Flow}${o2Unit === 'lpm' ? 'L/min' : '%'} (+${res.score})`);
-                 }
-                 const temp = parseFloat(getVital('pre_temp', 'temp_input')); if (!isNaN(temp)) { let tempScore = 0; if(temp>=38.6||temp<35.1) tempScore=2; else if((temp>=38&&temp<=38.5)||(temp>=35.1&&temp<=36)) tempScore=1; if(tempScore > 0) { adds+=tempScore; breakdownReasons.push(`Temp ${temp}C (+${tempScore})`);}}
+            const o2Flow = parseFloat(safeGet('o2_flow_input'));
+            if (!isNaN(o2Flow) && o2Flow > 0) {
+                const o2Unit = safeGet('o2_unit_input');
+                const res = scoringFunctions.getO2Score(o2Flow, o2Unit);
+                adds += res.score;
+                if(res.score > 0) breakdownReasons.push(`O2 ${o2Flow}${o2Unit === 'lpm' ? 'L/min' : '%'} (+${res.score})`);
+            }
+            const temp = parseFloat(safeGet('temp_input')); 
+            if (!isNaN(temp)) { 
+                let tempScore = 0; 
+                if(temp>=38.6||temp<35.1) tempScore=2; 
+                else if((temp>=38&&temp<=38.5)||(temp>=35.1&&temp<=36)) tempScore=1; 
+                if(tempScore > 0) { adds+=tempScore; breakdownReasons.push(`Temp ${temp}C (+${tempScore})`);}
             }
             
-            if (adds === null) adds = 0;
-            if(preReviewMethod === 'calculate') document.getElementById('pre_calculated_adds').textContent = met ? 'MET' : adds;
-
             const addsLabel = calculatedADDSEl.previousElementSibling;
             if(isModsActive) {
                 addsLabel.textContent = 'CALCULATED ADDS (MODS)';
