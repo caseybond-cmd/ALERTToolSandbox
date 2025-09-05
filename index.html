@@ -24,19 +24,7 @@
         .final-score-bg {
             background-color: #134E4A;
         }
-        
-        .risk-item-selected-amber {
-            background-color: #fef3c7 !important;
-            border-left: 4px solid #f59e0b !important;
-        }
-        .risk-item-selected-amber::before { content: '⚠️'; color: #f59e0b; margin-right: 8px; font-weight: bold; }
-
-        .risk-item-selected-critical { 
-            border-left: 4px solid #ef4444 !important; 
-            background-color: #fee2e2 !important; 
-        }
         .risk-item-selected-critical > span { font-weight: 600; }
-        .risk-item-selected-critical::before { content: '❗'; color: #ef4444; margin-right: 8px; font-weight: bold; }
         
         .module-bg-b { background-color: #f0f9ff; }
         .module-bg-d { background-color: #fffbeb; }
@@ -71,7 +59,6 @@
             border-radius: 8px; overflow: hidden;
         }
 
-        /* --- NEW Mobile Friendly Scoring Box Styles --- */
         .score-group { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; }
         .score-group-title { margin-bottom: 0.5rem; font-weight: 500; color: #4b5563; }
         .score-option {
@@ -84,7 +71,6 @@
             display: flex; align-items: center; justify-content: space-between;
             font-size: 1rem; line-height: 1.2;
         }
-        /* NEW Selected State: Neutral blue highlight, no checkmark */
         .score-option:has(input:checked) {
             border-color: #2563eb;
             background-color: #eff6ff;
@@ -105,40 +91,18 @@
         .segmented-control .score-option:last-child { border-right: none; }
         .segmented-control .option-label { justify-content: center; font-size: 0.875rem; }
         
-        /* NEW Selected State for Segmented Controls */
-        .segmented-control .score-option:has(input:checked) {
-            background-color: #2563eb;
-        }
-         .segmented-control .score-option:has(input:checked) .option-label {
-            color: #ffffff; font-weight:600;
-        }
+        .segmented-control .score-option:has(input:checked) { background-color: #2563eb; }
+        .segmented-control .score-option:has(input:checked) .option-label { color: #ffffff; font-weight:600; }
         
-        /* NEW: Stacking segmented controls on very small screens */
         @media (max-width: 420px) {
-            .segmented-control {
-                flex-direction: column;
-                border: none;
-            }
-            .segmented-control .score-option {
-                border-radius: 0.5rem;
-                border: 2px solid #d1d5db;
-                margin-bottom: 0.5rem;
-            }
-            .segmented-control .score-option:last-child {
-                margin-bottom: 0;
-            }
+            .segmented-control { flex-direction: column; border: none; }
+            .segmented-control .score-option { border-radius: 0.5rem; border: 2px solid #d1d5db; margin-bottom: 0.5rem; }
+            .segmented-control .score-option:last-child { margin-bottom: 0; }
         }
         
-        /* --- NEW One-Page Print Styles --- */
         @media print {
-            @page { 
-                size: A4; 
-                margin: 0.5in;
-            }
-            body {
-                font-size: 9pt;
-                background-color: #fff;
-            }
+            @page { size: A4; margin: 0.5in; }
+            body { font-size: 9pt; background-color: #fff; }
             .no-print { display: none !important; }
 
             body.print-blank-mode #main-content,
@@ -146,59 +110,41 @@
                 display: block !important;
                 visibility: visible !important;
             }
-            body.print-blank-mode > *:not(#main-content) {
-                display: none !important;
-            }
-            #main-content > *:not(#assessmentForm) {
-                display: none !important;
-            }
+            body.print-blank-mode > *:not(#main-content) { display: none !important; }
+            #main-content > *:not(#assessmentForm) { display: none !important; }
             
             .print-blank-mode #assessmentForm {
-                 box-shadow: none !important;
-                 border: none !important;
+                 box-shadow: none !important; border: none !important;
                  padding: 0 !important; margin: 0 !important;
-                 column-count: 2;
-                 column-gap: 1.5rem;
+                 column-count: 2; column-gap: 1.5rem;
             }
-            .print-blank-mode .print-section-break {
-                break-before: column;
-            }
-            .print-blank-mode > div {
-                break-inside: avoid;
-            }
-             .print-blank-mode .final-score-bg, .print-blank-mode details > summary {
-                display: none !important;
-            }
-             .print-blank-mode h1, .print-blank-mode h2, .print-blank-mode h3 {
+            .print-blank-mode .print-section-break { break-before: column; }
+            .print-blank-mode > div { break-inside: avoid; }
+            .print-blank-mode .final-score-bg, .print-blank-mode details > summary { display: none !important; }
+            .print-blank-mode h1, .print-blank-mode h2, .print-blank-mode h3 {
                  padding: 0 !important; margin: 0 0 4px 0 !important; font-size: 11pt;
-             }
-             .print-blank-mode h4 { font-size: 10pt; margin-bottom: 2px; }
-             .print-blank-mode .bg-white, .print-blank-mode .bg-gray-50 {
+            }
+            .print-blank-mode h4 { font-size: 10pt; margin-bottom: 2px; }
+            .print-blank-mode .bg-white, .print-blank-mode .bg-gray-50 {
                 padding: 0 !important; margin: 0 0 8px 0 !important;
-                border: none !important;
-                box-shadow: none !important;
-             }
-             .print-blank-mode input[type="text"], .print-blank-mode input[type="date"], .print-blank-mode input[type="number"],
-             .print-blank-mode textarea, .print-blank-mode select {
+                border: none !important; box-shadow: none !important;
+            }
+            .print-blank-mode input[type="text"], .print-blank-mode input[type="date"], .print-blank-mode input[type="number"],
+            .print-blank-mode textarea, .print-blank-mode select {
                 border: none !important; border-bottom: 1px solid #999 !important;
                 border-radius: 0 !important; padding: 1px 0 !important;
                 background-color: transparent !important; box-shadow: none !important;
                 width: 100%;
             }
-             .print-blank-mode textarea {
-                border: 1px solid #999 !important;
-                min-height: 4em;
-             }
-             .print-blank-mode input[type="checkbox"],  .print-blank-mode input[type="radio"] {
-                display: inline-block !important;
-                width: 12px; height: 12px;
-                border: 1px solid #000 !important;
-                vertical-align: middle;
-             }
-             .print-blank-mode label { color: #000 !important; }
-             .print-blank-mode .grid { display: block; }
-             .print-blank-mode .score-option { padding: 4px; }
-             .print-blank-mode .option-label { font-size: 9pt; }
+            .print-blank-mode textarea { border: 1px solid #999 !important; min-height: 4em; }
+            .print-blank-mode input[type="checkbox"],  .print-blank-mode input[type="radio"] {
+                display: inline-block !important; width: 12px; height: 12px;
+                border: 1px solid #000 !important; vertical-align: middle;
+            }
+            .print-blank-mode label { color: #000 !important; }
+            .print-blank-mode .grid { display: block; }
+            .print-blank-mode .score-option { padding: 4px; }
+            .print-blank-mode .option-label { font-size: 9pt; }
         }
     </style>
 </head>
@@ -350,19 +296,19 @@
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20" id="lactate_label">Lactate</label><div class="flex-grow"><input type="number" step="0.1" id="lactate_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="lactate_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div><span id="lactate_score_display" class="blood-score"></span></div>
-                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20" id="hb_label">Hb</label><div class="flex-grow"><input type="number" id="hb_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="hb_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div><span id="hb_score_display" class="blood-score"></span></div>
+                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20">Lactate</label><div class="flex-grow"><input type="number" step="0.1" id="lactate_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="lactate_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
+                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20">Hb</label><div class="flex-grow"><input type="number" id="hb_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="hb_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
                         <div>
-                            <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20" id="k_label">K+</label><div class="flex-grow"><input type="number" step="0.1" id="k_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div><span id="k_score_display" class="blood-score"></span></div>
+                            <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20">K+</label><div class="flex-grow"><input type="number" step="0.1" id="k_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
                             <div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="k_replaced_checkbox" class="h-3 w-3 mr-1 blood-input"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="k_planned_checkbox" class="h-3 w-3 mr-1 blood-input"> Planned/Ordered</label></div>
                         </div>
                         <div>
-                            <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20" id="mg_label">Mg++</label><div class="flex-grow"><input type="number" step="0.1" id="mg_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div><span id="mg_score_display" class="blood-score"></span></div>
+                            <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20">Mg++</label><div class="flex-grow"><input type="number" step="0.1" id="mg_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
                             <div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="mg_replaced_checkbox" class="h-3 w-3 mr-1 blood-input"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="mg_planned_checkbox" class="h-3 w-3 mr-1 blood-input"> Planned/Ordered</label></div>
                         </div>
-                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20" id="creatinine_label">Creatinine</label><div class="flex-grow"><input type="number" id="creatinine_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="creatinine_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div><span id="creatinine_score_display" class="blood-score"></span></div>
-                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20" id="crp_label">CRP</label><div class="flex-grow"><input type="number" id="crp_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="crp_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div><span id="crp_score_display" class="blood-score"></span></div>
-                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20" id="albumin_label">Albumin</label><div class="flex-grow"><input type="number" id="albumin_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="albumin_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div><span id="albumin_score_display" class="blood-score"></span></div>
+                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20">Creatinine</label><div class="flex-grow"><input type="number" id="creatinine_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="creatinine_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
+                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20">CRP</label><div class="flex-grow"><input type="number" id="crp_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="crp_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
+                        <div class="flex items-center gap-x-2"><label class="block text-sm font-medium text-gray-700 w-20">Albumin</label><div class="flex-grow"><input type="number" id="albumin_input" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Current"><input type="number" id="albumin_input_prev" class="blood-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Prev."></div></div>
                         <div class="sm:col-span-2 mt-2 pt-2 border-t">
                             <label class="flex items-center">
                                 <input type="checkbox" id="cts_cardiac_checkbox" class="blood-input">
@@ -370,21 +316,12 @@
                             </label>
                         </div>
                     </div>
-                    <div id="bloods_summary_container" class="mt-4 pt-2 border-t text-sm space-y-1 font-bold text-red-600"></div>
                 </div>
 
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <h3 class="font-semibold text-gray-700 mb-2">ADDS Calculator</h3>
-                    <p class="text-xs italic text-gray-500 mb-4 no-print">Enter current observations to calculate ADDS score. This will not contribute to the main risk score but will be included in the DMR summary.</p>
+                    <p class="text-xs italic text-gray-500 mb-4 no-print">Enter current observations to calculate ADDS score. This will be included in the DMR summary.</p>
                     <div class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
-                            <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Airway</label>
-                            <div class="sm:col-span-2">
-                                <select id="airway_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
-                                    <option>Patent</option> <option>At Risk</option> <option>Tracheostomy</option> <option>Laryngectomy</option>
-                                </select>
-                            </div>
-                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
                             <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Resp Rate</label>
                             <div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></div>
@@ -396,8 +333,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
                             <label class="block text-sm font-medium text-gray-700 sm:col-span-1">Oxygen Delivery</label>
                             <div class="sm:col-span-2 flex items-center space-x-2">
-                                <input type="number" id="o2_flow_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Value">
-                                <select id="o2_unit_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"><option value="lpm">L/min</option><option value="fio2">% FiO2</option></select>
+                                <input type="number" id="o2_flow_input" class="vital-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="Flow/FiO2">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center">
@@ -419,17 +355,13 @@
                     </div>
 
                     <div class="mt-6 bg-gray-100 p-4 rounded-lg border border-gray-300">
-                         <label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox" class="vital-input"> <span class="ml-2 text-sm font-medium text-gray-800">Apply MODS to ADDS</span></label>
+                         <label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium text-gray-800">Apply MODS to ADDS</span></label>
                          <div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4">
-                            <p class="text-xs italic text-gray-500">Define parameter ranges that should be considered normal for this patient, resulting in a score of 0 for that parameter.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
-                                <div class="space-y-1"><label class="flex items-center"><input type="checkbox" name="mod_param" value="RR"> <span class="ml-2 font-medium">Resp Rate</span></label></div>
-                                <div class="space-y-1"><label class="flex items-center"><input type="checkbox" name="mod_param" value="HR"> <span class="ml-2 font-medium">Heart Rate</span></label></div>
-                                <div class="space-y-1"><label class="flex items-center"><input type="checkbox" name="mod_param" value="SpO2"> <span class="ml-2 font-medium">SpO2</span></label></div>
-                                <div class="space-y-1"><label class="flex items-center"><input type="checkbox" name="mod_param" value="SBP"> <span class="ml-2 font-medium">SBP</span></label></div>
-                                <div class="space-y-1 md:col-span-2"><label class="flex items-center"><input type="checkbox" name="mod_param" value="Consciousness"> <span class="ml-2 font-medium">Consciousness</span></label></div>
-                            </div>
-                             <div class="pt-4">
+                             <div>
+                                 <label for="manualADDSScore" class="block text-sm font-medium text-gray-700">Manual Override ADDS Score:</label>
+                                 <input type="number" id="manualADDSScore" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm">
+                             </div>
+                             <div>
                                  <label for="addsModificationText" class="block text-sm font-medium text-gray-700">Modification Rationale:</label>
                                  <textarea id="addsModificationText" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm"></textarea>
                              </div>
@@ -441,266 +373,267 @@
                         <div id="addsBreakdown" class="text-xs text-gray-600 min-h-[3em]">Enter vitals to calculate</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="print-section-break"></div>
+            <div class="print-section-break"></div>
 
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
-                    <div id="scoringContainer">
-                        <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2>
-                        <div class="space-y-8">
-                            <div class="rounded-lg module-bg-b p-4">
-                                <h3 class="font-bold text-xl mb-3 text-blue-800">Physiological & Respiratory Stability</h3>
-                                <label class="score-option">
-                                    <input type="checkbox" class="score-input" data-score="15" data-id="crit_met" data-is-critical="true">
-                                    <span class="option-label"><span>Patient is in MET Criteria</span><span class="text-gray-600">(+15)</span></span>
-                                </label>
-                                <div class="score-group">
-                                    <div class="score-group-title">ADDS Score (Documented)</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="adds_score" class="score-input" data-score="1" data-id="adds_0-2" checked><span class="option-label">0-2 (+1)</span></label>
-                                        <label class="score-option"><input type="radio" name="adds_score" class="score-input" data-score="5" data-id="adds_3" data-is-amber="true"><span class="option-label">3 (+5)</span></label>
-                                    </div>
-                                    <label class="score-option mt-2">
-                                        <input type="checkbox" class="score-input" data-score="10" data-id="crit_adds4" data-is-critical="true">
-                                        <span class="option-label"><span>ADDS Score ≥ 4</span><span class="text-gray-600">(+10)</span></span>
-                                    </label>
-                                </div>
-                                <div class="score-group">
-                                    <div class="score-group-title">Respiratory Trend</div>
-                                    <label class="score-option">
-                                        <input type="checkbox" class="score-input" data-score="5" data-id="adds_worsening" data-is-amber="true">
-                                        <span class="option-label"><span>Worsening ADDS Trend (last 12-24h)</span><span class="text-gray-600">(+5)</span></span>
-                                    </label>
-                                    <label class="score-option">
-                                        <input type="checkbox" class="score-input" data-score="10" data-id="resp_increasing_o2" data-is-amber="true">
-                                        <span class="option-label"><span>Increasing O₂ requirements in last 12h</span><span class="text-gray-600">(+10)</span></span>
-                                    </label>
-                                    <label class="score-option">
-                                        <input type="checkbox" class="score-input" data-score="6" data-id="resp_rapid_wean" data-is-amber="true">
-                                        <span class="option-label"><span>Rapid wean of resp support in last 4h</span><span class="text-gray-600">(+6)</span></span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="p-4 rounded-lg module-bg-d">
-                                <h3 class="font-bold text-xl mb-3 text-yellow-800">Clinical</h3>
-                                <div class="score-group">
-                                    <div class="score-group-title">Pain Score</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="0" data-id="pain_0" checked><span class="option-label">Controlled (+0)</span></label>
-                                        <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="3" data-id="pain_iv"><span class="option-label">Needs IV (+3)</span></label>
-                                        <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="5" data-id="pain_pca"><span class="option-label">PCA / Poorly Controlled (+5)</span></label>
-                                    </div>
-                                </div>
-                                <div class="score-group">
-                                    <div class="score-group-title">Fluid Status</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="0" data-id="fluid_0" checked><span class="option-label">Euvolaemic (+0)</span></label>
-                                        <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="2" data-id="fluid_mild"><span class="option-label">Mild (+2)</span></label>
-                                        <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="4" data-id="fluid_sig" data-is-critical="true"><span class="option-label">Significant (+4)</span></label>
-                                    </div>
-                                </div>
-                                <div class="score-group">
-                                    <div class="score-group-title">Diet</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="0" data-id="diet_0" checked><span class="option-label">Normal (+0)</span></label>
-                                        <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="2" data-id="diet_modified"><span class="option-label">Modified (+2)</span></label>
-                                        <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="4" data-id="diet_nbm"><span class="option-label">NBM/NG/TPN (+4)</span></label>
-                                    </div>
-                                </div>
-                                <div class="score-group">
-                                    <div class="score-group-title">Delirium</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="0" data-id="delirium_0" checked><span class="option-label">None (+0)</span></label>
-                                        <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="4" data-id="delirium_mild"><span class="option-label">Mild (+4)</span></label>
-                                        <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="8" data-id="delirium_mod" data-is-critical="true"><span class="option-label">Mod-Severe (+8)</span></label>
-                                    </div>
-                                </div>
-                                <div class="score-group">
-                                    <div class="score-group-title">Mobility</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="0" data-id="mobility_0" checked><span class="option-label">Baseline</span></label>
-                                        <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="1" data-id="mobility_limited"><span class="option-label">Limited</span></label>
-                                        <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="2" data-id="mobility_assisted"><span class="option-label">Assisted</span></label>
-                                        <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="5" data-id="mobility_bedbound"><span class="option-label">Bed-bound</span></label>
-                                    </div>
-                                </div>
-                                <div class="score-group">
-                                    <div class="score-group-title">Lines & Drains</div>
-                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="5" data-id="lines_cvc_present"><span class="option-label"><span>Central Line present</span><span class="text-gray-500">(+5)</span></span></label>
-                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="10" data-id="crit_af" data-is-critical="true"><span class="option-label"><span>Unstable Atrial Fibrillation</span><span class="text-gray-500">(+10)</span></span></label>
-                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="5" data-id="airway_altered" data-is-critical="true"><span class="option-label"><span>Altered Airway (Trach/Lary)</span><span class="text-gray-500">(+5)</span></span></label>
-                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="3" data-id="drains_high_risk"><span class="option-label"><span>High-Risk Drain present</span><span class="text-gray-500">(+3)</span></span></label>
-                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="3" data-id="bowels_issue"><span class="option-label"><span>Bowels not opened >3 days or Ileus</span><span class="text-gray-500">(+3)</span></span></label>
-                                    <div class="grid grid-cols-2 gap-x-4 p-2 text-sm mt-2 border-t">
-                                        <div><label for="bowel_last_open" class="block font-medium text-gray-600">Last Bowel Movement:</label><input type="date" id="bowel_last_open" class="bowel-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white p-1 text-sm"></div>
-                                        <div><label for="bowel_type" class="block font-medium text-gray-600">Type:</label><select id="bowel_type" class="bowel-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white p-1 text-sm"><option value="">Select...</option><option>Normal</option><option>Diarrhoea</option><option>Constipated</option><option>Ileus / Not passed flatus</option><option>Stoma Active</option></select></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="p-4 rounded-lg module-bg-e"><h3 class="font-bold text-xl mb-3 text-red-800">Systemic</h3>
-                                <div class="score-group">
-                                    <div class="score-group-title">Patient Factors</div>
-                                    <label class="score-option"><input type="checkbox" id="losCheckbox" class="score-input" data-score="4" data-id="systemic_los"><span class="option-label"><span>ICU LOS > 3 days</span><span class="text-gray-600">(+4)</span></span></label>
-                                    <label class="score-option"><input type="checkbox" class="score-input" data-score="4" id="comorbiditiesCheckbox" data-id="systemic_comorbid"><span class="option-label"><span>≥3 chronic comorbidities</span><span class="text-gray-600">(+4)</span></span></label>
-                                </div>
-                                <div class="score-group">
-                                    <div class="score-group-title">Frailty (pre-hospital baseline)</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="0" data-id="frailty_0" checked><span class="option-label">Not Frail (+0)</span></label>
-                                        <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="2" data-id="frailty_mild"><span class="option-label">Mild (+2)</span></label>
-                                        <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="4" data-id="frailty_mod"><span class="option-label">Mod-Severe (+4)</span></label>
-                                    </div>
-                                </div>
-                                <div id="after_hours_container" class="score-group">
-                                    <label class="score-option"><input type="checkbox" class="score-input" data-id="systemic_after_hours" id="systemic_after_hours_checkbox" data-is-amber="true"><span class="option-label"><span>After-Hours Discharge (first 24h)</span></span></label>
-                                </div>
-                            </div>
-
-                            <div id="receivingWardModule" class="p-4 rounded-lg module-bg-g"><h3 class="font-bold text-xl mb-3 text-indigo-800">Receiving Ward and Staffing</h3>
-                                <div class="score-group">
-                                    <div class="score-group-title">Bed Type</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="bed_type" class="score-input" data-score="0" data-id="env_unmonitored" checked><span class="option-label">Unmonitored (+0)</span></label>
-                                        <label class="score-option"><input type="radio" name="bed_type" class="score-input" data-score="-3" data-id="env_monitored"><span class="option-label">Monitored (-3)</span></label>
-                                    </div>
-                                </div>
-                                <div class="score-group">
-                                    <div class="score-group-title">Staffing</div>
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="env_ratio" class="score-input" data-score="0" data-id="env_standard" checked><span class="option-label">Standard Ratio (+0)</span></label>
-                                        <label class="score-option"><input type="radio" name="env_ratio" class="score-input" data-score="-5" data-id="env_enhanced"><span class="option-label">Enhanced Ratio (-5)</span></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="p-4 rounded-lg module-bg-d"><h3 class="font-bold text-xl mb-3 text-yellow-800">Nursing Concern</h3>
-                                <div class="score-group">
-                                    <div class="segmented-control">
-                                        <label class="score-option"><input type="radio" name="concern_score" class="score-input" data-score="0" data-id="concern_0" value="0" checked><span class="option-label">No Concerns (+0)</span></label>
-                                        <label class="score-option"><input type="radio" name="concern_score" class="score-input" data-score="5" data-id="concern_present" value="5" data-is-critical="true"><span class="option-label">Concern Present (+5)</span></label>
-                                    </div>
-                                    <textarea id="nursingConcernText" class="mt-4 w-full rounded-md border-gray-300 shadow-sm text-sm" rows="2" placeholder="Specify concern..." style="display: none;"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div> 
-                </div>
-
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
-                    <details class="bg-gray-50 p-4 rounded-lg border border-gray-200" open>
-                        <summary class="font-semibold text-gray-700 cursor-pointer">Device, Drain & Wound Assessment</summary>
-                        <div class="space-y-6 pt-4">
-                            <div>
-                                <h4 class="font-medium text-gray-600 mb-2">Central Vascular Access Devices (CVADs)</h4>
-                                <div id="central_lines_container" class="space-y-4"></div>
-                                <button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 text-rose-800 hover:bg-rose-200 px-3 py-1 rounded-md">+ Add CVAD</button>
-                            </div>
-                            <div class="mt-4 pt-4 border-t">
-                                <h4 class="font-medium text-gray-600 mb-2">Peripheral IV Cannulas (PIVCs)</h4>
-                                <div id="pivcs_container" class="space-y-4"></div>
-                                <button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add PIVC</button>
-                            </div>
-                            <details class="pt-4 border-t">
-                                <summary class="text-sm font-medium text-blue-700 cursor-pointer">Show Additional Devices, Drains & Wounds</summary>
-                                <div class="space-y-6 pt-4">
-                                    <div>
-                                        <h4 class="font-medium text-gray-600 mb-2">Indwelling Catheter (IDC)</h4>
-                                        <div id="idcs_container" class="space-y-4"></div>
-                                        <button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 text-gray-800 hover:bg-gray-200 px-3 py-1 rounded-md">+ Add IDC</button>
-                                    </div>
-                                    <div class="mt-4 pt-4 border-t">
-                                        <h4 class="font-medium text-gray-600 mb-2">GI / Enteral Devices</h4>
-                                        <div id="ng_tubes_container" class="space-y-4"></div>
-                                        <button type="button" id="addNgTubeButton" class="no-print mt-2 text-sm bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 rounded-md">+ Add Enteral Device</button>
-                                    </div>
-                                    <div id="pacing-wires-section" class="mt-4 pt-4 border-t">
-                                        <h4 class="font-medium text-gray-600 mb-2">Epicardial Pacing Wires</h4>
-                                        <div id="pacing_wires_container" class="space-y-4"></div>
-                                        <button type="button" id="addPacingWiresButton" class="no-print mt-2 text-sm bg-purple-100 text-purple-800 hover:bg-purple-200 px-3 py-1 rounded-md">+ Add Pacing Wires</button>
-                                    </div>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                                        <div>
-                                            <h4 class="font-medium text-gray-600 mb-2">Drains</h4>
-                                            <div id="drains_container" class="space-y-4"></div>
-                                            <button type="button" id="addDrainButton" class="no-print mt-2 text-sm bg-teal-100 text-teal-800 hover:bg-teal-200 px-3 py-1 rounded-md">+ Add Drain</button>
-                                        </div>
-                                        <div>
-                                            <h4 class="font-medium text-gray-600 mb-2">Wounds</h4>
-                                            <div id="wounds_container" class="space-y-4"></div>
-                                            <button type="button" id="addWoundButton" class="no-print mt-2 text-sm bg-pink-100 text-pink-800 hover:bg-pink-200 px-3 py-1 rounded-md">+ Add Wound</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </details>
-                        </div>
-                    </details>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800 border-b pb-3">ALERT Nurse Assessment</h2>
-                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h3 class="font-semibold text-gray-700 mb-2">Fluid Balance</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-sm font-medium text-gray-700">24hr Fluid Balance (mL)</label><input type="number" id="fbc_24hr_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="100"></div>
-                            <div><label class="block text-sm font-medium text-gray-700">Total ICU Balance (mL)</label><input type="number" id="fbc_total_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="100"></div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Post-ICU Syndrome (PICS)</h3>
-                        <div class="p-4 rounded-lg module-bg-f">
-                            <div class="space-y-2">
+            <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
+                <div id="scoringContainer">
+                    <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2>
+                    <div class="space-y-8">
+                        <div class="rounded-lg module-bg-b p-4">
+                            <h3 class="font-bold text-xl mb-3 text-blue-800">Physiological & Respiratory Stability</h3>
+                            <label class="score-option">
+                                <input type="checkbox" class="score-input" data-score="15" data-id="crit_met" data-is-critical="true">
+                                <span class="option-label"><span>Patient is in MET Criteria</span><span class="text-gray-600">(+15)</span></span>
+                            </label>
+                            <div class="score-group">
+                                <div class="score-group-title">ADDS Score (Documented)</div>
                                 <div class="segmented-control">
-                                     <label class="score-option"><input type="radio" name="pics_status" value="negative" checked> <span class="option-label">Negative</span></label>
-                                     <label class="score-option"><input type="radio" name="pics_status" value="positive"> <span class="option-label">Positive</span></label>
-                                     <label class="score-option"><input type="radio" name="pics_status" value="unable"> <span class="option-label">Unable to assess</span></label>
+                                    <label class="score-option"><input type="radio" name="adds_score" class="score-input" data-score="1" data-id="adds_0-2" checked><span class="option-label">0-2 (+1)</span></label>
+                                    <label class="score-option"><input type="radio" name="adds_score" class="score-input" data-score="5" data-id="adds_3" data-is-amber="true"><span class="option-label">3 (+5)</span></label>
                                 </div>
-                                <div id="pics_details_container" class="hidden pt-2">
-                                    <label for="pics_notes" class="block text-sm font-medium text-gray-700">Information / Plan:</label>
-                                    <textarea id="pics_notes" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Information/Plan..."></textarea>
+                                <label class="score-option mt-2">
+                                    <input type="checkbox" class="score-input" data-score="10" data-id="crit_adds4" data-is-critical="true">
+                                    <span class="option-label"><span>ADDS Score ≥ 4</span><span class="text-gray-600">(+10)</span></span>
+                                </label>
+                            </div>
+                            <div class="score-group">
+                                <div class="score-group-title">Respiratory Trend</div>
+                                <label class="score-option">
+                                    <input type="checkbox" class="score-input" data-score="5" data-id="adds_worsening" data-is-amber="true">
+                                    <span class="option-label"><span>Worsening ADDS Trend (last 12-24h)</span><span class="text-gray-600">(+5)</span></span>
+                                </label>
+                                <label class="score-option">
+                                    <input type="checkbox" class="score-input" data-score="10" data-id="resp_increasing_o2" data-is-amber="true">
+                                    <span class="option-label"><span>Increasing O₂ requirements in last 12h</span><span class="text-gray-600">(+10)</span></span>
+                                </label>
+                                <label class="score-option">
+                                    <input type="checkbox" class="score-input" data-score="6" data-id="resp_rapid_wean" data-is-amber="true">
+                                    <span class="option-label"><span>Rapid wean of resp support in last 4h</span><span class="text-gray-600">(+6)</span></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-lg module-bg-d">
+                            <h3 class="font-bold text-xl mb-3 text-yellow-800">Clinical</h3>
+                            <div class="score-group">
+                                <div class="score-group-title">Pain Score</div>
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="0" data-id="pain_0" checked><span class="option-label">Controlled (+0)</span></label>
+                                    <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="3" data-id="pain_iv"><span class="option-label">Needs IV (+3)</span></label>
+                                    <label class="score-option"><input type="radio" name="pain_score" class="score-input" data-score="5" data-id="pain_pca"><span class="option-label">PCA / Poorly Controlled (+5)</span></label>
+                                </div>
+                            </div>
+                            <div class="score-group">
+                                <div class="score-group-title">Fluid Status</div>
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="0" data-id="fluid_0" checked><span class="option-label">Euvolaemic (+0)</span></label>
+                                    <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="2" data-id="fluid_mild"><span class="option-label">Mild (+2)</span></label>
+                                    <label class="score-option"><input type="radio" name="fluid_status_score" class="score-input" data-score="4" data-id="fluid_sig" data-is-critical="true"><span class="option-label">Significant (+4)</span></label>
+                                </div>
+                            </div>
+                            <div class="score-group">
+                                <div class="score-group-title">Diet</div>
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="0" data-id="diet_0" checked><span class="option-label">Normal (+0)</span></label>
+                                    <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="2" data-id="diet_modified"><span class="option-label">Modified (+2)</span></label>
+                                    <label class="score-option"><input type="radio" name="diet_score" class="score-input" data-score="4" data-id="diet_nbm"><span class="option-label">NBM/NG/TPN (+4)</span></label>
+                                </div>
+                            </div>
+                            <div class="score-group">
+                                <div class="score-group-title">Delirium</div>
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="0" data-id="delirium_0" checked><span class="option-label">None (+0)</span></label>
+                                    <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="4" data-id="delirium_mild"><span class="option-label">Mild (+4)</span></label>
+                                    <label class="score-option"><input type="radio" name="delirium_score" class="score-input" data-score="8" data-id="delirium_mod" data-is-critical="true"><span class="option-label">Mod-Severe (+8)</span></label>
+                                </div>
+                            </div>
+                            <div class="score-group">
+                                <div class="score-group-title">Mobility</div>
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="0" data-id="mobility_0" checked><span class="option-label">Baseline</span></label>
+                                    <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="1" data-id="mobility_limited"><span class="option-label">Limited</span></label>
+                                    <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="2" data-id="mobility_assisted"><span class="option-label">Assisted</span></label>
+                                    <label class="score-option"><input type="radio" name="mobility_score" class="score-input" data-score="5" data-id="mobility_bedbound"><span class="option-label">Bed-bound</span></label>
+                                </div>
+                            </div>
+                            <div class="score-group">
+                                <div class="score-group-title">Lines & Drains</div>
+                                <label class="score-option"><input type="checkbox" class="score-input" data-score="5" data-id="lines_cvc_present"><span class="option-label"><span>Central Line present</span><span class="text-gray-500">(+5)</span></span></label>
+                                <label class="score-option"><input type="checkbox" class="score-input" data-score="10" data-id="crit_af" data-is-critical="true"><span class="option-label"><span>Unstable Atrial Fibrillation</span><span class="text-gray-500">(+10)</span></span></label>
+                                <label class="score-option"><input type="checkbox" class="score-input" data-score="5" data-id="airway_altered" data-is-critical="true"><span class="option-label"><span>Altered Airway (Trach/Lary)</span><span class="text-gray-500">(+5)</span></span></label>
+                                <label class="score-option"><input type="checkbox" class="score-input" data-score="3" data-id="drains_high_risk"><span class="option-label"><span>High-Risk Drain present</span><span class="text-gray-500">(+3)</span></span></label>
+                                <label class="score-option"><input type="checkbox" class="score-input" data-score="3" data-id="bowels_issue"><span class="option-label"><span>Bowels not opened >3 days or Ileus</span><span class="text-gray-500">(+3)</span></span></label>
+                                <div class="grid grid-cols-2 gap-x-4 p-2 text-sm mt-2 border-t">
+                                    <div><label for="bowel_last_open" class="block font-medium text-gray-600">Last Bowel Movement:</label><input type="date" id="bowel_last_open" class="bowel-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white p-1 text-sm"></div>
+                                    <div><label for="bowel_type" class="block font-medium text-gray-600">Type:</label><select id="bowel_type" class="bowel-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white p-1 text-sm"><option value="">Select...</option><option>Normal</option><option>Diarrhoea</option><option>Constipated</option><option>Ileus / Not passed flatus</option><option>Stoma Active</option></select></div>
                                 </div>
                             </div>
                         </div>
+
+                        <div class="p-4 rounded-lg module-bg-e"><h3 class="font-bold text-xl mb-3 text-red-800">Systemic</h3>
+                            <div class="score-group">
+                                <div class="score-group-title">Patient Factors</div>
+                                <label class="score-option"><input type="checkbox" id="losCheckbox" class="score-input" data-score="4" data-id="systemic_los"><span class="option-label"><span>ICU LOS > 3 days</span><span class="text-gray-600">(+4)</span></span></label>
+                                <label class="score-option"><input type="checkbox" class="score-input" data-score="4" id="comorbiditiesCheckbox" data-id="systemic_comorbid"><span class="option-label"><span>≥3 chronic comorbidities</span><span class="text-gray-600">(+4)</span></span></label>
+                            </div>
+                            <div class="score-group">
+                                <div class="score-group-title">Frailty (pre-hospital baseline)</div>
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="0" data-id="frailty_0" checked><span class="option-label">Not Frail (+0)</span></label>
+                                    <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="2" data-id="frailty_mild"><span class="option-label">Mild (+2)</span></label>
+                                    <label class="score-option"><input type="radio" name="frailty_score" class="score-input" data-score="4" data-id="frailty_mod"><span class="option-label">Mod-Severe (+4)</span></label>
+                                </div>
+                            </div>
+                            <div id="after_hours_container" class="score-group">
+                                <label class="score-option"><input type="checkbox" class="score-input" data-id="systemic_after_hours" id="systemic_after_hours_checkbox"><span class="option-label"><span>After-Hours Discharge (first 24h)</span></span></label>
+                            </div>
+                        </div>
+
+                        <div id="receivingWardModule" class="p-4 rounded-lg module-bg-g"><h3 class="font-bold text-xl mb-3 text-indigo-800">Receiving Ward and Staffing</h3>
+                            <div class="score-group">
+                                <div class="score-group-title">Bed Type</div>
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="bed_type" class="score-input" data-score="0" data-id="env_unmonitored" checked><span class="option-label">Unmonitored (+0)</span></label>
+                                    <label class="score-option"><input type="radio" name="bed_type" class="score-input" data-score="-3" data-id="env_monitored"><span class="option-label">Monitored (-3)</span></label>
+                                </div>
+                            </div>
+                            <div class="score-group">
+                                <div class="score-group-title">Staffing</div>
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="env_ratio" class="score-input" data-score="0" data-id="env_standard" checked><span class="option-label">Standard Ratio (+0)</span></label>
+                                    <label class="score-option"><input type="radio" name="env_ratio" class="score-input" data-score="-5" data-id="env_enhanced"><span class="option-label">Enhanced Ratio (-5)</span></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-lg module-bg-d"><h3 class="font-bold text-xl mb-3 text-yellow-800">Nursing Concern</h3>
+                            <div class="score-group">
+                                <div class="segmented-control">
+                                    <label class="score-option"><input type="radio" name="concern_score" class="score-input" data-score="0" data-id="concern_0" value="0" checked><span class="option-label">No Concerns (+0)</span></label>
+                                    <label class="score-option"><input type="radio" name="concern_score" class="score-input" data-score="5" data-id="concern_present" value="5" data-is-critical="true"><span class="option-label">Concern Present (+5)</span></label>
+                                </div>
+                                <textarea id="nursingConcernText" class="mt-4 w-full rounded-md border-gray-300 shadow-sm text-sm" rows="2" placeholder="Specify concern..." style="display: none;"></textarea>
+                            </div>
+                        </div>
                     </div>
-                     <div>
-                          <label class="flex items-center font-medium text-gray-600">
-                              <input type="checkbox" id="homeTeamPlanCheckbox" class="mr-2 h-4 w-4 rounded">
-                              Home Team Plan in Place
-                          </label>
-                          <div id="homeTeamPlanDetails" class="hidden mt-2">
-                               <textarea id="homeTeamPlanText" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Enter details of home team plan..."></textarea>
-                          </div>
-                     </div>
-                     <div>
-                          <label for="emrAdditionalNotes" class="block font-medium text-gray-600">Additional Notes:</label>
-                          <textarea id="emrAdditionalNotes" rows="4" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
-                     </div>
+                </div> 
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
+                <details class="bg-gray-50 p-4 rounded-lg border border-gray-200" open>
+                    <summary class="font-semibold text-gray-700 cursor-pointer">Device, Drain & Wound Assessment</summary>
+                    <div class="space-y-6 pt-4">
+                        <div>
+                            <h4 class="font-medium text-gray-600 mb-2">Central Vascular Access Devices (CVADs)</h4>
+                            <div id="central_lines_container" class="space-y-4"></div>
+                            <button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 text-rose-800 hover:bg-rose-200 px-3 py-1 rounded-md">+ Add CVAD</button>
+                        </div>
+                        <div class="mt-4 pt-4 border-t">
+                            <h4 class="font-medium text-gray-600 mb-2">Peripheral IV Cannulas (PIVCs)</h4>
+                            <div id="pivcs_container" class="space-y-4"></div>
+                            <button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-md">+ Add PIVC</button>
+                        </div>
+                        <details class="pt-4 border-t">
+                            <summary class="text-sm font-medium text-blue-700 cursor-pointer">Show Additional Devices, Drains & Wounds</summary>
+                            <div class="space-y-6 pt-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-600 mb-2">Indwelling Catheter (IDC)</h4>
+                                    <div id="idcs_container" class="space-y-4"></div>
+                                    <button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 text-gray-800 hover:bg-gray-200 px-3 py-1 rounded-md">+ Add IDC</button>
+                                </div>
+                                <div class="mt-4 pt-4 border-t">
+                                    <h4 class="font-medium text-gray-600 mb-2">GI / Enteral Devices</h4>
+                                    <div id="ng_tubes_container" class="space-y-4"></div>
+                                    <button type="button" id="addNgTubeButton" class="no-print mt-2 text-sm bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 rounded-md">+ Add Enteral Device</button>
+                                </div>
+                                <div id="pacing-wires-section" class="mt-4 pt-4 border-t">
+                                    <h4 class="font-medium text-gray-600 mb-2">Epicardial Pacing Wires</h4>
+                                    <div id="pacing_wires_container" class="space-y-4"></div>
+                                    <button type="button" id="addPacingWiresButton" class="no-print mt-2 text-sm bg-purple-100 text-purple-800 hover:bg-purple-200 px-3 py-1 rounded-md">+ Add Pacing Wires</button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                                    <div>
+                                        <h4 class="font-medium text-gray-600 mb-2">Drains</h4>
+                                        <div id="drains_container" class="space-y-4"></div>
+                                        <button type="button" id="addDrainButton" class="no-print mt-2 text-sm bg-teal-100 text-teal-800 hover:bg-teal-200 px-3 py-1 rounded-md">+ Add Drain</button>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-600 mb-2">Wounds</h4>
+                                        <div id="wounds_container" class="space-y-4"></div>
+                                        <button type="button" id="addWoundButton" class="no-print mt-2 text-sm bg-pink-100 text-pink-800 hover:bg-pink-200 px-3 py-1 rounded-md">+ Add Wound</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </details>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6">
+                <h2 class="text-xl font-bold text-gray-800 border-b pb-3">ALERT Nurse Assessment</h2>
+                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-2">Fluid Balance</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700">24hr Fluid Balance (mL)</label><input type="number" id="fbc_24hr_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="100"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">Total ICU Balance (mL)</label><input type="number" id="fbc_total_input" class="fluid-input mt-1 block w-full rounded-md border-2 border-gray-300 bg-white shadow-sm p-2 text-sm" placeholder="+/- mL" step="100"></div>
+                    </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-lg mt-6 p-6">
-                    <div class="final-score-bg text-white rounded-xl shadow-lg p-6 mb-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-center text-center">
-                            <div class="mb-4 sm:mb-0">
-                                <span class="text-lg font-medium text-gray-400">Final Score</span>
-                                <div id="updatedTotalScore" class="text-5xl font-bold">0</div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Post-ICU Syndrome (PICS)</h3>
+                    <div class="p-4 rounded-lg module-bg-f">
+                        <div class="space-y-2">
+                            <div class="segmented-control">
+                                 <label class="score-option"><input type="radio" name="pics_status" value="negative" checked> <span class="option-label">Negative</span></label>
+                                 <label class="score-option"><input type="radio" name="pics_status" value="positive"> <span class="option-label">Positive</span></label>
+                                 <label class="score-option"><input type="radio" name="pics_status" value="unable"> <span class="option-label">Unable to assess</span></label>
                             </div>
-                            <div class="w-full sm:w-auto"><span class="text-lg font-medium text-gray-400">FINAL CATEGORY & ACTION</span><div id="updatedRiskCategory" class="text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300">Enter data to see category</div></div>
+                            <div id="pics_details_container" class="hidden pt-2">
+                                <label for="pics_notes" class="block text-sm font-medium text-gray-700">Information / Plan:</label>
+                                <textarea id="pics_notes" rows="2" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Information/Plan..."></textarea>
+                            </div>
                         </div>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">DMR Summary Generator</h2>
-                    <div class="flex space-x-4 mb-4 no-print">
-                        <button type="button" id="generateSummaryButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-1/2">Generate DMR Summary</button>
-                        <button type="button" id="copySummaryButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors w-1/2">Copy to Clipboard</button>
-                    </div>
-                    <textarea id="emrSummary" rows="20" class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 font-mono text-xs" placeholder="Your summary will appear here..."></textarea>
-                    <div class="mt-6 text-center no-print"><button type="button" id="resetButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Reset Current Patient Form</button></div>
                 </div>
+                 <div>
+                      <label class="flex items-center font-medium text-gray-600">
+                          <input type="checkbox" id="homeTeamPlanCheckbox" class="mr-2 h-4 w-4 rounded">
+                          Home Team Plan in Place
+                      </label>
+                      <div id="homeTeamPlanDetails" class="hidden mt-2">
+                           <textarea id="homeTeamPlanText" rows="3" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm" placeholder="Enter details of home team plan..."></textarea>
+                      </div>
+                 </div>
+                 <div>
+                      <label for="emrAdditionalNotes" class="block font-medium text-gray-600">Additional Notes:</label>
+                      <textarea id="emrAdditionalNotes" rows="4" class="mt-1 block w-full rounded-md border-2 border-gray-400 bg-gray-100 shadow-sm p-2 text-sm"></textarea>
+                 </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg mt-6 p-6">
+                <div class="final-score-bg text-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-center text-center">
+                        <div class="mb-4 sm:mb-0">
+                            <span class="text-lg font-medium text-gray-400">Final Score</span>
+                            <div id="updatedTotalScore" class="text-5xl font-bold">0</div>
+                        </div>
+                        <div class="w-full sm:w-auto"><span class="text-lg font-medium text-gray-400">FINAL CATEGORY & ACTION</span><div id="updatedRiskCategory" class="text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300">Enter data to see category</div></div>
+                    </div>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">DMR Summary Generator</h2>
+                <div class="flex space-x-4 mb-4 no-print">
+                    <button type="button" id="generateSummaryButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-1/2">Generate DMR Summary</button>
+                    <button type="button" id="copySummaryButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors w-1/2">Copy to Clipboard</button>
+                </div>
+                <textarea id="emrSummary" rows="25" class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 font-mono text-xs" placeholder="Your summary will appear here..."></textarea>
+                <div class="mt-6 text-center no-print"><button type="button" id="resetButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Reset Current Patient Form</button></div>
+            </div>
         </form>
     </div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 8.0.0 - Major Refactor</div>
+    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 9.0.0 - Major Bugfix Release</div>
     
     <script>
     // --- SCRIPT START ---
@@ -719,13 +652,13 @@
         };
 
         const form = document.getElementById('assessmentForm');
-        const mainContent = document.getElementById('main-content');
-        const launchModal = document.getElementById('launchScreenModal');
         
         // --- INITIALIZATION ---
         function initializeApp() {
             loadState();
             const isMobile = window.innerWidth < 768;
+            const launchModal = document.getElementById('launchScreenModal');
+            const mainContent = document.getElementById('main-content');
 
             if (patients.length > 0) {
                 renderTabs();
@@ -745,18 +678,15 @@
             setupEventListeners();
         }
         
-        // --- PATIENT & TAB MANAGEMENT (BUG FIXED) ---
+        // --- PATIENT & TAB MANAGEMENT ---
         function generatePatientId() { return `p_${Date.now()}`; }
 
         function addPatient() {
-            if (currentPatientId) {
-                saveCurrentPatientData();
-            }
+            if (currentPatientId) saveCurrentPatientData();
             const newPatientId = generatePatientId();
             const newPatient = { id: newPatientId, data: {}, name: `Patient ${patients.length + 1}` };
             patients.push(newPatient);
             currentPatientId = newPatientId;
-            
             clearForm();
             renderTabs();
             switchPatientTab(newPatientId);
@@ -765,14 +695,9 @@
 
         function switchPatientTab(patientId) {
             if (!patientId || (currentPatientId && currentPatientId === patientId)) return;
-            
-            if (currentPatientId) {
-                saveCurrentPatientData();
-            }
-            
+            if (currentPatientId) saveCurrentPatientData();
             currentPatientId = patientId;
             loadPatientData(patientId);
-            
             document.querySelectorAll('.patient-tab').forEach(tab => {
                 const isCurrent = tab.dataset.patientId === patientId;
                 tab.classList.toggle('active', isCurrent);
@@ -784,21 +709,22 @@
         function deletePatient(patientId) {
             const patientIndex = patients.findIndex(p => p.id === patientId);
             if (patientIndex === -1) return;
-
             const wasActive = currentPatientId === patientId;
             patients.splice(patientIndex, 1);
             
-            renderTabs();
-
             if (wasActive) {
                 if (patients.length > 0) {
                     const newActiveIndex = Math.max(0, patientIndex - 1);
                     currentPatientId = patients[newActiveIndex].id;
-                    switchPatientTab(currentPatientId);
                 } else {
                     currentPatientId = null;
-                    addPatient();
                 }
+            }
+            renderTabs();
+            if (patients.length > 0) {
+                 switchPatientTab(currentPatientId);
+            } else {
+                 addPatient();
             }
             saveState();
         }
@@ -807,21 +733,13 @@
             const container = document.getElementById('patientTabsContainer');
             container.innerHTML = '';
             if (patients.length === 0) return;
-
             patients.forEach(patient => {
                 const tab = document.createElement('div');
                 tab.className = 'patient-tab';
                 tab.dataset.patientId = patient.id;
-                
                 const score = patient.data?.finalScore || 0;
                 const riskClass = getRiskCategory(score).class;
-
-                tab.innerHTML = `
-                    <span class="tab-score-badge ${riskClass}">${score}</span>
-                    <span class="tab-name">${patient.name}</span>
-                    <button class="delete-patient-btn no-print" data-patient-id="${patient.id}">&times;</button>
-                `;
-
+                tab.innerHTML = `<span class="tab-score-badge ${riskClass}">${score}</span><span class="tab-name">${patient.name}</span><button class="delete-patient-btn no-print" data-patient-id="${patient.id}">&times;</button>`;
                 container.appendChild(tab);
                 if (patient.id === currentPatientId) {
                     tab.classList.add('active');
@@ -838,7 +756,6 @@
                 'category-critical': 'risk-critical', 'category-intensive-escalate': 'risk-intensive-escalate',
                 'category-intensive': 'risk-intensive', 'category-standard': 'risk-standard', 'category-single': 'risk-single'
             }[categoryInfo.class] || 'risk-single';
-
             tabElement.classList.remove('risk-critical', 'risk-intensive-escalate', 'risk-intensive', 'risk-standard', 'risk-single');
             tabElement.classList.add(riskClass);
         }
@@ -878,22 +795,17 @@
             const patient = patients.find(p => p.id === currentPatientId);
             if (!patient) return;
             const formData = gatherFormData();
-            
-            // Deep copy to prevent reference issues
             patient.data = JSON.parse(JSON.stringify(formData));
             patient.name = formData.patientInitials || `Patient ${patients.findIndex(p => p.id === currentPatientId) + 1}`;
             patient.data.finalScore = parseInt(document.getElementById('updatedTotalScore').textContent, 10) || 0;
-            
             saveState();
-            renderTabs();
         }
 
         function loadPatientData(patientId) {
             clearForm();
             const patient = patients.find(p => p.id === patientId);
             if (!patient || !patient.data) return;
-            const data = JSON.parse(JSON.stringify(patient.data)); // Deep copy
-
+            const data = JSON.parse(JSON.stringify(patient.data));
             Object.keys(data).forEach(key => {
                 const el = form.querySelector(`#${key}`) || form.querySelector(`[name="${key}"]`);
                 if (el) {
@@ -904,7 +816,6 @@
                     } else el.value = data[key];
                 }
             });
-
             if (data.allergies) data.allergies.forEach(a => addAllergy(a.name, a.reaction));
             if (data.devices) {
                  ['central_lines', 'pivcs', 'idcs', 'ng_tubes', 'drains', 'wounds', 'pacing_wires'].forEach(type => {
@@ -914,22 +825,21 @@
                     }
                 });
             }
-            
-            // Manually trigger change events for all inputs to ensure UI updates
             form.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
         }
 
         function clearForm() {
             form.reset();
-            deviceCounters = { central: 0, pivc: 0, idc: 0, ng: 0, drain: 0, wound: 0, pacing: 0 };
+            deviceCounters = {};
             document.querySelectorAll('.device-entry, .allergy-item').forEach(el => el.remove());
             form.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
             calculateTotalScore();
+            calculateADDS();
         }
 
-        function saveState() { localStorage.setItem('alertToolState_v8', JSON.stringify({ patients, currentPatientId })); }
+        function saveState() { localStorage.setItem('alertToolState_v9', JSON.stringify({ patients, currentPatientId })); }
         function loadState() {
-            const state = JSON.parse(localStorage.getItem('alertToolState_v8'));
+            const state = JSON.parse(localStorage.getItem('alertToolState_v9'));
             if (state) {
                 patients = state.patients || [];
                 currentPatientId = state.currentPatientId;
@@ -939,7 +849,7 @@
             if (confirm('Are you sure you want to delete ALL patient data? This action cannot be undone.')) {
                 patients = [];
                 currentPatientId = null;
-                localStorage.removeItem('alertToolState_v8');
+                localStorage.removeItem('alertToolState_v9');
                 addPatient();
             }
         }
@@ -953,175 +863,177 @@
             });
             
             const totalScoreEl = document.getElementById('updatedTotalScore');
-            totalScoreEl.textContent = score;
             totalScoreEl.title = '';
-
             if (hasCriticalItem && score < RISK_CATEGORIES.critical.score) {
                 score = RISK_CATEGORIES.critical.score;
                 totalScoreEl.textContent = `${score}*`;
                 totalScoreEl.title = '*Score elevated due to critical risk item.';
+            } else {
+                 totalScoreEl.textContent = score;
             }
 
             const category = getRiskCategory(score);
             const categoryEl = document.getElementById('updatedRiskCategory');
             categoryEl.textContent = category.text;
             categoryEl.className = `text-xl font-bold p-3 rounded-md mt-1 transition-all duration-300 ${category.class}`;
-
-            if (currentPatientId) saveCurrentPatientData();
+            if (currentPatientId) {
+                const patient = patients.find(p=>p.id === currentPatientId);
+                if(patient) {
+                    patient.data.finalScore = score;
+                    saveState();
+                    renderTabs();
+                }
+            }
         }
 
         function getRiskCategory(score) {
-            for (const key in RISK_CATEGORIES) {
-                if (score >= RISK_CATEGORIES[key].score) return RISK_CATEGORIES[key];
-            }
+            for (const key in RISK_CATEGORIES) { if (score >= RISK_CATEGORIES[key].score) return RISK_CATEGORIES[key]; }
             return RISK_CATEGORIES.single;
         }
 
-        // --- DEVICE MANAGEMENT (NEW IDC) ---
-        function createDeviceEntryHTML(id, content, type) {
-            return `<div id="${id}" data-device-type="${type}" class="device-entry bg-white p-3 rounded-md border border-gray-300 space-y-2">
-                        ${content}
-                        <button type="button" class="remove-device-btn text-xs text-red-600 hover:underline no-print">Remove</button>
-                    </div>`;
-        }
-        window.addCentral_line = function(data = {}) {
-            deviceCounters.central = (deviceCounters.central || 0) + 1;
-            const id = `central_${deviceCounters.central}`;
-            document.getElementById('central_lines_container').insertAdjacentHTML('beforeend', createDeviceEntryHTML(id, `
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                    <input type="text" data-key="type" value="${data.type || ''}" placeholder="Type (e.g., PICC, CVC)" class="p-1 border rounded-md">
-                    <input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md">
-                    <input type="date" data-key="insertion_date" value="${data.insertion_date || ''}" class="p-1 border rounded-md col-span-2">
-                </div>
-            `, 'central'));
-        }
-        window.addPivc = function(data = {}) {
-             deviceCounters.pivc = (deviceCounters.pivc || 0) + 1;
-             const id = `pivc_${deviceCounters.pivc}`;
-             document.getElementById('pivcs_container').insertAdjacentHTML('beforeend', createDeviceEntryHTML(id, `
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                    <input type="text" data-key="location" value="${data.location || ''}" placeholder="Location (e.g., L Hand)" class="p-1 border rounded-md">
-                    <input type="date" data-key="insertion_date" value="${data.insertion_date || ''}" class="p-1 border rounded-md">
-                </div>
-             `, 'pivc'));
-        }
-        window.addIdc = function(data = {}) {
-             deviceCounters.idc = (deviceCounters.idc || 0) + 1;
-             const id = `idc_${deviceCounters.idc}`;
-             document.getElementById('idcs_container').insertAdjacentHTML('beforeend', createDeviceEntryHTML(id, `
-                <div class="grid grid-cols-2 gap-2 text-sm items-center">
-                    <input type="date" data-key="insertion_date" value="${data.insertion_date || ''}" class="p-1 border rounded-md">
-                    <select data-key="size" class="p-1 border rounded-md bg-white">
-                        <option value="">Size</option>
-                        <option value="12" ${data.size === '12' ? 'selected' : ''}>12 Ch</option>
-                        <option value="14" ${data.size === '14' ? 'selected' : ''}>14 Ch</option>
-                        <option value="16" ${data.size === '16' ? 'selected' : ''}>16 Ch</option>
-                    </select>
-                </div>
-             `, 'idc'));
-        }
-        // Placeholder functions for other devices
-        window.addNg_tube = function(data={}) {}; window.addDrain = function(data={}) {};
-        window.addWound = function(data={}) {}; window.addPacing_wire = function(data={}) {};
+        // --- DEVICE MANAGEMENT ---
+        function createDeviceEntryHTML(id, content) { return `<div id="${id}" class="device-entry bg-white p-3 rounded-md border border-gray-300 space-y-2">${content}<button type="button" class="remove-device-btn text-xs text-red-600 hover:underline no-print">Remove</button></div>`;}
+        window.addCentral_line = function(data = {}) { deviceCounters.central = (deviceCounters.central || 0) + 1; document.getElementById('central_lines_container').insertAdjacentHTML('beforeend', createDeviceEntryHTML(`central_${deviceCounters.central}`, `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="type" value="${data.type || ''}" placeholder="Type (e.g., PICC)" class="p-1 border rounded-md"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"><input type="date" data-key="insertion_date" value="${data.insertion_date || ''}" class="p-1 border rounded-md col-span-2"></div>`)); }
+        window.addPivc = function(data = {}) { deviceCounters.pivc = (deviceCounters.pivc || 0) + 1; document.getElementById('pivcs_container').insertAdjacentHTML('beforeend', createDeviceEntryHTML(`pivc_${deviceCounters.pivc}`, `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"><input type="date" data-key="insertion_date" value="${data.insertion_date || ''}" class="p-1 border rounded-md"></div>`)); }
+        window.addIdc = function(data = {}) { deviceCounters.idc = (deviceCounters.idc || 0) + 1; document.getElementById('idcs_container').insertAdjacentHTML('beforeend', createDeviceEntryHTML(`idc_${deviceCounters.idc}`, `<div class="grid grid-cols-2 gap-2 text-sm items-center"><input type="date" data-key="insertion_date" value="${data.insertion_date || ''}" class="p-1 border rounded-md"><select data-key="size" class="p-1 border rounded-md bg-white"><option value="">Size</option><option value="12" ${data.size === '12' ? 'selected' : ''}>12 Ch</option><option value="14" ${data.size === '14' ? 'selected' : ''}>14 Ch</option><option value="16" ${data.size === '16' ? 'selected' : ''}>16 Ch</option></select></div>`)); }
+        window.addNg_tube = function(data={}) {}; window.addDrain = function(data={}) {}; window.addWound = function(data={}) {}; window.addPacing_wire = function(data={}) {};
+        function addAllergy(name = '', reaction = '') { document.getElementById('allergies_container').insertAdjacentHTML('beforeend', `<div class="allergy-item flex items-center gap-2"><input type="text" data-type="name" value="${name}" placeholder="Allergen" class="flex-grow p-1 border rounded-md text-sm"><input type="text" data-type="reaction" value="${reaction}" placeholder="Reaction" class="flex-grow p-1 border rounded-md text-sm"><button type="button" class="remove-allergy-btn text-red-500 font-bold no-print">&times;</button></div>`);}
         
-        function addAllergy(name = '', reaction = '') {
-            document.getElementById('allergies_container').insertAdjacentHTML('beforeend', `
-                <div class="allergy-item flex items-center gap-2">
-                    <input type="text" data-type="name" value="${name}" placeholder="Allergen" class="flex-grow p-1 border rounded-md text-sm">
-                    <input type="text" data-type="reaction" value="${reaction}" placeholder="Reaction" class="flex-grow p-1 border rounded-md text-sm">
-                    <button type="button" class="remove-allergy-btn text-red-500 font-bold no-print">&times;</button>
-                </div>`);
-        }
-        
-        // --- ADDS Calculator Logic ---
+        // --- ADDS CALCULATOR ---
         function calculateADDS() {
-             // ADDS calculation logic here...
+            const getScore = (val, ranges) => { for (const range of ranges) { if (val >= range.min && val <= range.max) return { score: range.score, text: range.text }; } return { score: 0, text: null }; };
+            const p = (id) => parseFloat(document.getElementById(id).value);
+            let total = 0;
+            let breakdown = [];
+            
+            const rr = p('rr_input');
+            if(rr){ const res = getScore(rr, [{min:0, max:8, score:2, text:"RR Low"}, {min:9, max:11, score:1, text:"RR Low"}, {min:21, max:29, score:2, text:"RR High"}, {min:30, max:999, score:3, text:"RR High"}]); total += res.score; if(res.text) breakdown.push(res.text);}
+            const spo2 = p('spo2_input');
+            if(spo2){ const res = getScore(spo2, [{min:0, max:89, score:3, text:"SpO2 Low"}, {min:90, max:93, score:2, text:"SpO2 Low"}]); total += res.score; if(res.text) breakdown.push(res.text);}
+            if(p('o2_flow_input') > 0) { total += 2; breakdown.push("On O2"); }
+            const hr = p('hr_input');
+            if(hr){ const res = getScore(hr, [{min:0, max:39, score:2, text:"HR Low"}, {min:40, max:49, score:1, text:"HR Low"}, {min:100, max:119, score:1, text:"HR High"}, {min:120, max:999, score:2, text:"HR High"}]); total += res.score; if(res.text) breakdown.push(res.text);}
+            const sbp = p('sbp_input');
+            if(sbp){ const res = getScore(sbp, [{min:0, max:79, score:3, text:"SBP Low"}, {min:80, max:99, score:2, text:"SBP Low"}, {min:200, max:999, score:2, text:"SBP High"}]); total += res.score; if(res.text) breakdown.push(res.text);}
+            const cons = p('consciousness_input');
+            if(cons > 0) { total += 3; breakdown.push("Consciousness Not Alert"); }
+            const temp = p('temp_input');
+            if(temp){ const res = getScore(temp, [{min:0, max:35.0, score:2, text:"Temp Low"}, {min:38.0, max:38.9, score:1, text:"Temp High"}, {min:39.0, max:99, score:2, text:"Temp High"}]); total += res.score; if(res.text) breakdown.push(res.text);}
+            
+            document.getElementById('calculatedADDSScore').textContent = total;
+            document.getElementById('addsBreakdown').textContent = breakdown.length > 0 ? breakdown.join(', ') : 'Normal Parameters';
         }
-        
-        // --- SUMMARY GENERATION ---
+
+        // --- DMR SUMMARY GENERATION ---
         function generateEMRSummary() {
-            // ... Full summary generation logic, including ADDS calculator results and After Hours flag ...
-             const getVal = (id) => document.getElementById(id)?.value.trim() || 'N/A';
-             const isChecked = (id) => document.getElementById(id)?.checked;
-             let summary = `ALERT NURSE REVIEW:\n\n`;
-             // ... The rest of the comprehensive summary generation logic ...
-             document.getElementById('emrSummary').value = summary;
+            const val = (id) => document.getElementById(id)?.value?.trim() || '';
+            const checkedText = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.closest('label').querySelector('.option-label').textContent.replace(/\(\S+\)/, '').trim() : 'N/A'; };
+            const isChecked = (id) => document.getElementById(id)?.checked;
+            
+            let summary = `ALERT NURSE REVIEW:\n\n`;
+            summary += `--- PATIENT & REVIEW DETAILS ---\n`;
+            summary += `Patient: ${val('patientInitials') || 'N/A'}\nLocation: ${val('wardAndRoom') || 'N/A'}\n`;
+            summary += `Review Type: ${val('reviewType') === 'post' ? 'Post-ICU stepdown' : 'Pre-ICU stepdown'}\n`;
+            summary += `ICU Stepdown: ${val('icuStepdownDate') || 'N/A'} at ${val('icuStepdownTime')}\nICU LOS: ${val('losDays') || 'N/A'} days\n`;
+            summary += `Goals of Care: ${val('goc') || 'Not Documented'}${val('gocSpecifics') ? ` (${val('gocSpecifics')})` : ''}\n`;
+            const precautions = Array.from(document.querySelectorAll('.precaution-cb:checked')).map(cb => cb.value).join(', ');
+            summary += `Infection Control: ${precautions || 'None'}${precautions ? ` (Reason: ${val('infectionControlReason')})` : ''}\n`;
+            if (isChecked('nkdaCheckbox')) { summary += `Allergies: NKDA\n`; }
+            else { const allergies = Array.from(document.querySelectorAll('.allergy-item')).map(item => `${item.querySelector('input[data-type="name"]').value} (${item.querySelector('input[data-type="reaction"]').value})`).join('; '); summary += `Allergies: ${allergies || 'None documented'}\n`; }
+            
+            summary += `\n--- CLINICAL OVERVIEW ---\n`;
+            summary += `Reason for ICU Admission: ${val('admissionReason') || 'N/A'}\nICU Summary: ${val('icuSummary') || 'N/A'}\nPMH: ${val('pmh') || 'N/A'}\n`;
+
+            summary += `\n--- ADDS SCORE ---\n`;
+            summary += `Calculated ADDS: ${document.getElementById('calculatedADDSScore').textContent} (${document.getElementById('addsBreakdown').textContent})\n`;
+            if(isChecked('addsModificationCheckbox')) {
+                summary += `MODIFIED ADDS: ${val('manualADDSScore')} (Rationale: ${val('addsModificationText')})\n`;
+            }
+
+            summary += `\n--- RISK ASSESSMENT ---\n`;
+            summary += `Final Score: ${document.getElementById('updatedTotalScore').textContent}\nCategory & Action: ${document.getElementById('updatedRiskCategory').textContent}\n`;
+            if (isChecked('systemic_after_hours_checkbox')) {
+                const stepdownTimeEl = document.getElementById('icuStepdownTime');
+                const isOOH = stepdownTimeEl.options[stepdownTimeEl.selectedIndex].dataset.ooh === 'true';
+                if ((new Date() - new Date(val('icuStepdownDate'))) / (1000*60*60*24) <= 1) {
+                    summary += `**! AFTER-HOURS DISCHARGE RISK (${isOOH ? 'OOH' : 'Afternoon'}) !**\n`;
+                }
+            }
+            summary += `Contributing Factors:\n`;
+            document.querySelectorAll('.score-input:checked').forEach(input => {
+                if (parseInt(input.dataset.score) !== 0 || input.id === 'systemic_after_hours_checkbox') {
+                     const label = input.closest('label').querySelector('.option-label, .option-label span:first-child');
+                     if(label) summary += `- ${label.textContent.replace(/\(\S+\)/, '').trim()}\n`;
+                }
+            });
+
+            summary += `\n--- DEVICES ---\n`;
+            const getDeviceText = (containerId, typeName) => {
+                const items = Array.from(document.getElementById(containerId).querySelectorAll('.device-entry')).map(entry => {
+                    let details = [];
+                    entry.querySelectorAll('input[data-key], select[data-key]').forEach(input => {
+                        if (input.value) details.push(`${input.dataset.key.replace(/_/g, ' ')}: ${input.value}`);
+                    });
+                    return details.length > 0 ? `- ${typeName}: ${details.join(', ')}` : null;
+                }).filter(Boolean).join('\n');
+                return items || `No ${typeName}s documented.\n`;
+            };
+            summary += getDeviceText('central_lines_container', 'CVAD') + '\n';
+            summary += getDeviceText('pivcs_container', 'PIVC') + '\n';
+            summary += getDeviceText('idcs_container', 'IDC') + '\n';
+
+            summary += `\n--- ASSESSMENT & PLAN ---\n`;
+            summary += `Fluid Balance: 24hr: ${val('fbc_24hr_input')}mL, Total ICU: ${val('fbc_total_input')}mL\n`;
+            summary += `PICS Assessment: ${document.querySelector('input[name="pics_status"]:checked').value}. ${val('pics_notes') || ''}\n`;
+            summary += `Home Team Plan: ${isChecked('homeTeamPlanCheckbox') ? `Yes - ${val('homeTeamPlanText')}` : 'No'}\n`;
+            summary += `Nursing Concern: ${document.querySelector('input[name="concern_score"]:checked').value === '5' ? `Yes - ${val('nursingConcernText')}` : 'No'}\n`;
+            summary += `Additional Notes: ${val('emrAdditionalNotes') || 'None'}\n`;
+            
+            document.getElementById('emrSummary').value = summary;
         }
 
         // --- EVENT LISTENER SETUP ---
         function setupEventListeners() {
-            // Main form interaction
-            form.addEventListener('input', calculateTotalScore);
-            form.addEventListener('change', calculateTotalScore);
+            form.addEventListener('input', () => { calculateTotalScore(); saveCurrentPatientData(); });
+            form.addEventListener('change', () => { calculateTotalScore(); saveCurrentPatientData(); });
 
-            // Patient management
             document.getElementById('addPatientBtn').addEventListener('click', addPatient);
             document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
             document.getElementById('patientTabsContainer').addEventListener('click', (e) => {
                 const tab = e.target.closest('.patient-tab');
                 const deleteBtn = e.target.closest('.delete-patient-btn');
-                if (deleteBtn) {
-                    e.stopPropagation();
-                    if (confirm('Are you sure you want to delete this patient?')) deletePatient(deleteBtn.dataset.patientId);
-                } else if (tab) {
-                    switchPatientTab(tab.dataset.patientId);
-                }
+                if (deleteBtn) { e.stopPropagation(); if (confirm('Are you sure?')) deletePatient(deleteBtn.dataset.patientId); } 
+                else if (tab) { switchPatientTab(tab.dataset.patientId); }
             });
             
-            // Allow radio buttons to be deselected
             let activeRadio = null;
-            form.addEventListener('mousedown', e => {
-                if (e.target.type === 'radio') activeRadio = e.target.checked ? e.target : null;
-            });
-            form.addEventListener('click', e => {
-                if (e.target.type === 'radio' && e.target === activeRadio) {
-                    e.target.checked = false;
-                    e.target.dispatchEvent(new Event('change', { bubbles: true })); // Ensure score updates
-                    activeRadio = null;
-                }
-            });
-
-            // Launch modal buttons
-            document.getElementById('startFromScratchBtn').addEventListener('click', () => {
-                launchModal.style.display = 'none';
-                mainContent.style.visibility = 'visible';
-                addPatient();
-            });
-
+            form.addEventListener('mousedown', e => { if (e.target.type === 'radio') activeRadio = e.target.checked ? e.target : null; });
+            form.addEventListener('click', e => { if (e.target.type === 'radio' && e.target === activeRadio) { e.target.checked = false; e.target.dispatchEvent(new Event('change', { bubbles: true })); activeRadio = null; } });
+            document.getElementById('startFromScratchBtn').addEventListener('click', () => { document.getElementById('launchScreenModal').style.display = 'none'; document.getElementById('main-content').style.visibility = 'visible'; addPatient(); });
+            
             // Device buttons
             document.getElementById('addCentralLineButton').addEventListener('click', () => window.addCentral_line());
             document.getElementById('addPivcButton').addEventListener('click', () => window.addPivc());
             document.getElementById('addIdcButton').addEventListener('click', () => window.addIdc());
             document.addEventListener('click', (e) => {
-                if (e.target.matches('.remove-device-btn')) e.target.closest('.device-entry').remove();
-                if (e.target.matches('.remove-allergy-btn')) e.target.closest('.allergy-item').remove();
+                if (e.target.matches('.remove-device-btn, .remove-allergy-btn')) e.target.parentElement.remove();
             });
 
-            // Other UI elements
-            document.getElementById('losDays').addEventListener('input', (e) => {
-                document.getElementById('losCheckbox').checked = parseInt(e.target.value, 10) > 3;
-            });
-            document.getElementById('nursingConcernText').style.display = document.querySelector('input[name="concern_score"]:checked')?.value === '5' ? 'block' : 'none';
-            document.querySelectorAll('input[name="concern_score"]').forEach(r => r.addEventListener('change', (e) => {
-                document.getElementById('nursingConcernText').style.display = e.target.value === '5' ? 'block' : 'none';
-            }));
+            // Conditional UI toggles
+            document.getElementById('homeTeamPlanCheckbox').addEventListener('change', e => { document.getElementById('homeTeamPlanDetails').style.display = e.target.checked ? 'block' : 'none'; });
+            document.querySelectorAll('.precaution-cb').forEach(cb => cb.addEventListener('change', () => { document.getElementById('infectionControlDetails').style.display = document.querySelector('.precaution-cb:checked') ? 'block' : 'none'; }));
+            document.getElementById('addsModificationCheckbox').addEventListener('change', e => { document.getElementById('addsModificationDetails').style.display = e.target.checked ? 'block' : 'none'; });
+            document.querySelectorAll('input[name="pics_status"]').forEach(r => r.addEventListener('change', e => { document.getElementById('pics_details_container').style.display = e.target.value !== 'negative' ? 'block' : 'none'; }));
+            document.querySelectorAll('input[name="concern_score"]').forEach(r => r.addEventListener('change', e => { document.getElementById('nursingConcernText').style.display = e.target.value === '5' ? 'block' : 'none'; }));
             
-            // Print and Summary buttons
-            document.getElementById('printBlankBtn').addEventListener('click', () => {
-                document.body.classList.add('print-blank-mode');
-                window.print();
-                document.body.classList.remove('print-blank-mode');
-            });
+            // ADDS Calculator Listener
+            form.querySelectorAll('.vital-input').forEach(el => el.addEventListener('input', calculateADDS));
+
+            // Summary and Print
+            document.getElementById('printBlankBtn').addEventListener('click', () => { document.body.classList.add('print-blank-mode'); window.print(); document.body.classList.remove('print-blank-mode'); });
             document.getElementById('generateSummaryButton').addEventListener('click', generateEMRSummary);
-            document.getElementById('copySummaryButton').addEventListener('click', () => {
-                const summaryEl = document.getElementById('emrSummary');
-                summaryEl.select();
-                document.execCommand('copy');
-                alert('Summary copied to clipboard!');
-            });
-            document.getElementById('resetButton').addEventListener('click', () => {
-                if (confirm('Are you sure you want to reset all fields for this patient?')) clearForm();
-            });
+            document.getElementById('copySummaryButton').addEventListener('click', () => { const el = document.getElementById('emrSummary'); el.select(); document.execCommand('copy'); alert('Summary copied!'); });
+            document.getElementById('resetButton').addEventListener('click', () => { if (confirm('Reset all fields for this patient?')) clearForm(); });
         }
         
         // --- RUN APP ---
