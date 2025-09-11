@@ -1,1 +1,82 @@
+body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
+.category-critical { background-color: #DC2626 !important; color: #FFFFFF; }
+.category-intensive-escalate { background-color: #F97316 !important; color: #FFFFFF; }
+.category-intensive { background-color: #F59E0B !important; color: #1A202C; }
+.category-standard { background-color: #2DD4BF !important; color: #134E4A; }
+.category-single { background-color: #67E8F9 !important; color: #164E63; }
+.header-gradient { background: linear-gradient(to right, #0D9488, #0F766E); }
+.final-score-bg { background-color: #134E4A; }
+
+.score-group-title { margin-bottom: 0.5rem; font-weight: 600; color: #4b5563; }
+
+/* New Big Button Styles */
+.score-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
+}
+.score-option-button {
+    display: block;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background-color: #ffffff;
+    text-align: center;
+}
+.score-option-button input { display: none; }
+.score-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.score-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+.score-option-button:has(input:checked) {
+    border-color: #2563eb;
+    background-color: #eff6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+.score-option-button:has(input:checked) .score-value { color: #1e40af; }
+.score-option-button:has(input:checked) .score-label { color: #1e40af; font-weight: 500;}
+
+/* Color coding for ADDS scores */
+.score-color-0 { background-color: #f8fafc; border-color: #e2e8f0; }
+.score-color-1 { background-color: #fefce8; border-color: #fde047; } /* Yellow */
+.score-color-2 { background-color: #fff7ed; border-color: #fb923c; } /* Orange */
+.score-color-3 { background-color: #fee2e2; border-color: #f87171; } /* Red */
+
+/* Sticky Footer */
+#sticky-footer {
+    transition: background-color 0.3s ease-in-out;
+}
+
+@media print {
+    /* Print styles remain the same */
+    @page { size: A4; margin: 0.5in; }
+    body { font-size: 9pt; background-color: #fff; }
+    .no-print, .print-hide, #sticky-footer { display: none !important; }
+    body.print-blank-mode #main-content, body.print-blank-mode #assessmentForm { display: block !important; visibility: visible !important; }
+    body.print-blank-mode > *:not(#main-content) { display: none !important; }
+    #main-content > *:not(#assessmentForm) { display: none !important; }
+    .print-blank-mode #assessmentForm { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+    .print-blank-mode .print-section { break-inside: avoid; margin-bottom: 1rem; }
+    .print-blank-mode h1, .print-blank-mode h2, .print-blank-mode h3 { padding: 0 !important; margin: 0 0 4px 0 !important; font-size: 11pt; }
+    .print-blank-mode .bg-white, .print-blank-mode .bg-gray-50 { padding: 0 !important; margin: 0 0 8px 0 !important; border: none !important; box-shadow: none !important; }
+    .print-blank-mode input[type="text"], .print-blank-mode input[type="date"], .print-blank-mode input[type="number"],
+    .print-blank-mode textarea, .print-blank-mode select {
+        border: none !important; border-bottom: 1px solid #999 !important;
+        border-radius: 0 !important; padding: 1px 0 !important; background-color: transparent !important; box-shadow: none !important; width: 100%;
+    }
+    .print-blank-mode textarea { border: 1px solid #999 !important; min-height: 2em; }
+    .print-blank-mode input[type="checkbox"],  .print-blank-mode input[type="radio"] { display: inline-block !important; width: 12px; height: 12px; border: 1px solid #000 !important; vertical-align: middle; }
+    .print-blank-mode label { color: #000 !important; }
+    .print-blank-mode .score-option-button { border: 1px solid #ccc !important; padding: 2px; }
+    .print-blank-mode .score-value { font-size: 10pt; }
+    .print-blank-mode .score-label { font-size: 7pt; }
+}
 
