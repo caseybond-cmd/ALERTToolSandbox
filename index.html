@@ -16,10 +16,10 @@
             <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ALERT Nursing Risk Assessment Tool</h2>
             <p class="text-gray-600">Please choose how you'd like to begin.</p>
             <div class="flex flex-col gap-4 pt-4">
-                <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review <span class="block text-xs font-normal">(Desktop or Mobile)</span></button>
+                <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review <span class="block text-xs font-normal">(on Desktop or Mobile)</span></button>
                 <button id="startQuickScoreBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg">⚡ Start Quick Score Only</button>
                 <div>
-                    <button id="resumeReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Continue from Desktop <span class="block text-xs font-normal">(On Mobile)</span></button>
+                    <button id="resumeReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Continue from Desktop <span class="block text-xs font-normal">(on Mobile)</span></button>
                 </div>
             </div>
             <div id="pasteContainer" class="hidden mt-4">
@@ -33,7 +33,6 @@
     <div id="main-content" class="max-w-4xl mx-auto" style="visibility: hidden;">
         <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print">
             <div class="flex flex-wrap justify-end items-center gap-2 mb-3">
-                 <button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-sm">📋 Copy Notes for Mobile</button>
                  <button id="printBlankBtn" type="button" class="bg-gray-100 text-gray-800 hover:bg-gray-200 font-semibold py-2 px-3 rounded-lg text-sm">Print Blank Form</button>
                  <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
             </div>
@@ -74,6 +73,8 @@
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
                     <div id="bloods-container" class="bg-gray-50 p-4 rounded-lg border"></div>
                 </div>
+                <!-- Handoff Button Placeholder -->
+                <div id="handoff-container" class="print-hide"></div>
                 <!-- ADDS Calculator -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
                     <div id="adds-container" class="bg-gray-50 p-4 rounded-lg border"></div>
@@ -121,7 +122,7 @@
         <span id="footer-score" class="text-3xl font-bold bg-white/20 px-4 py-1 rounded-md">0</span>
     </div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 15.0.0 - UI Overhaul</div>
+    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 16.0.0 - UI Overhaul</div>
     
     <script src="js/script.js"></script>
 
