@@ -178,7 +178,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const isChecked = (id) => document.getElementById(id)?.checked;
         let summary = `ALERT NURSE REVIEW:\n\n--- PATIENT & REVIEW DETAILS ---\n`;
         summary += `Patient: ${val('patientInitials')}\nLocation: ${val('wardAndRoom')}\n`;
-        summary += `ICU Stepdown: ${val('icuStepdownDate')} @ ${val('icuStepdownTime')}\nICU LOS: ${val('losDays')} days\n`;
+        const stepdownDate = val('icuStepdownDate');
+        if (stepdownDate !== 'N/A') {
+            const timeBand = val('icuStepdownTime');
+            const timeMatch = timeBand.match(/\((\d{2})/);
+            const hour = timeMatch ? timeMatch[1] : '00';
+            const stepdownDateTime = new Date(`${stepdownDate}T${hour}:00:00`);
+            const now = new Date();
+            const diffHours = (now - stepdownDateTime) / (1000 * 60 * 60);
+            let timeOnWardText = 'N/A';
+            if (diffHours >= 0) {
+                if (diffHours < 24) {
+                    timeOnWardText = `${Math.round(diffHours)} hours`;
+                } else {
+                    timeOnWardText = `${Math.round(diffHours / 24)} days`;
+                }
+            }
+            summary += `ICU Stepdown: ${stepdownDate} @ ${timeBand}\nTime on Ward: ${timeOnWardText}\n`;
+        }
+        summary += `ICU LOS: ${val('losDays')} days\n`;
         summary += `\n--- CLINICAL BACKGROUND ---\n`;
         summary += `GOC: ${val('goc') || 'N/A'}${val('gocSpecifics') ? ` (${val('gocSpecifics')})` : ''}\n`;
         const precautions = Array.from(document.querySelectorAll('.precaution-cb:checked')).map(cb => cb.value).join(', ');
@@ -193,28 +211,27 @@ document.addEventListener('DOMContentLoaded', () => {
         summary += `\n--- RISK ASSESSMENT ---\n`;
         summary += `Final Score: ${document.getElementById('updatedTotalScore').textContent}\nCategory & Action: ${document.getElementById('updatedRiskCategory').textContent}\n`;
         if (isChecked('systemic_after_hours_checkbox')) {
-            const stepdownTimeEl = document.getElementById('icuStepdownTime');
-            const isOOH = stepdownTimeEl.options[stepdownTimeEl.selectedIndex].dataset.ooh === 'true';
             if ((new Date() - new Date(val('icuStepdownDate'))) / (1000*60*60*24) <= 1) {
-                summary += `**! AFTER-HOURS DISCHARGE RISK (${isOOH ? 'OOH' : 'Afternoon'}) !**\n`;
+                summary += `**! AFTER-HOURS DISCHARGE RISK !**\n`;
             }
         }
         summary += `\nContributing Factors:\n`;
         const coreItems = ['pain_score', 'fluid_status_score', 'diet_score', 'delirium_score', 'mobility_score', 'frailty_score', 'bed_type', 'env_ratio', 'concern_score'];
         const highRiskItems = ['crit_met', 'adds_worsening', 'resp_increasing_o2', 'resp_rapid_wean', 'lines_cvc_present', 'crit_af', 'airway_altered', 'drains_high_risk', 'bowels_issue', 'systemic_los', 'systemic_comorbid'];
-        document.querySelectorAll('#scoringContainer .score-group, #scoringContainer > div > .score-option').forEach(element => {
+        document.querySelectorAll('#scoringContainer .score-group, #scoringContainer > div > label.score-option').forEach(element => {
             const titleEl = element.querySelector('.score-group-title');
-            const title = titleEl ? titleEl.textContent : (element.querySelector('.option-label span:first-child')?.textContent || "Item");
             element.querySelectorAll('.score-input').forEach(input => {
                 const name = input.name;
                 const note = document.getElementById(`${name}_note`)?.value || '';
                 const isTicked = input.checked;
-                if(coreItems.includes(name) || (highRiskItems.includes(name) && isTicked)) {
-                    const label = input.closest('label').querySelector('.option-label span:first-child')?.textContent || input.closest('label').querySelector('.option-label')?.textContent;
-                    if(input.type === 'radio'){
-                        if(isTicked) summary += `- ${title}: ${label.replace(/\(\S+\)/, '').trim()}${note ? ` (${note})` : ''}\n`;
+                const label = input.closest('label').querySelector('.option-label span:first-child')?.textContent || input.closest('label').querySelector('.option-label')?.textContent;
+                const title = titleEl ? titleEl.textContent : label;
+                
+                if (coreItems.includes(name) || (highRiskItems.includes(name) && isTicked)) {
+                    if (input.type === 'radio') {
+                        if (isTicked) summary += `- ${title}: ${label.replace(/\s\(.*\)/, '').trim()}${note ? ` (${note})` : ''}\n`;
                     } else if (input.type === 'checkbox') {
-                        if (isTicked) summary += `- Has ${label.replace(/:/g, '')}${note ? ` (${note})` : ''}\n`;
+                        if (isTicked) summary += `- Has ${label}${note ? ` (${note})` : ''}\n`;
                     }
                 }
             });
@@ -242,7 +259,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateHandoffNote() {
         saveState();
-        const readableNotes = `--- GENERAL NOTES ---\n${currentReview.generalNotes || ''}\n\n--- ICU SUMMARY ---\n${currentReview.icuSummary || ''}\n\n--- PMH ---\n${currentReview.pmh || ''}`;
+        const combinedNotes = [
+            currentReview.admissionReason, currentReview.icuSummary, 
+            currentReview.pmh, currentReview.generalNotes
+        ].filter(s => s && s.trim() !== 'N/A').join('\n\n---\n');
+
+        const readableNotes = `--- NOTES ---\n${combinedNotes}`;
+
         const keyData = {
             details: (({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }) => ({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }))(currentReview),
             clinical: (({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }) => ({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }))(currentReview),
@@ -260,14 +283,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             clearForm(false);
             
-            const generalNotesMatch = pastedText.match(/--- GENERAL NOTES ---\n([\s\S]*?)\n\n---/);
-            if(generalNotesMatch) document.getElementById('generalNotes').value = generalNotesMatch[1].trim();
-            const icuSummaryMatch = pastedText.match(/--- ICU SUMMARY ---\n([\s\S]*?)\n\n---/);
-            if(icuSummaryMatch) document.getElementById('icuSummary').value = icuSummaryMatch[1].trim();
-            const pmhMatch = pastedText.match(/--- PMH ---\n([\s\S]*?)(?=\n\n---|$)/);
-            if(pmhMatch) document.getElementById('pmh').value = pmhMatch[1].trim();
+            const notesMatch = pastedText.match(/--- NOTES ---\n([\s\S]*?)\n\n---/);
+            if(notesMatch) document.getElementById('generalNotes').value = notesMatch[1].trim();
 
-            const combinedData = {...decodedData.details, ...decodedData.clinical, ...decodedData.bloods};
+            const combinedData = {...decodedData.details, ...decodedData.clinical, ...decodedData.bloods, ...decodedData.notes};
             Object.keys(combinedData).forEach(key => {
                 const el = form.querySelector(`#${key}`);
                 if (el) {
@@ -341,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.precaution-cb').forEach(cb => cb.addEventListener('change', () => { document.getElementById('infectionControlDetails').style.display = document.querySelector('.precaution-cb:checked') ? 'block' : 'none'; }));
         document.getElementById('addsModificationCheckbox').addEventListener('change', e => { document.getElementById('addsModificationDetails').style.display = e.target.checked ? 'block' : 'none'; });
         document.getElementById('goc').addEventListener('change', e => { document.getElementById('gocSpecificsContainer').style.display = e.target.value ? 'block' : 'none'; });
-        document.querySelectorAll('input[name="pics_status"]').forEach(r => r.addEventListener('change', e => { document.getElementById('pics_details_container').style.display = e.target.value !== 'Negative' ? 'block' : 'none'; }));
+        document.querySelectorAll('input[name="pics_status"]').forEach(r => r.addEventListener('change', e => { document.getElementById('pics_details_container').style.display = e.target.value === 'Positive' || e.target.value === 'Unable to assess' ? 'block' : 'none'; }));
         
         form.querySelectorAll('.vital-input').forEach(el => el.addEventListener('input', calculateADDS));
         document.getElementById('printBlankBtn').addEventListener('click', () => { document.body.classList.add('print-blank-mode'); window.print(); document.body.classList.remove('print-blank-mode'); });
@@ -368,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         handoffContainer.innerHTML = `
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6 text-center">
                 <h3 class="text-lg font-semibold text-gray-800">Desktop Preparation Complete</h3>
-                <p class="text-sm text-gray-600 mt-2 mb-4">You have entered the pre-review data. You can now copy the notes to continue the assessment on a mobile device.</p>
+                <p class="text-sm text-gray-600 mt-2 mb-4">This section is only needed if you start a review on desktop and want to continue at the bedside on a mobile device.</p>
                 <button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
                     📲 Copy Notes to Continue on Mobile
                 </button>
@@ -395,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (item.control === 'segmented') html += `<div class="segmented-control">`;
                     item.items.forEach(subItem => { html += buildScoreOption(subItem); });
                     if (item.control === 'segmented') html += `</div>`;
-                    if (item.title === 'Lines & Drains') { html += `<div class="flex flex-col md:flex-row gap-x-4 p-2 text-sm mt-2 border-t bowel-inputs"><div><label for="bowel_last_open" class="block font-medium">Last Bowel Movement:</label><input type="date" id="bowel_last_open" class="mt-1 block w-full rounded-md border-2 p-1"></div><div><label for="bowel_type" class="block font-medium">Type:</label><select id="bowel_type" class="mt-1 block w-full rounded-md border-2 p-1"><option value="">Select...</option><option>Normal</option><option>Diarrhoea</option><option>Constipated</option><option>Ileus / Not passed flatus</option><option>Stoma Active</option></select></div></div>`;}
+                    if (item.title === 'Lines & Drains') { html += `<div class="bowel-inputs flex flex-col md:flex-row gap-x-4 p-2 text-sm mt-2 border-t"><div><label for="bowel_last_open" class="block font-medium">Last Bowel Movement:</label><input type="date" id="bowel_last_open" class="mt-1 block w-full rounded-md border-2 p-1"></div><div><label for="bowel_type" class="block font-medium">Type:</label><select id="bowel_type" class="mt-1 block w-full rounded-md border-2 p-1"><option value="">Select...</option><option>Normal</option><option>Diarrhoea</option><option>Constipated</option><option>Ileus / Not passed flatus</option><option>Stoma Active</option></select></div></div>`;}
                     if (item.title === '') { html += `<textarea id="nursingConcernText" name="nursingConcernText_note" class="score-note mt-4 w-full rounded-md border-gray-300 hidden" rows="2" placeholder="Specify concern..."></textarea>`}
                     html += `</div>`;
                 } else { html += buildScoreOption(item); }
