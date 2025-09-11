@@ -20,6 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
         loadState();
         const launchModal = document.getElementById('launchScreenModal');
         const mainContent = document.getElementById('main-content');
+        
+        // Hide handoff section on mobile devices
+        if (window.innerWidth < 768 || navigator.userAgent.includes("Mobi")) {
+            const handoffContainer = document.getElementById('handoff-container');
+            if(handoffContainer) handoffContainer.style.display = 'none';
+        }
+
         if (Object.keys(currentReview).length > 0) {
             launchModal.style.display = 'none';
             setAppViewMode(currentReview.mode || 'full');
@@ -71,11 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveState() {
         currentReview = gatherFormData();
         currentReview.finalScore = parseInt(document.getElementById('footer-score').textContent) || 0;
-        localStorage.setItem('alertToolState_v16', JSON.stringify(currentReview));
+        localStorage.setItem('alertToolState_v17', JSON.stringify(currentReview));
     }
     
     function loadState() {
-        const savedState = localStorage.getItem('alertToolState_v16');
+        const savedState = localStorage.getItem('alertToolState_v17');
         if (savedState) {
             currentReview = JSON.parse(savedState);
         }
@@ -115,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
              el.dispatchEvent(new Event('change', { bubbles: true }));
         });
         currentReview = {};
-        if (clearStorage) localStorage.removeItem('alertToolState_v16');
+        if (clearStorage) localStorage.removeItem('alertToolState_v17');
         calculateTotalScore();
         calculateADDS();
     }
@@ -182,22 +189,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let summary = `ALERT NURSE REVIEW:\n\n--- PATIENT & REVIEW DETAILS ---\n`;
         summary += `Patient: ${val('patientInitials')}\nLocation: ${val('wardAndRoom')}\n`;
         const stepdownDate = val('icuStepdownDate');
-        if (stepdownDate !== 'N/A') {
+        if (stepdownDate && stepdownDate !== 'N/A') {
             const timeBand = val('icuStepdownTime');
+            summary += `ICU Stepdown: ${stepdownDate} @ ${timeBand}\n`;
             const timeMatch = timeBand.match(/\((\d{2})/);
             const hour = timeMatch ? timeMatch[1] : '00';
             const stepdownDateTime = new Date(`${stepdownDate}T${hour}:00:00`);
             const now = new Date();
             const diffHours = (now - stepdownDateTime) / (1000 * 60 * 60);
-            let timeOnWardText = 'N/A';
             if (diffHours >= 0) {
-                if (diffHours < 24) {
-                    timeOnWardText = `${Math.round(diffHours)} hours`;
-                } else {
-                    timeOnWardText = `${Math.round(diffHours / 24)} days`;
-                }
+                const timeOnWardText = diffHours < 24 ? `${Math.round(diffHours)} hours` : `${Math.round(diffHours / 24)} days`;
+                summary += `Time on Ward: ${timeOnWardText}\n`;
             }
-            summary += `ICU Stepdown: ${stepdownDate} @ ${timeBand}\nTime on Ward: ${timeOnWardText}\n`;
         }
         summary += `ICU LOS: ${val('losDays')} days\n`;
         summary += `\n--- CLINICAL BACKGROUND ---\n`;
@@ -212,11 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if(isChecked('addsModificationCheckbox')) { summary += `MODIFIED ADDS: ${val('manualADDSScore')} (Rationale: ${val('addsModificationText')})\n`; }
         
         summary += `\n--- RISK ASSESSMENT ---\n`;
-        summary += `Final Score: ${document.getElementById('footer-score').textContent}\nCategory & Action: ${document.getElementById('footer-category').textContent}\n`;
-        if (isChecked('systemic_after_hours_checkbox')) {
-            if ((new Date() - new Date(val('icuStepdownDate'))) / (1000*60*60*24) <= 1) {
-                summary += `**! AFTER-HOURS DISCHARGE RISK !**\n`;
-            }
+        summary += `Final Score: ${document.getElementById('footer-score').textContent}\nCategory & Action: ${RISK_CATEGORIES[getRiskCategory(parseInt(document.getElementById('footer-score').textContent)).class.replace('category-','')].text}\n`;
+        if (isChecked('systemic_after_hours_checkbox') && ((new Date() - new Date(val('icuStepdownDate'))) / (1000*60*60*24) <= 1)) {
+            summary += `**! AFTER-HOURS DISCHARGE RISK !**\n`;
         }
         summary += `\nContributing Factors:\n`;
         const coreItems = ['pain_score', 'fluid_status_score', 'diet_score', 'delirium_score', 'mobility_score', 'frailty_score', 'bed_type', 'env_ratio', 'concern_score'];
@@ -232,11 +233,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const label = labelEl.querySelector('.score-label')?.textContent || labelEl.querySelector('.option-label span:first-child')?.textContent || labelEl.querySelector('.option-label')?.textContent;
                 const title = titleEl ? titleEl.textContent : label;
                 
-                if (coreItems.includes(name) || (highRiskItems.includes(name) && isTicked)) {
-                    if (input.type === 'radio') {
-                        if (isTicked) summary += `- ${title}: ${label.replace(/\s\(.*\)/, '').trim()}${note ? ` (${note})` : ''}\n`;
-                    } else if (input.type === 'checkbox') {
-                        if (isTicked) summary += `- Has ${label}${note ? ` (${note})` : ''}\n`;
+                if (coreItems.includes(name)) { // Always include core items
+                    if (input.type === 'radio' && isTicked) {
+                         summary += `- ${title}: ${label.replace(/\s\(.*\)/, '').trim()}${note ? ` (${note})` : ''}\n`;
+                    }
+                } else if (highRiskItems.includes(name) && isTicked) { // Only include high-risk if ticked
+                     if (input.type === 'checkbox') {
+                        summary += `- Has ${label}${note ? ` (${note})` : ''}\n`;
                     }
                 }
             });
@@ -264,19 +267,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateHandoffNote() {
         saveState();
-        const combinedNotes = [
-            `ICU Summary: ${currentReview.icuSummary || ''}`,
-            `PMH: ${currentReview.pmh || ''}`,
-            `General Notes: ${currentReview.generalNotes || ''}`
-        ].filter(s => s.split(':')[1].trim() !== '').join('\n\n');
-        
-        const readableNotes = `--- NOTES ---\n${combinedNotes}`;
-
-        const keyData = {
-            details: (({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }) => ({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }))(currentReview),
-            clinical: (({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }) => ({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }))(currentReview),
-            bloods: (({ lactate_input, lactate_input_prev, hb_input, hb_input_prev, k_input, k_input_prev, mg_input, mg_input_prev, creatinine_input, creatinine_input_prev, crp_input, crp_input_prev, albumin_input, albumin_input_prev, cts_cardiac_checkbox }) => ({ lactate_input, lactate_input_prev, hb_input, hb_input_prev, k_input, k_input_prev, mg_input, mg_input_prev, creatinine_input, creatinine_input_prev, crp_input, crp_input_prev, albumin_input, albumin_input_prev, cts_cardiac_checkbox }))(currentReview)
-        };
+        const readableNotes = [ `--- ICU SUMMARY ---\n${currentReview.icuSummary || ''}`, `--- PMH ---\n${currentReview.pmh || ''}`, `--- GENERAL NOTES ---\n${currentReview.generalNotes || ''}`].join('\n\n');
+        const keyData = { details: {}, clinical: {}, bloods: {} };
+        ['reviewType', 'patientInitials', 'wardAndRoom', 'icuStepdownDate', 'icuStepdownTime', 'losDays'].forEach(k => keyData.details[k] = currentReview[k]);
+        ['goc', 'gocSpecifics', 'nkdaCheckbox', 'allergies', 'precautions', 'infectionControlReason'].forEach(k => keyData.clinical[k] = currentReview[k]);
+        ['lactate_input', 'lactate_input_prev', 'hb_input', 'hb_input_prev', 'k_input', 'k_input_prev', 'mg_input', 'mg_input_prev', 'creatinine_input', 'creatinine_input_prev', 'crp_input', 'crp_input_prev', 'albumin_input', 'albumin_input_prev', 'cts_cardiac_checkbox'].forEach(k => keyData.bloods[k] = currentReview[k]);
         const encodedKey = btoa(JSON.stringify(keyData));
         return `${readableNotes}\n\n---\n[DATA_START]${encodedKey}[DATA_END]\n---`;
     }
@@ -284,21 +279,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadFromHandoff(pastedText) {
         try {
             const keyMatch = pastedText.match(/\[DATA_START\](.*)\[DATA_END\]/);
-            if (!keyMatch || !keyMatch[1]) { alert('Could not find data key in pasted text.'); return; }
+            if (!keyMatch || !keyMatch[1]) { alert('Could not find data key.'); return; }
             const decodedData = JSON.parse(atob(keyMatch[1]));
-            
             clearForm(false);
-            
-            const generalNotesMatch = pastedText.match(/--- NOTES ---\n([\s\S]*?)(?=\n\n---|$)/);
-            if (generalNotesMatch) {
-                const notes = generalNotesMatch[1].trim();
-                const icuSummaryMatch = notes.match(/ICU Summary: ([\s\S]*?)(?=\n\nPMH:|$)/);
-                if(icuSummaryMatch) document.getElementById('icuSummary').value = icuSummaryMatch[1].trim();
-                const pmhMatch = notes.match(/PMH: ([\s\S]*?)(?=\n\nGeneral Notes:|$)/);
-                if(pmhMatch) document.getElementById('pmh').value = pmhMatch[1].trim();
-                const generalMatch = notes.match(/General Notes: ([\s\S]*)/);
-                if(generalMatch) document.getElementById('generalNotes').value = generalMatch[1].trim();
-            }
+            const icuSummaryMatch = pastedText.match(/--- ICU SUMMARY ---\n([\s\S]*?)(?=\n\n---|$)/);
+            if(icuSummaryMatch) document.getElementById('icuSummary').value = icuSummaryMatch[1].trim();
+            const pmhMatch = pastedText.match(/--- PMH ---\n([\s\S]*?)(?=\n\n---|$)/);
+            if(pmhMatch) document.getElementById('pmh').value = pmhMatch[1].trim();
+            const generalMatch = pastedText.match(/--- GENERAL NOTES ---\n([\s\S]*?)(?=\n\n---|$)/);
+            if(generalMatch) document.getElementById('generalNotes').value = generalMatch[1].trim();
 
             const combinedData = {...decodedData.details, ...decodedData.clinical, ...decodedData.bloods};
             Object.keys(combinedData).forEach(key => {
@@ -313,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             form.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
             alert('Data loaded successfully!');
         } catch (e) {
-            alert('Error loading data. The pasted text may be corrupted.');
+            alert('Error loading data.');
             console.error("Error decoding handoff data:", e);
         }
     }
@@ -324,21 +313,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('startQuickScoreBtn').addEventListener('click', () => { document.getElementById('launchScreenModal').style.display = 'none'; setAppViewMode('quick'); clearForm(true); });
         document.getElementById('resumeReviewBtn').addEventListener('click', () => { document.getElementById('pasteContainer').style.display = 'block'; });
         document.getElementById('loadPastedDataBtn').addEventListener('click', () => { const pastedText = document.getElementById('pasteDataInput').value; if(!pastedText) return; document.getElementById('launchScreenModal').style.display = 'none'; setAppViewMode('full'); loadFromHandoff(pastedText); });
-
         form.addEventListener('input', saveState);
         form.addEventListener('change', saveState);
-        document.getElementById('startOverBtn').addEventListener('click', () => {
-            if (confirm('Are you sure you want to start over?')) {
-                clearForm(true);
-                document.getElementById('main-content').style.visibility = 'hidden';
-                document.getElementById('launchScreenModal').style.display = 'flex';
-            }
-        });
-        
+        document.getElementById('startOverBtn').addEventListener('click', () => { if (confirm('Are you sure you want to start over?')) { clearForm(true); document.getElementById('main-content').style.visibility = 'hidden'; document.getElementById('launchScreenModal').style.display = 'flex'; } });
         let activeRadio = null;
         form.addEventListener('mousedown', e => { if (e.target.type === 'radio' && (e.target.classList.contains('score-input') || e.target.classList.contains('adds-input'))) activeRadio = e.target.checked ? e.target : null; });
         form.addEventListener('click', e => { if (e.target.type === 'radio' && (e.target.classList.contains('score-input') || e.target.classList.contains('adds-input')) && e.target === activeRadio) { e.target.checked = false; e.target.dispatchEvent(new Event('change', { bubbles: true })); } });
-        
         document.getElementById('addCentralLineButton').addEventListener('click', () => window.addCentral_line());
         document.getElementById('addPivcButton').addEventListener('click', () => window.addPivc());
         document.getElementById('addIdcButton').addEventListener('click', () => window.addIdc());
@@ -346,30 +326,23 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('addOtherButton').addEventListener('click', () => window.addOther());
         document.getElementById('addAllergyButton').addEventListener('click', () => addAllergy());
         document.addEventListener('click', (e) => { if (e.target.matches('.remove-device-btn, .remove-allergy-btn')) e.target.closest('div').remove(); });
-        document.addEventListener('input', e => { if (e.target.classList.contains('device-date-input')) { const dwellEl = e.target.parentElement.querySelector('[data-key="dwell_time"]'); if(e.target.value) { const days = Math.round((new Date() - new Date(e.target.value)) / (1000 * 60 * 60 * 24)); dwellEl.textContent = `Dwell time: ${days} day(s)`; } else { dwellEl.textContent = ''; } } });
-        
+        document.addEventListener('input', e => { if (e.target.classList.contains('device-date-input')) { const dwellEl = e.target.closest('.device-entry').querySelector('[data-key="dwell_time"]'); if(e.target.value) { const days = Math.round((new Date() - new Date(e.target.value)) / (1000 * 60 * 60 * 24)); dwellEl.textContent = `Dwell time: ${days} day(s)`; } else { dwellEl.textContent = ''; } } });
         const scoringContainer = document.getElementById('scoringContainer');
         const addsContainer = document.getElementById('adds-container');
-        scoringContainer.addEventListener('change', (e) => { if(e.target.classList.contains('score-input')) { const option = e.target.closest('.list-score-option, .score-option'); const noteBox = option.querySelector('.score-note'); if (noteBox) { const shouldShow = e.target.checked && (parseInt(e.target.dataset.score, 10) !== 0 || e.target.name === 'concern_score'); noteBox.style.display = shouldShow ? 'block' : 'none'; } calculateTotalScore(); }});
+        scoringContainer.addEventListener('change', (e) => { if(e.target.classList.contains('score-input')) { const option = e.target.closest('.list-score-option, .score-option'); const noteBox = option.nextElementSibling; if (noteBox && noteBox.classList.contains('score-note')) { const shouldShow = e.target.checked && (parseInt(e.target.dataset.score, 10) !== 0 || e.target.name === 'concern_score'); noteBox.style.display = shouldShow ? 'block' : 'none'; } calculateTotalScore(); }});
         scoringContainer.addEventListener('click', handleAutoAdvance);
         addsContainer.addEventListener('change', (e) => { if (e.target.classList.contains('adds-input')) calculateADDS(); });
         addsContainer.addEventListener('click', handleAutoAdvance);
-        
         document.getElementById('homeTeamPlanCheckbox').addEventListener('change', e => { document.getElementById('homeTeamPlanDetails').style.display = e.target.checked ? 'block' : 'none'; });
         document.querySelectorAll('.precaution-cb').forEach(cb => cb.addEventListener('change', () => { document.getElementById('infectionControlDetails').style.display = document.querySelector('.precaution-cb:checked') ? 'block' : 'none'; }));
         document.getElementById('addsModificationCheckbox').addEventListener('change', e => { document.getElementById('addsModificationDetails').style.display = e.target.checked ? 'block' : 'none'; });
         document.getElementById('goc').addEventListener('change', e => { document.getElementById('gocSpecificsContainer').style.display = e.target.value ? 'block' : 'none'; });
         document.querySelectorAll('input[name="pics_status"]').forEach(r => r.addEventListener('change', e => { document.getElementById('pics_details_container').style.display = e.target.value !== 'Negative' ? 'block' : 'none'; }));
-        
         document.getElementById('printBlankBtn').addEventListener('click', () => { document.body.classList.add('print-blank-mode'); window.print(); document.body.classList.remove('print-blank-mode'); });
         document.getElementById('generateSummaryButton').addEventListener('click', generateEMRSummary);
         document.getElementById('copySummaryButton').addEventListener('click', () => { const el = document.getElementById('emrSummary'); el.select(); document.execCommand('copy'); alert('Summary copied!'); });
         document.getElementById('resetButton').addEventListener('click', () => { if (confirm('Reset form?')) clearForm(true); });
-        
-        document.getElementById('generateHandoffBtn').addEventListener('click', () => {
-             const note = generateHandoffNote();
-             navigator.clipboard.writeText(note).then(() => { alert('Bedside notes copied to clipboard!'); }, () => { alert('Could not copy automatically.'); });
-        });
+        document.getElementById('generateHandoffBtn').addEventListener('click', () => { const note = generateHandoffNote(); navigator.clipboard.writeText(note).then(() => { alert('Bedside notes copied to clipboard!'); }, () => { alert('Could not copy automatically.'); }); });
     }
     
     // --- DYNAMIC CONTENT INJECTION ---
@@ -387,13 +360,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function generateScoringHTML() {
-        const sections = [ { id: 'phys-section', title: 'Physiological & Respiratory Stability', color: 'blue', items: [ { type: 'checkbox', label: 'Patient is in MET Criteria', score: 15, isCritical: true, name: 'crit_met' }, { type: 'group', title: 'ADDS Score', control: 'segmented', name: 'adds_score', items: [ { label: '0-2', score: 1, checked: true }, { label: '3', score: 5 }, { label: '≥ 4', score: 10, isCritical: true } ]}, { type: 'group', title: 'Respiratory Trend', items: [ { type: 'checkbox', label: 'Worsening ADDS Trend', score: 5, name: 'adds_worsening' }, { type: 'checkbox', label: 'Increasing O₂', score: 10, name: 'resp_increasing_o2' }, { type: 'checkbox', label: 'Rapid wean of resp support', score: 6, name: 'resp_rapid_wean' } ]} ]}, { id: 'clinical-section', title: 'Clinical', color: 'yellow', items: [ { type: 'group', title: 'Pain Score', control: 'segmented', name: 'pain_score', items: [ { label: 'Well Controlled', score: 0, checked: true }, { label: 'Significant Pain/PRN', score: 3 }, { label: 'PCA/Ketamine/APS', score: 5 } ]}, { type: 'group', title: 'Fluid Status', control: 'segmented', name: 'fluid_status_score', items: [ { label: 'Euvolaemic', score: 0, checked: true }, { label: 'Mild Dehydration/Overload', score: 2 }, { label: 'Significant Dehydration/Overload', score: 4, isCritical: true } ]}, { type: 'group', title: 'Diet', control: 'segmented', name: 'diet_score', items: [ { label: 'Normal', score: 0, checked: true }, { label: 'Modified', score: 2 }, { label: 'NBM/NG/TPN', score: 4 }] }, { type: 'group', title: 'Delirium', control: 'segmented', name: 'delirium_score', items: [ { label: 'None', score: 0, checked: true }, { label: 'Mild', score: 4 }, { label: 'Mod-Severe', score: 8, isCritical: true }] }, { type: 'group', title: 'Mobility', control: 'segmented', name: 'mobility_score', items: [ { label: 'Baseline', score: 0, checked: true }, { label: 'Limited', score: 1 }, { label: 'Assisted', score: 2 }, { label: 'Bed-bound', score: 5 }] }, { type: 'group', title: 'Lines & Drains', items: [ { type: 'checkbox', label: 'Central Line present', score: 5, name: 'lines_cvc_present' }, { type: 'checkbox', label: 'Unstable Atrial Fibrillation', score: 10, name: 'crit_af', isCritical: true }, { type: 'checkbox', label: 'Altered Airway (Trach/Lary)', score: 5, name: 'airway_altered', isCritical: true }, { type: 'checkbox', label: 'High-Risk Drain present', score: 3, name: 'drains_high_risk' }, { type: 'checkbox', label: 'Bowels not opened >3 days or Ileus', score: 3, name: 'bowels_issue' }]} ]},
-            { id: 'systemic-section', title: 'Systemic', color: 'red', items: [ { type: 'group', title: 'Patient Factors', items: [ { type: 'checkbox', label: 'ICU LOS > 3 days', score: 4, name: 'systemic_los', id: 'losCheckbox' }, { type: 'checkbox', label: '≥3 chronic comorbidities', score: 4, name: 'systemic_comorbid' }] }, { type: 'group', title: 'Frailty (pre-hospital)', control: 'segmented', name: 'frailty_score', items: [ { label: 'Not Frail', score: 0, checked: true }, { label: 'Mild', score: 2 }, { label: 'Mod-Severe', score: 4 }] }, { type: 'group', title: 'Discharge Timing', items: [ { type: 'checkbox', label: 'After-Hours Discharge (first 24h)', score: 0, name: 'systemic_after_hours', id: 'systemic_after_hours_checkbox' }] } ]},
-            { id: 'ward-section', title: 'Receiving Ward and Staffing', color: 'indigo', items: [ { type: 'group', title: 'Bed Type', control: 'segmented', name: 'bed_type', items: [ { label: 'Unmonitored', score: 0, checked: true }, { label: 'Monitored', score: -3 }] }, { type: 'group', title: 'Staffing', control: 'segmented', name: 'env_ratio', items: [ { label: 'Standard Ratio', score: 0, checked: true }, { label: 'Enhanced Ratio', score: -5 }] } ]},
-            { id: 'concern-section', title: 'Nursing Concern', color: 'yellow', items: [ { type: 'group', title: '', control: 'segmented', name: 'concern_score', items: [ { label: 'No Concerns', score: 0, value: '0', checked: true }, { label: 'Concern Present', score: 5, value: '5', isCritical: true }] } ]} ];
+        const sections = [ { id: 'phys-section', title: 'Physiological & Respiratory Stability', items: [ { type: 'checkbox', label: 'Patient is in MET Criteria', score: 15, isCritical: true, name: 'crit_met' }, { type: 'group', title: 'ADDS Score', control: 'segmented', name: 'adds_score', items: [ { label: '0-2', score: 1, checked: true }, { label: '3', score: 5 }, { label: '≥ 4', score: 10, isCritical: true } ]}, { type: 'group', title: 'Respiratory Trend', items: [ { type: 'checkbox', label: 'Worsening ADDS Trend', score: 5, name: 'adds_worsening' }, { type: 'checkbox', label: 'Increasing O₂', score: 10, name: 'resp_increasing_o2' }, { type: 'checkbox', label: 'Rapid wean of resp support', score: 6, name: 'resp_rapid_wean' } ]} ]}, { id: 'clinical-section', title: 'Clinical', items: [ { type: 'group', title: 'Pain Score', control: 'segmented', name: 'pain_score', items: [ { label: 'Well Controlled', score: 0, checked: true }, { label: 'Significant Pain/PRN', score: 3 }, { label: 'PCA/Ketamine/APS', score: 5 } ]}, { type: 'group', title: 'Fluid Status', control: 'segmented', name: 'fluid_status_score', items: [ { label: 'Euvolaemic', score: 0, checked: true }, { label: 'Mild Dehydration/Overload', score: 2 }, { label: 'Significant Dehydration/Overload', score: 4, isCritical: true } ]}, { type: 'group', title: 'Diet', control: 'segmented', name: 'diet_score', items: [ { label: 'Normal', score: 0, checked: true }, { label: 'Modified', score: 2 }, { label: 'NBM/NG/TPN', score: 4 }] }, { type: 'group', title: 'Delirium', control: 'segmented', name: 'delirium_score', items: [ { label: 'None', score: 0, checked: true }, { label: 'Mild', score: 4 }, { label: 'Mod-Severe', score: 8, isCritical: true }] }, { type: 'group', title: 'Mobility', control: 'segmented', name: 'mobility_score', items: [ { label: 'Baseline', score: 0, checked: true }, { label: 'Limited', score: 1 }, { label: 'Assisted', score: 2 }, { label: 'Bed-bound', score: 5 }] }, { type: 'group', title: 'Lines & Drains', items: [ { type: 'checkbox', label: 'Central Line present', score: 5, name: 'lines_cvc_present' }, { type: 'checkbox', label: 'Unstable Atrial Fibrillation', score: 10, name: 'crit_af', isCritical: true }, { type: 'checkbox', label: 'Altered Airway (Trach/Lary)', score: 5, name: 'airway_altered', isCritical: true }, { type: 'checkbox', label: 'High-Risk Drain present', score: 3, name: 'drains_high_risk' }, { type: 'checkbox', label: 'Bowels not opened >3 days or Ileus', score: 3, name: 'bowels_issue' }]} ]},
+            { id: 'systemic-section', title: 'Systemic', items: [ { type: 'group', title: 'Patient Factors', items: [ { type: 'checkbox', label: 'ICU LOS > 3 days', score: 4, name: 'systemic_los', id: 'losCheckbox' }, { type: 'checkbox', label: '≥3 chronic comorbidities', score: 4, name: 'systemic_comorbid' }] }, { type: 'group', title: 'Frailty (pre-hospital)', control: 'segmented', name: 'frailty_score', items: [ { label: 'Not Frail', score: 0, checked: true }, { label: 'Mild', score: 2 }, { label: 'Mod-Severe', score: 4 }] }, { type: 'group', title: 'Discharge Timing', items: [ { type: 'checkbox', label: 'After-Hours Discharge (first 24h)', score: 0, name: 'systemic_after_hours', id: 'systemic_after_hours_checkbox' }] } ]},
+            { id: 'ward-section', title: 'Receiving Ward and Staffing', items: [ { type: 'group', title: 'Bed Type', control: 'segmented', name: 'bed_type', items: [ { label: 'Unmonitored', score: 0, checked: true }, { label: 'Monitored', score: -3 }] }, { type: 'group', title: 'Staffing', control: 'segmented', name: 'env_ratio', items: [ { label: 'Standard Ratio', score: 0, checked: true }, { label: 'Enhanced Ratio', score: -5 }] } ]},
+            { id: 'concern-section', title: 'Nursing Concern', items: [ { type: 'group', title: '', control: 'segmented', name: 'concern_score', items: [ { label: 'No Concerns', score: 0, value: '0', checked: true }, { label: 'Concern Present', score: 5, value: '5', isCritical: true }] } ]} ];
         let html = '';
         sections.forEach(section => {
-            html += `<div id="${section.id}" class="auto-advance-section rounded-lg mb-4"><h3 class="font-bold text-xl mb-3 text-gray-800">${section.title}</h3>`;
+            html += `<div id="${section.id}" class="auto-advance-section mb-4"><h3 class="font-bold text-xl mb-3 text-gray-800">${section.title}</h3>`;
             section.items.forEach(item => {
                 if (item.type === 'group') {
                     html += `<div class="score-group"><div class="score-group-title">${item.title}</div>`;
@@ -413,20 +386,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const noteHtml = `<textarea name="${name}_note" id="${name}_note" class="score-note mt-2 w-full rounded-md border-gray-300 shadow-sm text-sm p-2 hidden" rows="2" placeholder="Add details..."></textarea>`;
         const score = item.score !== undefined ? item.score : 0;
         const value = item.label || item.value;
-        const scoreText = `+${score}`;
+        const scoreText = `${score >= 0 ? '+' : ''}${score}`;
         
         return `<label class="list-score-option"> <input type="${item.type}" name="${name}" class="score-input" data-score="${score}" ${item.isCritical ? 'data-is-critical="true"' : ''} ${item.checked ? 'checked' : ''} value="${value}"> <span class="score-value">${scoreText}</span><span class="score-label">${item.label}</span> </label>${noteHtml}`;
     }
     
     function generateADDSHTML() {
         const params = [
-            { id: 'rr-section', name: 'Resp Rate', ranges: [{ score: 2, text: '≤8' }, { score: 1, text: '9-11' }, { score: 0, text: '12-20' }, { score: 2, text: '21-29' }, { score: 3, text: '>30' }] },
-            { id: 'spo2-section', name: 'SpO2', ranges: [{ score: 3, text: '≤89%' }, { score: 2, text: '90-93%' }, { score: 1, text: '94-95%' }, { score: 0, text: '≥96%' }] },
+            { id: 'rr-section', name: 'Resp Rate', ranges: [{ score: 3, text: '<=8' }, { score: 1, text: '9-11' }, { score: 0, text: '12-20' }, { score: 2, text: '21-29' }, { score: 3, text: '>=30' }] },
+            { id: 'spo2-section', name: 'SpO2', ranges: [{ score: 3, text: '<=89%' }, { score: 2, text: '90-93%' }, { score: 1, text: '94-95%' }, { score: 0, text: '>=96%' }] },
             { id: 'o2-section', name: 'On O2', ranges: [{ score: 2, text: 'Yes' }, { score: 0, text: 'No', checked: true }] },
-            { id: 'hr-section', name: 'Heart Rate', ranges: [{ score: 2, text: '≤39' }, { score: 1, text: '40-49' }, { score: 0, text: '50-99' }, { score: 1, text: '100-119' }, { score: 2, text: '>120' }] },
-            { id: 'sbp-section', name: 'SBP', ranges: [{ score: 3, text: '≤79' }, { score: 2, text: '80-99' }, { score: 0, text: '100-199' }, { score: 2, text: '≥200' }] },
+            { id: 'hr-section', name: 'Heart Rate', ranges: [{ score: 2, text: '<=39' }, { score: 1, text: '40-49' }, { score: 0, text: '50-99' }, { score: 1, text: '100-119' }, { score: 2, text: '>=120' }] },
+            { id: 'sbp-section', name: 'SBP', ranges: [{ score: 3, text: '<=79' }, { score: 2, text: '80-99' }, { score: 0, text: '100-199' }, { score: 2, text: '>=200' }] },
             { id: 'cons-section', name: 'Consciousness', ranges: [{ score: 0, text: 'Alert', checked: true }, { score: 3, text: 'V, P, U' }] },
-            { id: 'temp-section', name: 'Temperature', ranges: [{ score: 2, text: '≤35.0' }, { score: 0, text: '35.1-38.0' }, { score: 1, text: '38.1-38.9' }, { score: 2, text: '≥39.0' }] }
+            { id: 'temp-section', name: 'Temperature', ranges: [{ score: 2, text: '<=35.0' }, { score: 0, text: '35.1-38.0' }, { score: 1, text: '38.1-38.9' }, { score: 2, text: '>=39.0' }] }
         ];
         let html = '';
         params.forEach(param => {
