@@ -1,72 +1,71 @@
 body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
-.category-critical { background-color: #DC2626; color: #FFFFFF; }
-.category-intensive-escalate { background-color: #F97316; color: #FFFFFF; }
-.category-intensive { background-color: #F59E0B; color: #1A202C; }
-.category-standard { background-color: #2DD4BF; color: #134E4A; }
-.category-single { background-color: #67E8F9; color: #164E63; }
+.category-critical { background-color: #DC2626 !important; color: #FFFFFF; }
+.category-intensive-escalate { background-color: #F97316 !important; color: #FFFFFF; }
+.category-intensive { background-color: #F59E0B !important; color: #1A202C; }
+.category-standard { background-color: #2DD4BF !important; color: #134E4A; }
+.category-single { background-color: #67E8F9 !important; color: #164E63; }
 .header-gradient { background: linear-gradient(to right, #0D9488, #0F766E); }
 .final-score-bg { background-color: #134E4A; }
 
-.patient-tabs-container { border-bottom: 1px solid #D1D5DB; }
-.patient-tab { 
-    position: relative; cursor: pointer; padding: 0.75rem 1rem; color: #4B5563; 
-    border: 1px solid transparent; border-bottom: none; border-top: 4px solid transparent; 
-    margin-bottom: -1px; display: flex; align-items: center; gap: 0.5rem; 
-    transition: all 0.2s ease-in-out;
-}
-.patient-tab:hover { background-color: #F3F4F6; }
-.patient-tab.active { border-color: #D1D5DB; color: #047857; font-weight: 600; background-color: #FFFFFF; }
-.delete-patient-btn { color: #9CA3AF; font-size: 1.1rem; line-height: 1; padding: 2px; border-radius: 99px; }
-.delete-patient-btn:hover { color: #DC2626; background-color: #FEE2E2; }
-.tab-score-badge { font-size: 0.7rem; font-weight: 700; color: white; padding: 2px 6px; border-radius: 8px; }
-
-.patient-tab.active.risk-critical { border-top-color: #DC2626; }
-.patient-tab.active.risk-intensive-escalate { border-top-color: #F97316; }
-.patient-tab.active.risk-intensive { border-top-color: #F59E0B; }
-.patient-tab.active.risk-standard { border-top-color: #2DD4BF; }
-.patient-tab.active.risk-single { border-top-color: #67E8F9; }
-
-.score-group { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; }
 .score-group-title { margin-bottom: 0.5rem; font-weight: 600; color: #4b5563; }
-.score-option {
-    display: block; border: 2px solid #d1d5db; border-radius: 0.5rem;
-    padding: 0.75rem 1rem; margin-bottom: 0.5rem; cursor: pointer;
-    transition: all 0.2s ease-in-out; background-color: #ffffff;
+
+/* New Big Button Styles */
+.score-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
 }
-.score-option input { display: none; }
-.option-label { display: flex; align-items: center; justify-content: space-between; font-size: 1rem; line-height: 1.2; }
-.score-option:has(input:checked) { border-color: #2563eb; background-color: #eff6ff; }
-.score-option:has(input:checked) .option-label { font-weight: 600; color: #1e40af; }
+.score-option-button {
+    display: block;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background-color: #ffffff;
+    text-align: center;
+}
+.score-option-button input { display: none; }
+.score-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.score-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+.score-option-button:has(input:checked) {
+    border-color: #2563eb;
+    background-color: #eff6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+.score-option-button:has(input:checked) .score-value { color: #1e40af; }
+.score-option-button:has(input:checked) .score-label { color: #1e40af; font-weight: 500;}
 
-.segmented-control { display: flex; width: 100%; border-radius: 0.5rem; overflow: hidden; border: 2px solid #d1d5db; }
-.segmented-control .score-option { flex-grow: 1; text-align: center; border: none; margin: 0; border-radius: 0; border-right: 2px solid #d1d5db; padding: 0.5rem 0.25rem; }
-.segmented-control .score-option:last-child { border-right: none; }
-.segmented-control .option-label { justify-content: center; font-size: 0.875rem; }
-.segmented-control .score-option:has(input:checked) { background-color: #2563eb; }
-.segmented-control .score-option:has(input:checked) .option-label { color: #ffffff; font-weight:600; }
+/* Color coding for ADDS scores */
+.score-color-0 { background-color: #f8fafc; border-color: #e2e8f0; }
+.score-color-1 { background-color: #fefce8; border-color: #fde047; } /* Yellow */
+.score-color-2 { background-color: #fff7ed; border-color: #fb923c; } /* Orange */
+.score-color-3 { background-color: #fee2e2; border-color: #f87171; } /* Red */
 
-@media (max-width: 420px) {
-    .segmented-control { flex-direction: column; border: none; }
-    .segmented-control .score-option { border-radius: 0.5rem; border: 2px solid #d1d5db; margin-bottom: 0.5rem; }
-    .segmented-control .score-option:last-child { margin-bottom: 0; }
-    .bowel-inputs { flex-direction: column; }
-    .bowel-inputs > div { width: 100%; }
+/* Sticky Footer */
+#sticky-footer {
+    transition: background-color 0.3s ease-in-out;
 }
 
 @media print {
+    /* Print styles remain the same */
     @page { size: A4; margin: 0.5in; }
     body { font-size: 9pt; background-color: #fff; }
-    .no-print, .print-hide { display: none !important; }
-
+    .no-print, .print-hide, #sticky-footer { display: none !important; }
     body.print-blank-mode #main-content, body.print-blank-mode #assessmentForm { display: block !important; visibility: visible !important; }
     body.print-blank-mode > *:not(#main-content) { display: none !important; }
     #main-content > *:not(#assessmentForm) { display: none !important; }
-    
     .print-blank-mode #assessmentForm { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
     .print-blank-mode .print-section { break-inside: avoid; margin-bottom: 1rem; }
-    .print-blank-mode .final-score-bg, .print-blank-mode details > summary { display: none !important; }
     .print-blank-mode h1, .print-blank-mode h2, .print-blank-mode h3 { padding: 0 !important; margin: 0 0 4px 0 !important; font-size: 11pt; }
-    .print-blank-mode h4 { font-size: 10pt; margin-bottom: 2px; }
     .print-blank-mode .bg-white, .print-blank-mode .bg-gray-50 { padding: 0 !important; margin: 0 0 8px 0 !important; border: none !important; box-shadow: none !important; }
     .print-blank-mode input[type="text"], .print-blank-mode input[type="date"], .print-blank-mode input[type="number"],
     .print-blank-mode textarea, .print-blank-mode select {
@@ -76,8 +75,8 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
     .print-blank-mode textarea { border: 1px solid #999 !important; min-height: 2em; }
     .print-blank-mode input[type="checkbox"],  .print-blank-mode input[type="radio"] { display: inline-block !important; width: 12px; height: 12px; border: 1px solid #000 !important; vertical-align: middle; }
     .print-blank-mode label { color: #000 !important; }
-    .print-blank-mode .grid { display: block; }
-    .print-blank-mode .score-option { padding: 4px; }
-    .print-blank-mode .option-label { font-size: 9pt; }
+    .print-blank-mode .score-option-button { border: 1px solid #ccc !important; padding: 2px; }
+    .print-blank-mode .score-value { font-size: 10pt; }
+    .print-blank-mode .score-label { font-size: 7pt; }
 }
 
