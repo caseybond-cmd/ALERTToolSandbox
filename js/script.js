@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveState() {
         currentReview = gatherFormData();
         currentReview.finalScore = parseInt(document.getElementById('footer-score').textContent) || 0;
-        localStorage.setItem('alertToolState_v15', JSON.stringify(currentReview));
+        localStorage.setItem('alertToolState_v16', JSON.stringify(currentReview));
     }
     
     function loadState() {
-        const savedState = localStorage.getItem('alertToolState_v15');
+        const savedState = localStorage.getItem('alertToolState_v16');
         if (savedState) {
             currentReview = JSON.parse(savedState);
         }
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
              el.dispatchEvent(new Event('change', { bubbles: true }));
         });
         currentReview = {};
-        if (clearStorage) localStorage.removeItem('alertToolState_v15');
+        if (clearStorage) localStorage.removeItem('alertToolState_v16');
         calculateTotalScore();
         calculateADDS();
     }
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const category = getRiskCategory(score);
-        footerCategoryEl.textContent = category.text;
+        footerCategoryEl.textContent = category.text.split(':')[0];
         stickyFooter.className = `fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-between z-40 ${category.class}`;
         
         saveState();
@@ -176,9 +176,147 @@ document.addEventListener('DOMContentLoaded', () => {
     function addAllergy(name = '', reaction = '') { document.getElementById('allergies_container').insertAdjacentHTML('beforeend', `<div class="allergy-item flex items-center gap-2"><input type="text" data-type="name" value="${name}" placeholder="Allergen" class="flex-grow p-1 border rounded-md text-sm"><input type="text" data-type="reaction" value="${reaction}" placeholder="Reaction" class="flex-grow p-1 border rounded-md text-sm"><button type="button" class="remove-allergy-btn text-red-500 font-bold no-print">&times;</button></div>`);}
     
     // --- DMR & HANDOFF NOTE ---
-    function generateEMRSummary() { /* Omitted for brevity */ }
-    function generateHandoffNote() { /* Omitted for brevity */ }
-    function loadFromHandoff(pastedText) { /* Omitted for brevity */ }
+    function generateEMRSummary() {
+        const val = (id) => document.getElementById(id)?.value?.trim() || 'N/A';
+        const isChecked = (id) => document.getElementById(id)?.checked;
+        let summary = `ALERT NURSE REVIEW:\n\n--- PATIENT & REVIEW DETAILS ---\n`;
+        summary += `Patient: ${val('patientInitials')}\nLocation: ${val('wardAndRoom')}\n`;
+        const stepdownDate = val('icuStepdownDate');
+        if (stepdownDate !== 'N/A') {
+            const timeBand = val('icuStepdownTime');
+            const timeMatch = timeBand.match(/\((\d{2})/);
+            const hour = timeMatch ? timeMatch[1] : '00';
+            const stepdownDateTime = new Date(`${stepdownDate}T${hour}:00:00`);
+            const now = new Date();
+            const diffHours = (now - stepdownDateTime) / (1000 * 60 * 60);
+            let timeOnWardText = 'N/A';
+            if (diffHours >= 0) {
+                if (diffHours < 24) {
+                    timeOnWardText = `${Math.round(diffHours)} hours`;
+                } else {
+                    timeOnWardText = `${Math.round(diffHours / 24)} days`;
+                }
+            }
+            summary += `ICU Stepdown: ${stepdownDate} @ ${timeBand}\nTime on Ward: ${timeOnWardText}\n`;
+        }
+        summary += `ICU LOS: ${val('losDays')} days\n`;
+        summary += `\n--- CLINICAL BACKGROUND ---\n`;
+        summary += `GOC: ${val('goc') || 'N/A'}${val('gocSpecifics') ? ` (${val('gocSpecifics')})` : ''}\n`;
+        const precautions = Array.from(document.querySelectorAll('.precaution-cb:checked')).map(cb => cb.value).join(', ');
+        summary += `Infection Control: ${precautions || 'None'}${precautions ? ` (Reason: ${val('infectionControlReason')})` : ''}\n`;
+        if (isChecked('nkdaCheckbox')) { summary += `Allergies: NKDA\n`; }
+        else { const allergies = Array.from(document.querySelectorAll('.allergy-item')).map(item => `${item.querySelector('input[data-type="name"]').value} (${item.querySelector('input[data-type="reaction"]').value})`).join('; '); summary += `Allergies: ${allergies || 'None'}\n`; }
+        
+        summary += `\n--- OBSERVATIONS (ADDS) ---\n`;
+        summary += `Calculated ADDS: ${document.getElementById('calculatedADDSScore').textContent} (${document.getElementById('addsBreakdown').textContent})\n`;
+        if(isChecked('addsModificationCheckbox')) { summary += `MODIFIED ADDS: ${val('manualADDSScore')} (Rationale: ${val('addsModificationText')})\n`; }
+        
+        summary += `\n--- RISK ASSESSMENT ---\n`;
+        summary += `Final Score: ${document.getElementById('footer-score').textContent}\nCategory & Action: ${document.getElementById('footer-category').textContent}\n`;
+        if (isChecked('systemic_after_hours_checkbox')) {
+            if ((new Date() - new Date(val('icuStepdownDate'))) / (1000*60*60*24) <= 1) {
+                summary += `**! AFTER-HOURS DISCHARGE RISK !**\n`;
+            }
+        }
+        summary += `\nContributing Factors:\n`;
+        const coreItems = ['pain_score', 'fluid_status_score', 'diet_score', 'delirium_score', 'mobility_score', 'frailty_score', 'bed_type', 'env_ratio', 'concern_score'];
+        const highRiskItems = ['crit_met', 'adds_worsening', 'resp_increasing_o2', 'resp_rapid_wean', 'lines_cvc_present', 'crit_af', 'airway_altered', 'drains_high_risk', 'bowels_issue', 'systemic_los', 'systemic_comorbid'];
+        
+        document.querySelectorAll('#scoringContainer .score-group, #scoringContainer > div > label.list-score-option').forEach(element => {
+            const titleEl = element.closest('.score-group') ? element.closest('.score-group').querySelector('.score-group-title') : null;
+            element.querySelectorAll('.score-input').forEach(input => {
+                const name = input.name;
+                const note = document.getElementById(`${name}_note`)?.value || '';
+                const isTicked = input.checked;
+                const labelEl = input.closest('label');
+                const label = labelEl.querySelector('.score-label')?.textContent || labelEl.querySelector('.option-label span:first-child')?.textContent || labelEl.querySelector('.option-label')?.textContent;
+                const title = titleEl ? titleEl.textContent : label;
+                
+                if (coreItems.includes(name) || (highRiskItems.includes(name) && isTicked)) {
+                    if (input.type === 'radio') {
+                        if (isTicked) summary += `- ${title}: ${label.replace(/\s\(.*\)/, '').trim()}${note ? ` (${note})` : ''}\n`;
+                    } else if (input.type === 'checkbox') {
+                        if (isTicked) summary += `- Has ${label}${note ? ` (${note})` : ''}\n`;
+                    }
+                }
+            });
+        });
+        
+        const getDeviceText = (containerId, typeName) => Array.from(document.getElementById(containerId).querySelectorAll('.device-entry')).map(entry => {
+            let details = [];
+            entry.querySelectorAll('input[data-key], select[data-key]').forEach(input => { if (input.value) details.push(`${input.dataset.key.replace(/_/g, ' ')}: ${input.value}`); });
+            const dwellSpan = entry.querySelector('span[data-key="dwell_time"]');
+            if(dwellSpan && dwellSpan.textContent) details.push(dwellSpan.textContent);
+            return `- ${typeName}: ` + details.join(', ');
+        }).join('\n');
+        const devicesSummary = [getDeviceText('central_lines_container', 'CVAD'), getDeviceText('pivcs_container', 'PIVC'), getDeviceText('idcs_container', 'IDC'), getDeviceText('pacing_wires_container', 'Pacing Wires'), getDeviceText('others_container', 'Other')].filter(Boolean).join('\n');
+        summary += `\n--- DEVICES ---\n${devicesSummary || 'No devices documented.'}\n`;
+
+        summary += `\n--- ASSESSMENT & PLAN ---\n`;
+        summary += `Fluid Balance: 24hr: ${val('fbc_24hr_input')}mL, Total ICU: ${val('fbc_total_input')}mL\n`;
+        summary += `PICS: ${document.querySelector('input[name="pics_status"]:checked').value}. ${val('pics_notes') || ''}\n`;
+        summary += `Home Team Plan: ${isChecked('homeTeamPlanCheckbox') ? `Yes - ${val('homeTeamPlanText')}` : 'No'}\n`;
+        const combinedNotes = [val('admissionReason'), val('icuSummary'), val('pmh'), val('generalNotes')].filter(s => s && s !== 'N/A').join('\n\n---\n');
+        summary += `\n--- CLINICIAN NOTES ---\n${combinedNotes || 'N/A'}\n`;
+
+        document.getElementById('emrSummary').value = summary;
+    }
+
+    function generateHandoffNote() {
+        saveState();
+        const combinedNotes = [
+            `ICU Summary: ${currentReview.icuSummary || ''}`,
+            `PMH: ${currentReview.pmh || ''}`,
+            `General Notes: ${currentReview.generalNotes || ''}`
+        ].filter(s => s.split(':')[1].trim() !== '').join('\n\n');
+        
+        const readableNotes = `--- NOTES ---\n${combinedNotes}`;
+
+        const keyData = {
+            details: (({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }) => ({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }))(currentReview),
+            clinical: (({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }) => ({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }))(currentReview),
+            bloods: (({ lactate_input, lactate_input_prev, hb_input, hb_input_prev, k_input, k_input_prev, mg_input, mg_input_prev, creatinine_input, creatinine_input_prev, crp_input, crp_input_prev, albumin_input, albumin_input_prev, cts_cardiac_checkbox }) => ({ lactate_input, lactate_input_prev, hb_input, hb_input_prev, k_input, k_input_prev, mg_input, mg_input_prev, creatinine_input, creatinine_input_prev, crp_input, crp_input_prev, albumin_input, albumin_input_prev, cts_cardiac_checkbox }))(currentReview)
+        };
+        const encodedKey = btoa(JSON.stringify(keyData));
+        return `${readableNotes}\n\n---\n[DATA_START]${encodedKey}[DATA_END]\n---`;
+    }
+
+    function loadFromHandoff(pastedText) {
+        try {
+            const keyMatch = pastedText.match(/\[DATA_START\](.*)\[DATA_END\]/);
+            if (!keyMatch || !keyMatch[1]) { alert('Could not find data key in pasted text.'); return; }
+            const decodedData = JSON.parse(atob(keyMatch[1]));
+            
+            clearForm(false);
+            
+            const generalNotesMatch = pastedText.match(/--- NOTES ---\n([\s\S]*?)(?=\n\n---|$)/);
+            if (generalNotesMatch) {
+                const notes = generalNotesMatch[1].trim();
+                const icuSummaryMatch = notes.match(/ICU Summary: ([\s\S]*?)(?=\n\nPMH:|$)/);
+                if(icuSummaryMatch) document.getElementById('icuSummary').value = icuSummaryMatch[1].trim();
+                const pmhMatch = notes.match(/PMH: ([\s\S]*?)(?=\n\nGeneral Notes:|$)/);
+                if(pmhMatch) document.getElementById('pmh').value = pmhMatch[1].trim();
+                const generalMatch = notes.match(/General Notes: ([\s\S]*)/);
+                if(generalMatch) document.getElementById('generalNotes').value = generalMatch[1].trim();
+            }
+
+            const combinedData = {...decodedData.details, ...decodedData.clinical, ...decodedData.bloods};
+            Object.keys(combinedData).forEach(key => {
+                const el = form.querySelector(`#${key}`);
+                if (el) {
+                     if (el.type === 'checkbox') el.checked = combinedData[key];
+                     else el.value = combinedData[key];
+                }
+            });
+            if (decodedData.clinical.allergies) decodedData.clinical.allergies.forEach(a => addAllergy(a.name, a.reaction));
+            
+            form.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+            alert('Data loaded successfully!');
+        } catch (e) {
+            alert('Error loading data. The pasted text may be corrupted.');
+            console.error("Error decoding handoff data:", e);
+        }
+    }
     
     // --- EVENT LISTENER SETUP ---
     function setupEventListeners() {
@@ -190,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('input', saveState);
         form.addEventListener('change', saveState);
         document.getElementById('startOverBtn').addEventListener('click', () => {
-            if (confirm('Are you sure you want to start over? This will clear all data for the current review.')) {
+            if (confirm('Are you sure you want to start over?')) {
                 clearForm(true);
                 document.getElementById('main-content').style.visibility = 'hidden';
                 document.getElementById('launchScreenModal').style.display = 'flex';
@@ -199,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let activeRadio = null;
         form.addEventListener('mousedown', e => { if (e.target.type === 'radio' && (e.target.classList.contains('score-input') || e.target.classList.contains('adds-input'))) activeRadio = e.target.checked ? e.target : null; });
-        form.addEventListener('click', e => { if (e.target.type === 'radio' && (e.target.classList.contains('score-input') || e.target.classList.contains('adds-input')) && e.target === activeRadio) { e.target.checked = false; e.target.dispatchEvent(new Event('change', { bubbles: true })); activeRadio = null; } });
+        form.addEventListener('click', e => { if (e.target.type === 'radio' && (e.target.classList.contains('score-input') || e.target.classList.contains('adds-input')) && e.target === activeRadio) { e.target.checked = false; e.target.dispatchEvent(new Event('change', { bubbles: true })); } });
         
         document.getElementById('addCentralLineButton').addEventListener('click', () => window.addCentral_line());
         document.getElementById('addPivcButton').addEventListener('click', () => window.addPivc());
@@ -208,20 +346,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('addOtherButton').addEventListener('click', () => window.addOther());
         document.getElementById('addAllergyButton').addEventListener('click', () => addAllergy());
         document.addEventListener('click', (e) => { if (e.target.matches('.remove-device-btn, .remove-allergy-btn')) e.target.closest('div').remove(); });
-        document.addEventListener('input', e => {
-            if (e.target.classList.contains('device-date-input')) {
-                const dwellEl = e.target.parentElement.querySelector('[data-key="dwell_time"]');
-                if(e.target.value) {
-                    const days = Math.round((new Date() - new Date(e.target.value)) / (1000 * 60 * 60 * 24));
-                    dwellEl.textContent = `Dwell time: ${days} day(s)`;
-                } else {
-                    dwellEl.textContent = '';
-                }
-            }
-        });
+        document.addEventListener('input', e => { if (e.target.classList.contains('device-date-input')) { const dwellEl = e.target.parentElement.querySelector('[data-key="dwell_time"]'); if(e.target.value) { const days = Math.round((new Date() - new Date(e.target.value)) / (1000 * 60 * 60 * 24)); dwellEl.textContent = `Dwell time: ${days} day(s)`; } else { dwellEl.textContent = ''; } } });
         
-        document.getElementById('scoringContainer').addEventListener('change', (e) => { if(e.target.classList.contains('score-input')) { const option = e.target.closest('.score-option-button, .score-option'); const noteBox = option.querySelector('.score-note'); if (noteBox) { const shouldShow = e.target.checked && (parseInt(e.target.dataset.score, 10) !== 0 || e.target.name === 'concern_score'); noteBox.style.display = shouldShow ? 'block' : 'none'; } calculateTotalScore(); }});
-        document.getElementById('adds-container').addEventListener('change', (e) => { if (e.target.classList.contains('adds-input')) calculateADDS(); });
+        const scoringContainer = document.getElementById('scoringContainer');
+        const addsContainer = document.getElementById('adds-container');
+        scoringContainer.addEventListener('change', (e) => { if(e.target.classList.contains('score-input')) { const option = e.target.closest('.list-score-option, .score-option'); const noteBox = option.querySelector('.score-note'); if (noteBox) { const shouldShow = e.target.checked && (parseInt(e.target.dataset.score, 10) !== 0 || e.target.name === 'concern_score'); noteBox.style.display = shouldShow ? 'block' : 'none'; } calculateTotalScore(); }});
+        scoringContainer.addEventListener('click', handleAutoAdvance);
+        addsContainer.addEventListener('change', (e) => { if (e.target.classList.contains('adds-input')) calculateADDS(); });
+        addsContainer.addEventListener('click', handleAutoAdvance);
         
         document.getElementById('homeTeamPlanCheckbox').addEventListener('change', e => { document.getElementById('homeTeamPlanDetails').style.display = e.target.checked ? 'block' : 'none'; });
         document.querySelectorAll('.precaution-cb').forEach(cb => cb.addEventListener('change', () => { document.getElementById('infectionControlDetails').style.display = document.querySelector('.precaution-cb:checked') ? 'block' : 'none'; }));
@@ -241,10 +373,72 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- DYNAMIC CONTENT INJECTION ---
-    function populateStaticContent() { /* Omitted for brevity */ }
-    function generateScoringHTML() { /* Omitted for brevity */ }
-    function buildScoreOption(item, controlType) { /* Omitted for brevity */ }
+    function populateStaticContent() {
+        const bloodsContainer = document.getElementById('bloods-container');
+        bloodsContainer.innerHTML = `<h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3><div class="grid sm:grid-cols-2 gap-x-6 gap-y-4"><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Lactate</label><div class="flex-grow"><input type="number" step="0.1" id="lactate_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="lactate_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Hb</label><div class="flex-grow"><input type="number" id="hb_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="hb_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">K+</label><div class="flex-grow"><input type="number" step="0.1" id="k_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="k_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="k_planned_checkbox" class="h-3 w-3 mr-1"> Planned</label></div></div><div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Mg++</label><div class="flex-grow"><input type="number" step="0.1" id="mg_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="mg_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="mg_planned_checkbox" class="h-3 w-3 mr-1"> Planned</label></div></div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Creatinine</label><div class="flex-grow"><input type="number" id="creatinine_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="creatinine_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">CRP</label><div class="flex-grow"><input type="number" id="crp_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="crp_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Albumin</label><div class="flex-grow"><input type="number" id="albumin_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="albumin_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="sm:col-span-2 mt-2 pt-2 border-t"><label class="flex items-center"><input type="checkbox" id="cts_cardiac_checkbox" class="blood-input"><span class="ml-2 text-sm font-medium">CTS/Cardiac Patient</span></label></div></div>`;
+        
+        document.getElementById('handoff-container').innerHTML = `<div class="bg-white rounded-xl shadow-lg mb-6 p-6 text-center"><h3 class="text-lg font-semibold text-gray-800">Desktop Preparation Complete</h3><p class="text-sm text-gray-600 mt-2 mb-4">You have entered the pre-review data. If you wish to continue the assessment on a mobile device, use the button below. Otherwise, continue scrolling down.</p><button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg">📲 Copy Notes to Continue on Mobile</button></div>`;
+        
+        const addsContainer = document.getElementById('adds-container');
+        addsContainer.innerHTML = `<h3 class="font-semibold mb-2">ADDS Calculator</h3><div class="space-y-1">${generateADDSHTML()}</div><div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label for="manualADDSScore" class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label for="addsModificationText" class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div><div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border"><span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span><div id="calculatedADDSScore" class="font-bold text-5xl my-2">0</div><div id="addsBreakdown" class="text-xs min-h-[1.5em]">Select vitals to calculate</div></div>`;
+        
+        const scoringContainer = document.getElementById('scoringContainer');
+        scoringContainer.innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2><div class="space-y-4">${generateScoringHTML()}</div>`;
+    }
     
+    function generateScoringHTML() {
+        const sections = [ { id: 'phys-section', title: 'Physiological & Respiratory Stability', color: 'blue', items: [ { type: 'checkbox', label: 'Patient is in MET Criteria', score: 15, isCritical: true, name: 'crit_met' }, { type: 'group', title: 'ADDS Score', control: 'segmented', name: 'adds_score', items: [ { label: '0-2', score: 1, checked: true }, { label: '3', score: 5 }, { label: '≥ 4', score: 10, isCritical: true } ]}, { type: 'group', title: 'Respiratory Trend', items: [ { type: 'checkbox', label: 'Worsening ADDS Trend', score: 5, name: 'adds_worsening' }, { type: 'checkbox', label: 'Increasing O₂', score: 10, name: 'resp_increasing_o2' }, { type: 'checkbox', label: 'Rapid wean of resp support', score: 6, name: 'resp_rapid_wean' } ]} ]}, { id: 'clinical-section', title: 'Clinical', color: 'yellow', items: [ { type: 'group', title: 'Pain Score', control: 'segmented', name: 'pain_score', items: [ { label: 'Well Controlled', score: 0, checked: true }, { label: 'Significant Pain/PRN', score: 3 }, { label: 'PCA/Ketamine/APS', score: 5 } ]}, { type: 'group', title: 'Fluid Status', control: 'segmented', name: 'fluid_status_score', items: [ { label: 'Euvolaemic', score: 0, checked: true }, { label: 'Mild Dehydration/Overload', score: 2 }, { label: 'Significant Dehydration/Overload', score: 4, isCritical: true } ]}, { type: 'group', title: 'Diet', control: 'segmented', name: 'diet_score', items: [ { label: 'Normal', score: 0, checked: true }, { label: 'Modified', score: 2 }, { label: 'NBM/NG/TPN', score: 4 }] }, { type: 'group', title: 'Delirium', control: 'segmented', name: 'delirium_score', items: [ { label: 'None', score: 0, checked: true }, { label: 'Mild', score: 4 }, { label: 'Mod-Severe', score: 8, isCritical: true }] }, { type: 'group', title: 'Mobility', control: 'segmented', name: 'mobility_score', items: [ { label: 'Baseline', score: 0, checked: true }, { label: 'Limited', score: 1 }, { label: 'Assisted', score: 2 }, { label: 'Bed-bound', score: 5 }] }, { type: 'group', title: 'Lines & Drains', items: [ { type: 'checkbox', label: 'Central Line present', score: 5, name: 'lines_cvc_present' }, { type: 'checkbox', label: 'Unstable Atrial Fibrillation', score: 10, name: 'crit_af', isCritical: true }, { type: 'checkbox', label: 'Altered Airway (Trach/Lary)', score: 5, name: 'airway_altered', isCritical: true }, { type: 'checkbox', label: 'High-Risk Drain present', score: 3, name: 'drains_high_risk' }, { type: 'checkbox', label: 'Bowels not opened >3 days or Ileus', score: 3, name: 'bowels_issue' }]} ]},
+            { id: 'systemic-section', title: 'Systemic', color: 'red', items: [ { type: 'group', title: 'Patient Factors', items: [ { type: 'checkbox', label: 'ICU LOS > 3 days', score: 4, name: 'systemic_los', id: 'losCheckbox' }, { type: 'checkbox', label: '≥3 chronic comorbidities', score: 4, name: 'systemic_comorbid' }] }, { type: 'group', title: 'Frailty (pre-hospital)', control: 'segmented', name: 'frailty_score', items: [ { label: 'Not Frail', score: 0, checked: true }, { label: 'Mild', score: 2 }, { label: 'Mod-Severe', score: 4 }] }, { type: 'group', title: 'Discharge Timing', items: [ { type: 'checkbox', label: 'After-Hours Discharge (first 24h)', score: 0, name: 'systemic_after_hours', id: 'systemic_after_hours_checkbox' }] } ]},
+            { id: 'ward-section', title: 'Receiving Ward and Staffing', color: 'indigo', items: [ { type: 'group', title: 'Bed Type', control: 'segmented', name: 'bed_type', items: [ { label: 'Unmonitored', score: 0, checked: true }, { label: 'Monitored', score: -3 }] }, { type: 'group', title: 'Staffing', control: 'segmented', name: 'env_ratio', items: [ { label: 'Standard Ratio', score: 0, checked: true }, { label: 'Enhanced Ratio', score: -5 }] } ]},
+            { id: 'concern-section', title: 'Nursing Concern', color: 'yellow', items: [ { type: 'group', title: '', control: 'segmented', name: 'concern_score', items: [ { label: 'No Concerns', score: 0, value: '0', checked: true }, { label: 'Concern Present', score: 5, value: '5', isCritical: true }] } ]} ];
+        let html = '';
+        sections.forEach(section => {
+            html += `<div id="${section.id}" class="auto-advance-section rounded-lg mb-4"><h3 class="font-bold text-xl mb-3 text-gray-800">${section.title}</h3>`;
+            section.items.forEach(item => {
+                if (item.type === 'group') {
+                    html += `<div class="score-group"><div class="score-group-title">${item.title}</div>`;
+                    item.items.forEach(subItem => { html += buildScoreOption(subItem, item.control, item.name); });
+                    if (item.title === 'Lines & Drains') { html += `<div class="bowel-inputs flex flex-col md:flex-row gap-x-4 p-2 text-sm mt-2 border-t"><div><label for="bowel_last_open" class="block font-medium">Last Bowel Movement:</label><input type="date" id="bowel_last_open" class="mt-1 block w-full rounded-md border-2 p-1"></div><div><label for="bowel_type" class="block font-medium">Type:</label><select id="bowel_type" class="mt-1 block w-full rounded-md border-2 p-1"><option value="">Select...</option><option>Normal</option><option>Diarrhoea</option><option>Constipated</option><option>Ileus / Not passed flatus</option><option>Stoma Active</option></select></div></div>`;}
+                    if (item.title === '') { html += `<textarea id="${item.name}_note" name="${item.name}_note" class="score-note mt-4 w-full rounded-md border-gray-300 hidden" rows="2" placeholder="Specify concern..."></textarea>`}
+                    html += `</div>`;
+                } else { html += buildScoreOption(item, 'checkbox', item.name); }
+            });
+            html += `</div>`;
+        });
+        return html;
+    }
+    
+    function buildScoreOption(item, controlType, groupName) {
+        const name = item.name || groupName;
+        const noteHtml = `<textarea name="${name}_note" id="${name}_note" class="score-note mt-2 w-full rounded-md border-gray-300 shadow-sm text-sm p-2 hidden" rows="2" placeholder="Add details..."></textarea>`;
+        const score = item.score !== undefined ? item.score : 0;
+        const value = item.label || item.value;
+        const scoreText = `+${score}`;
+        
+        return `<label class="list-score-option"> <input type="${item.type}" name="${name}" class="score-input" data-score="${score}" ${item.isCritical ? 'data-is-critical="true"' : ''} ${item.checked ? 'checked' : ''} value="${value}"> <span class="score-value">${scoreText}</span><span class="score-label">${item.label}</span> </label>${noteHtml}`;
+    }
+    
+    function generateADDSHTML() {
+        const params = [
+            { id: 'rr-section', name: 'Resp Rate', ranges: [{ score: 2, text: '≤8' }, { score: 1, text: '9-11' }, { score: 0, text: '12-20' }, { score: 2, text: '21-29' }, { score: 3, text: '>30' }] },
+            { id: 'spo2-section', name: 'SpO2', ranges: [{ score: 3, text: '≤89%' }, { score: 2, text: '90-93%' }, { score: 1, text: '94-95%' }, { score: 0, text: '≥96%' }] },
+            { id: 'o2-section', name: 'On O2', ranges: [{ score: 2, text: 'Yes' }, { score: 0, text: 'No', checked: true }] },
+            { id: 'hr-section', name: 'Heart Rate', ranges: [{ score: 2, text: '≤39' }, { score: 1, text: '40-49' }, { score: 0, text: '50-99' }, { score: 1, text: '100-119' }, { score: 2, text: '>120' }] },
+            { id: 'sbp-section', name: 'SBP', ranges: [{ score: 3, text: '≤79' }, { score: 2, text: '80-99' }, { score: 0, text: '100-199' }, { score: 2, text: '≥200' }] },
+            { id: 'cons-section', name: 'Consciousness', ranges: [{ score: 0, text: 'Alert', checked: true }, { score: 3, text: 'V, P, U' }] },
+            { id: 'temp-section', name: 'Temperature', ranges: [{ score: 2, text: '≤35.0' }, { score: 0, text: '35.1-38.0' }, { score: 1, text: '38.1-38.9' }, { score: 2, text: '≥39.0' }] }
+        ];
+        let html = '';
+        params.forEach(param => {
+            html += `<div id="${param.id}" class="score-group auto-advance-section"><div class="score-group-title">${param.name}</div><div class="score-options-grid">`;
+            param.ranges.forEach(range => {
+                html += `<label class="score-option-button score-color-${range.score}"><input type="radio" name="${param.name.toLowerCase().replace(/\s/g, '_')}" value="${range.score}" class="adds-input" data-text="${param.name}: ${range.text}" ${range.checked ? 'checked' : ''}><div class="score-value">+${range.score}</div><div class="score-label">${range.text}</div></label>`;
+            });
+            html += `</div></div>`;
+        });
+        return html;
+    }
+        
     initializeApp();
 });
 
