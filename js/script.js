@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainContent = document.getElementById('main-content');
         if (Object.keys(currentReview).length > 0) {
             launchModal.style.display = 'none';
-            setAppViewMode('full');
+            setAppViewMode(currentReview.mode || 'full');
             loadReviewData();
         } else {
             launchModal.style.display = 'flex';
@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('main-content').style.visibility = 'visible';
         const fullReviewContainer = document.getElementById('fullReviewContainer');
         const fullReviewContainerBottom = document.getElementById('fullReviewContainerBottom');
+        currentReview.mode = mode;
         if (mode === 'quick') {
             fullReviewContainer.style.display = 'none';
             fullReviewContainerBottom.style.display = 'none';
@@ -201,15 +202,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         summary += `\nContributing Factors:\n`;
-        document.querySelectorAll('#scoringContainer .score-group').forEach(group => {
-            const title = group.querySelector('.score-group-title').textContent;
-            group.querySelectorAll('.score-option').forEach(option => {
+        document.querySelectorAll('#scoringContainer .score-group, #scoringContainer > div > .score-option').forEach(element => {
+            const titleEl = element.querySelector('.score-group-title');
+            const title = titleEl ? titleEl.textContent : (element.querySelector('.option-label span:first-child')?.textContent || "Item");
+            
+            element.querySelectorAll('.score-option').forEach(option => {
                 const input = option.querySelector('.score-input');
                 const label = option.querySelector('.option-label span:first-child')?.textContent || option.querySelector('.option-label')?.textContent;
                 const note = option.querySelector('.score-note')?.value || '';
+                
                 if(input.type === 'radio'){
                     if(input.checked) summary += `- ${title}: ${label.replace(/\(\S+\)/, '').trim()}${note ? `\n  > Notes: ${note}` : ''}\n`;
-                } else {
+                } else if (input.type === 'checkbox') {
                     summary += `- ${label.replace(/:/g, '')}: [${input.checked ? 'Yes' : 'No'}]${input.checked && note ? `\n  > Notes: ${note}` : ''}\n`;
                 }
             });
@@ -244,28 +248,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function generateHandoffNote() {
-        const data = gatherFormData();
+        saveState(); // Ensure current data is saved before generating
         const readableNotes = [
-            `ICU SUMMARY:\n${data.icuSummary || 'N/A'}`,
-            `\nPAST MEDICAL HISTORY:\n${data.pmh || 'N/A'}`,
-            `\nGENERAL NOTES:\n${data.generalNotes || 'N/A'}`
+            `--- ICU SUMMARY ---\n${currentReview.icuSummary || 'N/A'}`,
+            `\n--- PAST MEDICAL HISTORY ---\n${currentReview.pmh || 'N/A'}`,
+            `\n--- GENERAL NOTES ---\n${currentReview.generalNotes || 'N/A'}`
         ].join('\n\n');
         
         const keyData = {
-            details: {
-                reviewType: data.reviewType, patientInitials: data.patientInitials,
-                wardAndRoom: data.wardAndRoom, icuStepdownDate: data.icuStepdownDate,
-                icuStepdownTime: data.icuStepdownTime, losDays: data.losDays
-            },
-            clinical: {
-                goc: data.goc, gocSpecifics: data.gocSpecifics, nkdaCheckbox: data.nkdaCheckbox,
-                allergies: data.allergies, precautions: { contact: data['precautions_Contact'], droplet: data['precautions_Droplet'], airborne: data['precautions_Airborne']},
-                infectionControlReason: data.infectionControlReason
-            },
-            bloods: {
-               lactate_input: data.lactate_input, hb_input: data.hb_input, k_input: data.k_input, mg_input: data.mg_input,
-               creatinine_input: data.creatinine_input, crp_input: data.crp_input, albumin_input: data.albumin_input
-            }
+            details: (({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }) => ({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }))(currentReview),
+            clinical: (({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }) => ({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }))(currentReview),
+            bloods: (({ lactate_input, hb_input, k_input, mg_input, creatinine_input, crp_input, albumin_input }) => ({ lactate_input, hb_input, k_input, mg_input, creatinine_input, crp_input, albumin_input }))(currentReview)
         };
         const encodedKey = btoa(JSON.stringify(keyData));
         return `${readableNotes}\n\n---\n[DATA_START]${encodedKey}[DATA_END]\n---`;
@@ -282,16 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             clearForm(false);
             
-            // Populate text fields from readable part
-            const summaryMatch = pastedText.match(/ICU SUMMARY:\n([\s\S]*?)\n\n--- PAST MEDICAL HISTORY ---/);
-            const pmhMatch = pastedText.match(/PAST MEDICAL HISTORY:\n([\s\S]*?)\n\n--- GENERAL NOTES ---/);
-            const generalNotesMatch = pastedText.match(/GENERAL NOTES:\n([\s\S]*?)\n\n---/);
+            const summaryMatch = pastedText.match(/--- ICU SUMMARY ---\n([\s\S]*?)\n\n--- PAST MEDICAL HISTORY ---/);
+            const pmhMatch = pastedText.match(/--- PAST MEDICAL HISTORY ---\n([\s\S]*?)\n\n--- GENERAL NOTES ---/);
+            const generalNotesMatch = pastedText.match(/--- GENERAL NOTES ---\n([\s\S]*?)\n\n---/);
             
             if(summaryMatch) document.getElementById('icuSummary').value = summaryMatch[1].trim();
             if(pmhMatch) document.getElementById('pmh').value = pmhMatch[1].trim();
             if(generalNotesMatch) document.getElementById('generalNotes').value = generalNotesMatch[1].trim();
 
-            // Populate structured data from key
             const combinedData = {...decodedData.details, ...decodedData.clinical, ...decodedData.bloods};
             Object.keys(combinedData).forEach(key => {
                 const el = document.getElementById(key);
@@ -319,7 +310,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         form.addEventListener('input', saveState);
         form.addEventListener('change', saveState);
-        document.getElementById('clearDataBtn').addEventListener('click', () => { if (confirm('Are you sure you want to clear the form?')) clearForm(true); });
+        document.getElementById('startOverBtn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to start over? All unsaved data will be lost.')) {
+                clearForm(true);
+                document.getElementById('main-content').style.visibility = 'hidden';
+                document.getElementById('launchScreenModal').style.display = 'flex';
+            }
+        });
         
         let activeRadio = null;
         form.addEventListener('mousedown', e => { if (e.target.type === 'radio' && e.target.classList.contains('score-input')) activeRadio = e.target.checked ? e.target : null; });
@@ -361,7 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('addsModificationCheckbox').addEventListener('change', e => { document.getElementById('addsModificationDetails').style.display = e.target.checked ? 'block' : 'none'; });
         document.getElementById('goc').addEventListener('change', e => { document.getElementById('gocSpecificsContainer').style.display = e.target.value ? 'block' : 'none'; });
         document.querySelectorAll('input[name="pics_status"]').forEach(r => r.addEventListener('change', e => { document.getElementById('pics_details_container').style.display = e.target.value !== 'Negative' ? 'block' : 'none'; }));
-        document.querySelectorAll('input[name="concern_score"]').forEach(r => r.addEventListener('change', e => { document.getElementById('nursingConcernText').style.display = e.target.value === '5' ? 'block' : 'none'; }));
         
         form.querySelectorAll('.vital-input').forEach(el => el.addEventListener('input', calculateADDS));
         document.getElementById('printBlankBtn').addEventListener('click', () => { document.body.classList.add('print-blank-mode'); window.print(); document.body.classList.remove('print-blank-mode'); });
@@ -373,11 +369,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- DYNAMIC CONTENT INJECTION ---
     function populateStaticContent() {
-        // Populates static HTML sections into the DOM
         const bloodsContainer = document.getElementById('bloods-container');
-        bloodsContainer.innerHTML = `<h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3><div class="grid sm:grid-cols-2 gap-x-6 gap-y-4"><!-- Bloods content here --></div>`;
+        bloodsContainer.innerHTML = `<h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3><div class="grid sm:grid-cols-2 gap-x-6 gap-y-4"><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Lactate</label><div class="flex-grow"><input type="number" step="0.1" id="lactate_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="lactate_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Hb</label><div class="flex-grow"><input type="number" id="hb_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="hb_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">K+</label><div class="flex-grow"><input type="number" step="0.1" id="k_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="k_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="k_planned_checkbox" class="h-3 w-3 mr-1"> Planned</label></div></div><div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Mg++</label><div class="flex-grow"><input type="number" step="0.1" id="mg_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="mg_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="mg_planned_checkbox" class="h-3 w-3 mr-1"> Planned</label></div></div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Creatinine</label><div class="flex-grow"><input type="number" id="creatinine_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="creatinine_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">CRP</label><div class="flex-grow"><input type="number" id="crp_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="crp_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-20">Albumin</label><div class="flex-grow"><input type="number" id="albumin_input" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="albumin_input_prev" class="blood-input mt-1 w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="sm:col-span-2 mt-2 pt-2 border-t"><label class="flex items-center"><input type="checkbox" id="cts_cardiac_checkbox" class="blood-input"><span class="ml-2 text-sm font-medium">CTS/Cardiac Patient</span></label></div></div>`;
         const addsContainer = document.getElementById('adds-container');
-        addsContainer.innerHTML = `<h3 class="font-semibold mb-2">ADDS Calculator</h3><div class="space-y-4"><!-- ADDS content here --></div><div class="mt-6 bg-gray-100 p-4 rounded-lg border"><!-- MODS content --></div><div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border"><!-- ADDS score --></div>`;
+        addsContainer.innerHTML = `<h3 class="font-semibold mb-2">ADDS Calculator</h3><div class="space-y-4"><div class="grid sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Resp Rate</label><div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">SpO2 (%)</label><div class="sm:col-span-2"><input type="number" id="spo2_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Oxygen Delivery</label><div class="sm:col-span-2 flex items-center space-x-2"><input type="number" id="o2_flow_input" class="vital-input mt-1 w-full rounded-md border-2 p-2" placeholder="Value"><select id="o2_unit_input" class="vital-input mt-1 w-auto rounded-md border-2 p-2"><option value="L/min">L/min</option><option value="%">% FiO2</option></select></div></div><div class="grid sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Heart Rate</label><div class="sm:col-span-2"><input type="number" id="hr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">SBP (mmHg)</label><div class="sm:col-span-2"><input type="number" id="sbp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">DBP (mmHg)</label><div class="sm:col-span-2"><input type="number" id="dbp_input" class="mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Consciousness</label><div class="sm:col-span-2"><select id="consciousness_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div></div><div class="grid sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Temp (°C)</label><div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div></div><div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label for="manualADDSScore" class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label for="addsModificationText" class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div><div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border"><span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span><div id="calculatedADDSScore" class="font-bold text-5xl my-2">0</div><div id="addsBreakdown" class="text-xs min-h-[1.5em]">Enter vitals to calculate</div></div>`;
         const scoringContainer = document.getElementById('scoringContainer');
         scoringContainer.innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2><div class="space-y-8">${generateScoringHTML()}</div>`;
     }
