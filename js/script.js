@@ -259,12 +259,12 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             clinical: {
                 goc: data.goc, gocSpecifics: data.gocSpecifics, nkdaCheckbox: data.nkdaCheckbox,
-                allergies: data.allergies, precautions: { contact: data['precaution-Contact'], droplet: data['precaution-Droplet'], airborne: data['precaution-Airborne']},
+                allergies: data.allergies, precautions: { contact: data['precautions_Contact'], droplet: data['precautions_Droplet'], airborne: data['precautions_Airborne']},
                 infectionControlReason: data.infectionControlReason
             },
             bloods: {
-                lactate_input: data.lactate_input, hb_input: data.hb_input, k_input: data.k_input, mg_input: data.mg_input,
-                creatinine_input: data.creatinine_input, crp_input: data.crp_input, albumin_input: data.albumin_input
+               lactate_input: data.lactate_input, hb_input: data.hb_input, k_input: data.k_input, mg_input: data.mg_input,
+               creatinine_input: data.creatinine_input, crp_input: data.crp_input, albumin_input: data.albumin_input
             }
         };
         const encodedKey = btoa(JSON.stringify(keyData));
@@ -373,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- DYNAMIC CONTENT INJECTION ---
     function populateStaticContent() {
+        // Populates static HTML sections into the DOM
         const bloodsContainer = document.getElementById('bloods-container');
         bloodsContainer.innerHTML = `<h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3><div class="grid sm:grid-cols-2 gap-x-6 gap-y-4"><!-- Bloods content here --></div>`;
         const addsContainer = document.getElementById('adds-container');
