@@ -35,7 +35,6 @@
     <div id="main-content" class="max-w-4xl mx-auto" style="visibility: hidden;">
         <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print">
             <div class="flex flex-wrap justify-end items-center gap-2 mb-3">
-                 <button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-sm">📋 Copy Bedside Notes</button>
                  <button id="printBlankBtn" type="button" class="bg-gray-100 text-gray-800 hover:bg-gray-200 font-semibold py-2 px-3 rounded-lg text-sm">Print Blank Form</button>
                  <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
             </div>
@@ -73,6 +72,7 @@
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
                     <div id="bloods-container" class="bg-gray-50 p-4 rounded-lg border"></div>
                 </div>
+                <div id="handoff-container" class="print-hide"></div>
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
                     <div id="adds-container" class="bg-gray-50 p-4 rounded-lg border"></div>
                 </div>
@@ -115,7 +115,7 @@
         </form>
     </div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 13.3.0 - Bugfix Release</div>
+    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 13.4.0 - Workflow Refinement</div>
     
     <script src="js/script.js"></script>
 
