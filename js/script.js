@@ -212,9 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const note = option.querySelector('.score-note')?.value || '';
                 
                 if(input.type === 'radio'){
-                    if(input.checked) summary += `- ${title}: ${label.replace(/\(\S+\)/, '').trim()}${note ? `\n  > Notes: ${note}` : ''}\n`;
+                    if(input.checked) summary += `- ${title}: ${label.replace(/\(\S+\)/, '').trim()}${note ? ` (${note})` : ''}\n`;
                 } else if (input.type === 'checkbox') {
-                    summary += `- ${label.replace(/:/g, '')}: [${input.checked ? 'Yes' : 'No'}]${input.checked && note ? `\n  > Notes: ${note}` : ''}\n`;
+                    summary += `- ${label.replace(/:/g, '')}: [${input.checked ? 'Yes' : 'No'}]${input.checked && note ? ` (${note})` : ''}\n`;
                 }
             });
         });
@@ -249,16 +249,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateHandoffNote() {
         saveState(); // Ensure current data is saved before generating
-        const readableNotes = [
-            `--- ICU SUMMARY ---\n${currentReview.icuSummary || 'N/A'}`,
-            `\n--- PAST MEDICAL HISTORY ---\n${currentReview.pmh || 'N/A'}`,
-            `\n--- GENERAL NOTES ---\n${currentReview.generalNotes || 'N/A'}`
-        ].join('\n\n');
+        const readableNotes = `--- GENERAL NOTES ---\n${currentReview.generalNotes || ''}`;
         
         const keyData = {
             details: (({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }) => ({ reviewType, patientInitials, wardAndRoom, icuStepdownDate, icuStepdownTime, losDays }))(currentReview),
             clinical: (({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }) => ({ goc, gocSpecifics, nkdaCheckbox, allergies, precautions, infectionControlReason }))(currentReview),
-            bloods: (({ lactate_input, hb_input, k_input, mg_input, creatinine_input, crp_input, albumin_input }) => ({ lactate_input, hb_input, k_input, mg_input, creatinine_input, crp_input, albumin_input }))(currentReview)
+            bloods: (({ lactate_input, hb_input, k_input, mg_input, creatinine_input, crp_input, albumin_input }) => ({ lactate_input, hb_input, k_input, mg_input, creatinine_input, crp_input, albumin_input }))(currentReview),
+            notes: { admissionReason: currentReview.admissionReason, icuSummary: currentReview.icuSummary, pmh: currentReview.pmh }
         };
         const encodedKey = btoa(JSON.stringify(keyData));
         return `${readableNotes}\n\n---\n[DATA_START]${encodedKey}[DATA_END]\n---`;
@@ -275,20 +272,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             clearForm(false);
             
-            const summaryMatch = pastedText.match(/--- ICU SUMMARY ---\n([\s\S]*?)\n\n--- PAST MEDICAL HISTORY ---/);
-            const pmhMatch = pastedText.match(/--- PAST MEDICAL HISTORY ---\n([\s\S]*?)\n\n--- GENERAL NOTES ---/);
             const generalNotesMatch = pastedText.match(/--- GENERAL NOTES ---\n([\s\S]*?)\n\n---/);
-            
-            if(summaryMatch) document.getElementById('icuSummary').value = summaryMatch[1].trim();
-            if(pmhMatch) document.getElementById('pmh').value = pmhMatch[1].trim();
             if(generalNotesMatch) document.getElementById('generalNotes').value = generalNotesMatch[1].trim();
 
-            const combinedData = {...decodedData.details, ...decodedData.clinical, ...decodedData.bloods};
+            const combinedData = {...decodedData.details, ...decodedData.clinical, ...decodedData.bloods, ...decodedData.notes};
             Object.keys(combinedData).forEach(key => {
-                const el = document.getElementById(key);
+                const el = form.querySelector(`#${key}`);
                 if (el) {
-                    if (el.type === 'checkbox') el.checked = combinedData[key];
-                    else el.value = combinedData[key];
+                     if (el.type === 'checkbox') el.checked = combinedData[key];
+                     else el.value = combinedData[key];
                 }
             });
             if (decodedData.clinical.allergies) decodedData.clinical.allergies.forEach(a => addAllergy(a.name, a.reaction));
