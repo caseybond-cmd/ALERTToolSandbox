@@ -15,14 +15,13 @@
     <!-- Launch Screen -->
     <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex flex-col items-center justify-center p-4 z-50 no-print">
         <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 text-center max-w-lg w-full space-y-4">
-            <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ALERT Tool</h2>
+            <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ALERT Nursing Risk Assessment Tool</h2>
             <p class="text-gray-600">Please choose how you'd like to begin.</p>
             <div class="flex flex-col gap-4 pt-4">
-                <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review</button>
+                <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review <span class="block text-xs font-normal">(Desktop or Mobile)</span></button>
                 <button id="startQuickScoreBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg">⚡ Start Quick Score Only</button>
                 <div>
-                    <button id="resumeReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg">📲 Continue from Desktop</button>
-                    <p class="text-xs text-gray-500 mt-1">(For loading notes you copied from another device)</p>
+                    <button id="resumeReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Continue from Desktop <span class="block text-xs font-normal">(On Mobile)</span></button>
                 </div>
             </div>
             <div id="pasteContainer" class="hidden mt-4">
@@ -37,11 +36,9 @@
         <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print">
             <div class="flex flex-wrap justify-end items-center gap-2 mb-3">
                  <button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-sm">📋 Copy Bedside Notes</button>
-                 <button id="addPatientBtn" type="button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg text-sm">Add Patient</button>
                  <button id="printBlankBtn" type="button" class="bg-gray-100 text-gray-800 hover:bg-gray-200 font-semibold py-2 px-3 rounded-lg text-sm">Print Blank Form</button>
                  <button id="clearDataBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Clear All Data</button>
             </div>
-            <div id="patientTabsContainer" class="patient-tabs-container flex flex-wrap items-center"></div>
         </div>
 
         <form id="assessmentForm" onsubmit="return false;">
@@ -83,14 +80,13 @@
 
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-section">
                 <div id="scoringContainer">
-                    <h2 class="text-xl font-bold border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2>
                     <!-- Scoring options will be injected here by JS -->
                 </div> 
             </div>
 
             <div id="fullReviewContainerBottom">
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
-                    <details class="bg-gray-50 p-4 rounded-lg border" open><summary class="font-semibold cursor-pointer">Device, Drain & Wound Assessment</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container"  class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div><details class="pt-4 border-t"><summary class="text-sm font-medium">Show Additional</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">IDC</h4><div id="idcs_container" class="space-y-2"></div><button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add IDC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Other Devices & Wounds</h4><div id="others_container" class="space-y-2"></div><button type="button" id="addOtherButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add Other</button></div></div></details></div></details>
+                    <details class="bg-gray-50 p-4 rounded-lg border" open><summary class="font-semibold cursor-pointer">Device, Drain & Wound Assessment</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container"  class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div><details class="pt-4 border-t"><summary class="text-sm font-medium">Show Additional</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">IDC</h4><div id="idcs_container" class="space-y-2"></div><button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add IDC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Epicardial Pacing Wires</h4><div id="pacing_wires_container" class="space-y-2"></div><button type="button" id="addPacingWireButton" class="no-print mt-2 text-sm bg-purple-100 px-3 py-1 rounded-md">+ Add Pacing Wires</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Other Devices & Wounds</h4><div id="others_container" class="space-y-2"></div><button type="button" id="addOtherButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add Other</button></div></div></details></div></details>
                 </div>
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-hide">
                     <h2 class="text-xl font-bold border-b pb-3">Final Assessment & Plan</h2>
@@ -119,7 +115,7 @@
         </form>
     </div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 12.0.0 - Final Workflow</div>
+    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 13.2.0 - Bugfix Release</div>
     
     <script src="js/script.js"></script>
 
