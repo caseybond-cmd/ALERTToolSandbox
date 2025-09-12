@@ -23,7 +23,7 @@
                 </div>
             </div>
             <div id="pasteContainer" class="hidden mt-4">
-                <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your bedside notes here..."></textarea>
+                <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your data key here..."></textarea>
                 <button id="loadPastedDataBtn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Load Data</button>
             </div>
         </div>
@@ -55,14 +55,7 @@
                             <div class="md:col-span-2">
                                 <label class="block font-medium">Location:</label>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
-                                    <select id="ward" class="sm:col-span-2 w-full rounded-md border-2 p-2">
-                                        <option value="">Select Ward...</option>
-                                        <option value="5A">5A</option>
-                                        <option value="5B">5B</option>
-                                        <option value="5C">5C</option>
-                                        <option value="5D">5D</option>
-                                        <option value="Other">Other</option>
-                                    </select>
+                                    <select id="ward" class="sm:col-span-2 w-full rounded-md border-2 p-2"></select>
                                     <input type="number" id="roomNumber" placeholder="Room No." class="w-full rounded-md border-2 p-2">
                                 </div>
                                 <div id="wardOtherContainer" class="hidden mt-2">
@@ -112,8 +105,8 @@
                  <!-- Final Assessment Items -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-hide">
                     <h2 class="text-xl font-bold border-b pb-3">Final Assessment & Plan</h2>
-                    <div class="bg-gray-50 p-4 rounded-lg border"><h3 class="font-semibold mb-2">Fluid Status Assessment</h3><div class="grid md:grid-cols-2 gap-4"><div><label class="block text-sm font-medium">Patient Weight (kg):</label><input type="number" id="patientWeight" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label class="block text-sm font-medium">24hr Fluid Balance (mL):</label><input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2" step="100"></div><div class="md:col-span-2"><label class="block text-sm font-medium">Total ICU Balance (mL):</label><input type="number" id="fbc_total_input" class="mt-1 w-full rounded-md border-2 p-2" step="100"></div></div></div>
-                    <div><h3 class="text-lg font-semibold mb-2">PICS</h3><div class="p-4 rounded-lg bg-purple-50"><div class="space-y-2"><div class="segmented-control"><label class="score-option"><input type="radio" name="pics_status" value="Negative" checked><span class="option-label">Negative</span></label><label class="score-option"><input type="radio" name="pics_status" value="Positive"><span class="option-label">Positive</span></label><label class="score-option"><input type="radio" name="pics_status" value="Unable to assess"><span class="option-label">Unable to assess</span></label></div><div id="pics_details_container" class="hidden pt-2"><label for="pics_notes" class="block text-sm font-medium">Plan:</label><textarea id="pics_notes" rows="2" class="mt-1 w-full rounded-md border-2 p-2" placeholder="Plan..."></textarea></div></div></div></div>
+                    <div id="fluid-assessment-container" class="bg-gray-50 p-4 rounded-lg border"></div>
+                    <div><h3 class="text-lg font-semibold mb-2">PICS</h3><div class="p-4 rounded-lg bg-purple-50"><div class="space-y-2"><select id="pics_status" name="pics_status" class="w-full rounded-md border-2 p-2"><option value="Negative">Negative</option><option value="Positive">Positive</option><option value="Unable to assess">Unable to assess</option></select><div id="pics_details_container" class="hidden pt-2"><label for="pics_notes" class="block text-sm font-medium">Plan:</label><textarea id="pics_notes" rows="2" class="mt-1 w-full rounded-md border-2 p-2" placeholder="Plan..."></textarea></div></div></div></div>
                     <div><label class="flex items-center font-medium"><input type="checkbox" id="homeTeamPlanCheckbox" class="mr-2 h-4 w-4">Home Team Plan in Place</label><div id="homeTeamPlanDetails" class="hidden mt-2"><textarea id="homeTeamPlanText" rows="3" class="mt-1 w-full rounded-md border-2 p-2" placeholder="Enter plan details..."></textarea></div></div>
                     <div><label for="additionalNotes" class="block font-medium">Additional Notes:</label><textarea id="additionalNotes" rows="6" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div>
                 </div>
