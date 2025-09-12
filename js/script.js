@@ -63,13 +63,16 @@ document.addEventListener('DOMContentLoaded', () => {
         data.allergies = Array.from(document.querySelectorAll('.allergy-item')).map(item => ({ name: item.querySelector('input[data-type="name"]').value, reaction: item.querySelector('input[data-type="reaction"]').value }));
         data.devices = {};
         ['central_lines', 'pivcs', 'idcs', 'pacing_wires', 'drains', 'others'].forEach(type => {
-            data.devices[type] = Array.from(document.getElementById(`${type}_container`).querySelectorAll('.device-entry')).map(entry => {
-                const deviceData = {};
-                entry.querySelectorAll('input[data-key], select[data-key]').forEach(input => {
-                    if (input.dataset.key) deviceData[input.dataset.key] = input.value;
+            const container = document.getElementById(`${type}_container`);
+            if (container) {
+                data.devices[type] = Array.from(container.querySelectorAll('.device-entry')).map(entry => {
+                    const deviceData = {};
+                    entry.querySelectorAll('input[data-key], select[data-key]').forEach(input => {
+                        if (input.dataset.key) deviceData[input.dataset.key] = input.value;
+                    });
+                    return deviceData;
                 });
-                return deviceData;
-            });
+            }
         });
         return data;
     }
@@ -277,10 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateHandoffNote() {
         saveState();
-        const keyData = { details: {}, clinical: {}, bloods: {} };
-        ['reviewType', 'patientInitials', 'ward', 'roomNumber', 'wardOther', 'icuStepdownDate', 'icuStepdownTime', 'losDays'].forEach(k => keyData.details[k] = currentReview[k]);
-        ['goc', 'gocSpecifics', 'nkdaCheckbox', 'allergies', 'precautions', 'infectionControlReason', 'admissionReason', 'icuSummary', 'pmh'].forEach(k => keyData.clinical[k] = currentReview[k]);
-        ['lactate_input', 'lactate_input_prev', 'hb_input', 'hb_input_prev', 'k_input', 'k_input_prev', 'mg_input', 'mg_input_prev', 'creatinine_input', 'creatinine_input_prev', 'crp_input', 'crp_input_prev', 'albumin_input', 'albumin_input_prev', 'pct_input'].forEach(k => keyData.bloods[k] = currentReview[k]);
+        const keyData = {};
+        ['reviewType', 'patientInitials', 'ward', 'roomNumber', 'wardOther', 'icuStepdownDate', 'icuStepdownTime', 'losDays', 'goc', 'gocSpecifics', 'nkdaCheckbox', 'allergies', 'precautions', 'infectionControlReason', 'admissionReason', 'icuSummary', 'pmh', 'lactate_input', 'lactate_input_prev', 'hb_input', 'hb_input_prev', 'k_input', 'k_input_prev', 'mg_input', 'mg_input_prev', 'creatinine_input', 'creatinine_input_prev', 'crp_input', 'crp_input_prev', 'albumin_input', 'albumin_input_prev', 'pct_input'].forEach(k => {
+            if(currentReview[k]) keyData[k] = currentReview[k];
+        });
         return btoa(JSON.stringify(keyData));
     }
 
@@ -288,15 +291,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const decodedData = JSON.parse(atob(pastedText));
             clearForm(false);
-            const combinedData = {...decodedData.details, ...decodedData.clinical, ...decodedData.bloods};
-            Object.keys(combinedData).forEach(key => {
+            Object.keys(decodedData).forEach(key => {
                 const el = form.querySelector(`#${key}`);
                 if (el) {
-                     if (el.type === 'checkbox') el.checked = combinedData[key];
-                     else el.value = combinedData[key];
+                     if (el.type === 'checkbox') el.checked = decodedData[key];
+                     else el.value = decodedData[key];
                 }
             });
-            if (decodedData.clinical.allergies) decodedData.clinical.allergies.forEach(a => addAllergy(a.name, a.reaction));
+            if (decodedData.allergies) decodedData.allergies.forEach(a => addAllergy(a.name, a.reaction));
             
             form.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
             alert('Data loaded successfully!');
