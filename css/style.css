@@ -84,45 +84,40 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
 
 /* Print Styles */
 @media print {
-    @page { size: A4 landscape; margin: 0.5in; }
+    @page { size: A4; margin: 0.5in; }
     body { font-size: 8pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .no-print, .print-hide, #sticky-footer { display: none !important; }
 
-    body.print-blank-mode #main-content, body.print-blank-mode #assessmentForm { display: block !important; visibility: visible !important; }
-    body.print-blank-mode > *:not(#main-content) { display: none !important; }
-    #main-content > *:not(#assessmentForm) { display: none !important; }
+    #print-container { display: block !important; }
+    body.print-blank-mode > *:not(#print-container) { display: none !important; }
     
-    .print-blank-mode #assessmentForm { 
-        box-shadow: none !important; border: none !important; 
-        padding: 0 !important; margin: 0 !important;
+    .print-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
         gap: 1rem;
+        height: 100%;
     }
-    .print-blank-mode .print-section { 
+    .print-checklist { 
         break-inside: avoid; 
         border: 1px solid #ccc;
         padding: 0.5rem;
         border-radius: 6px;
     }
     
-    .print-blank-mode h1, .print-blank-mode h2, .print-blank-mode h3 { font-size: 10pt; font-weight: bold; margin: 0 0 4px 0 !important; padding: 0 !important; border-bottom: 1px solid #333; }
-    .print-blank-mode .score-group-title { font-size: 9pt; font-weight: bold; }
+    .print-checklist h3 { font-size: 9pt; font-weight: bold; margin: 0 0 4px 0 !important; padding: 0 0 2px 0 !important; border-bottom: 1px solid #333; }
+    .print-checklist .score-group-title { font-size: 8pt; font-weight: bold; margin-top: 4px; }
     
-    .print-blank-mode .list-score-option { border: 1px solid #ccc !important; padding: 2px; }
-    .print-blank-mode .score-value { display:none; }
-    .print-blank-mode .score-label { font-size: 7.5pt; padding-left: 0.25rem; }
-    .print-blank-mode .list-score-option::before {
-        content: '\_';
-        font-weight: bold;
-        margin-right: 0.5rem;
+    .print-checklist .list-score-option { border: 1px solid #ccc !important; padding: 1px 2px; margin-bottom: 2px; display: flex; align-items: center; }
+    .print-checklist .score-value { display:inline-block; font-size: 7pt; width: 25px; text-align: right; padding-right: 4px; }
+    .print-checklist .score-label { font-size: 7pt; padding-left: 0.25rem; }
+    .print-checklist .list-score-option::before {
+        content: '';
         border: 1px solid black;
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
         display: inline-block;
-        line-height: 10px;
-        text-align: center;
     }
-    .print-blank-mode .grid { display: block; }
+    .print-checklist .grid { display: block; }
 }
 
