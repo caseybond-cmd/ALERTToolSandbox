@@ -459,7 +459,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('input', e => { if (e.target.classList.contains('device-date-input')) { const dwellEl = e.target.closest('.device-entry').querySelector('[data-key="dwell_time"]'); if(e.target.value) { const days = Math.round((new Date() - new Date(e.target.value)) / (1000 * 60 * 60 * 24)); dwellEl.textContent = `Dwell time: ${days} day(s)`; } else { dwellEl.textContent = ''; } } });
         
         const scoringContainer = document.getElementById('scoringContainer');
-        scoringContainer.addEventListener('change', (e) => { if(e.target.classList.contains('score-input')) { const isCheckbox = e.target.type === 'checkbox'; const option = e.target.closest('.list-score-option'); const noteBox = document.getElementById(`${e.target.name}_note`); if (noteBox) { const shouldShow = e.target.checked && (parseInt(e.target.dataset.score, 10) !== 0 || e.target.name === 'concern_score'); noteBox.style.display = shouldShow ? 'block' : 'none'; } calculateTotalScore(); }});
+        scoringContainer.addEventListener('change', (e) => { 
+            if(e.target.classList.contains('score-input')) { 
+                 const option = e.target.closest('.list-score-option');
+                 const noteBox = option.nextElementSibling;
+                 if (noteBox && noteBox.classList.contains('score-note')) {
+                     const shouldShow = e.target.checked && (parseInt(e.target.dataset.score, 10) !== 0 || e.target.name === 'concern_score');
+                     noteBox.style.display = shouldShow ? 'block' : 'none';
+                 }
+                 calculateTotalScore(); 
+            }
+        });
         
         form.querySelectorAll('.vital-input').forEach(el => el.addEventListener('input', calculateADDS));
         
@@ -557,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.items.forEach(subItem => { 
                         if (subItem.type === 'sub-group') {
                             html += `<div class="score-sub-group-title">${subItem.title}</div>`;
-                            subSubItem.items.forEach(subSubItem => html += buildScoreOption(subSubItem, subItem.name));
+                            subItem.items.forEach(subSubItem => html += buildScoreOption(subSubItem, subItem.name));
                         } else if (subItem.type === 'sub-group-item') {
                             html += buildScoreOption(subItem, subItem.name);
                         } else {
@@ -576,12 +586,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function buildScoreOption(item, groupName) {
         const name = item.name || groupName;
         const type = item.type || 'radio';
-        const noteHtml = (item.type === 'checkbox') ? `<textarea name="${name}_note" id="${name}_note" class="score-note mt-2 w-full rounded-md border-gray-300 shadow-sm text-sm p-2 hidden" rows="2" placeholder="Add details..."></textarea>` : '';
+        const noteHtml = `<textarea name="${name}_note" id="${name}_note" class="score-note mt-2 w-full rounded-md border-gray-300 shadow-sm text-sm p-2 hidden" rows="2" placeholder="Add details..."></textarea>`;
         const score = item.score !== undefined ? item.score : 0;
         const value = item.label || item.value;
         const scoreText = `${score >= 0 ? '+' : ''}${score}`;
         const idAttr = item.id || name;
-        return `<label class="list-score-option ${item.hidden ? 'hidden' : ''}"> <input type="${type}" name="${name}" id="${idAttr}" class="score-input" data-score="${score}" ${item.checked ? 'checked' : ''} value="${value}"> <span class="score-label">${item.label}</span><span class="score-value">${scoreText}</span> </label>${noteHtml}`;
+        return `<div><label class="list-score-option ${item.hidden ? 'hidden' : ''}"> <input type="${type}" name="${name}" id="${idAttr}" class="score-input" data-score="${score}" ${item.checked ? 'checked' : ''} value="${value}"> <span class="score-label">${item.label}</span><span class="score-value">${scoreText}</span> </label>${noteHtml}</div>`;
     }
 
     function generateScorableBloodsHTML() {
