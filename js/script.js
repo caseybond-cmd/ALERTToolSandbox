@@ -5,11 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let deviceCounters = {};
 
     const RISK_CATEGORIES = {
-        critical: { score: 25, text: 'CRITICAL: Escalate to ICU Liaison / MET / Critical Care', class: 'category-critical' },
-        intensive_escalate: { score: 20, text: 'INTENSIVE+: Escalate to ICU Liaison / ANM', class: 'category-intensive-escalate' },
-        intensive: { score: 11, text: 'INTENSIVE: Requires multiple reviews per day', class: 'category-intensive' },
-        standard: { score: 5, text: 'STANDARD: At least one follow-up review required', class: 'category-standard' },
-        single: { score: 0, text: 'SINGLE: Follow-up as required', class: 'category-single' }
+        extremely_high: { score: 10, text: 'Extremely High Risk: Urgent medical review & consider re-transfer to higher care.', class: 'category-extremely-high' },
+        high: { score: 6, text: 'High Risk: Formal medical review required.', class: 'category-high' },
+        medium: { score: 3, text: 'Medium Risk: Enhanced nurse-led care.', class: 'category-medium' },
+        low: { score: 0, text: 'Low Risk: Single check next shift.', class: 'category-low' }
     };
     
     const form = document.getElementById('assessmentForm');
@@ -80,11 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveState() {
         currentReview = gatherFormData();
         currentReview.finalScore = parseInt(document.getElementById('footer-score').textContent) || 0;
-        localStorage.setItem('alertToolState_v18', JSON.stringify(currentReview));
+        localStorage.setItem('alertToolState_v20', JSON.stringify(currentReview));
     }
     
     function loadState() {
-        const savedState = localStorage.getItem('alertToolState_v18');
+        const savedState = localStorage.getItem('alertToolState_v20');
         if (savedState) {
             currentReview = JSON.parse(savedState);
         }
@@ -124,18 +123,18 @@ document.addEventListener('DOMContentLoaded', () => {
              el.dispatchEvent(new Event('change', { bubbles: true }));
         });
         currentReview = {};
-        if (clearStorage) localStorage.removeItem('alertToolState_v18');
+        if (clearStorage) localStorage.removeItem('alertToolState_v20');
         calculateTotalScore();
         calculateADDS();
         updateBloodFlags();
+        calculatePfRatio();
     }
     
     // --- SCORING & CALCULATIONS ---
     function calculateTotalScore() {
         let score = 0;
-        const hasCriticalItem = Array.from(form.querySelectorAll('.score-input:checked')).some(input => {
+        form.querySelectorAll('.score-input:checked').forEach(input => {
             score += parseInt(input.dataset.score, 10) || 0;
-            return input.dataset.isCritical === 'true';
         });
         
         const footerScoreEl = document.getElementById('footer-score');
@@ -143,24 +142,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const stickyFooter = document.getElementById('sticky-footer');
         
         footerScoreEl.title = '';
-        if (hasCriticalItem && score < RISK_CATEGORIES.critical.score) {
-            score = RISK_CATEGORIES.critical.score;
-            footerScoreEl.textContent = `${score}*`;
-            footerScoreEl.title = '*Score elevated due to critical risk item.';
-        } else {
-             footerScoreEl.textContent = score;
-        }
+        footerScoreEl.textContent = score;
         
         const category = getRiskCategory(score);
-        footerCategoryEl.textContent = category.text.split(':')[0];
+        footerCategoryEl.textContent = category.text.split(':')[0].toUpperCase();
         stickyFooter.className = `fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-between z-40 ${category.class}`;
         
         saveState();
     }
     
     function getRiskCategory(score) {
-        for (const key in RISK_CATEGORIES) { if (score >= RISK_CATEGORIES[key].score) return RISK_CATEGORIES[key]; }
-        return RISK_CATEGORIES.single;
+        if (score >= RISK_CATEGORIES.extremely_high.score) return RISK_CATEGORIES.extremely_high;
+        if (score >= RISK_CATEGORIES.high.score) return RISK_CATEGORIES.high;
+        if (score >= RISK_CATEGORIES.medium.score) return RISK_CATEGORIES.medium;
+        return RISK_CATEGORIES.low;
     }
 
     function calculateADDS() {
@@ -177,6 +172,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const temp = p('temp_input'); if (!isNaN(temp)) total += getScore(temp, [{min:0, max:35.0, score:2}, {min:38.1, max:38.9, score:1}, {min:39.0, max:99, score:2}]);
         
         document.getElementById('calculatedADDSScore').textContent = total;
+    }
+
+    function calculatePfRatio() {
+        const pao2 = parseFloat(document.getElementById('pao2_input').value);
+        const fio2 = parseFloat(document.getElementById('fio2_input').value);
+        const resultEl = document.getElementById('pf_ratio_result');
+        const interpretationEl = document.getElementById('pf_ratio_interpretation');
+
+        if (isNaN(pao2) || isNaN(fio2) || fio2 <= 0 || fio2 > 100) {
+            resultEl.textContent = '-';
+            interpretationEl.textContent = 'Enter PaO2 and FiO2 to calculate.';
+            interpretationEl.className = 'text-sm text-gray-500';
+            return;
+        }
+
+        const pfRatio = pao2 / (fio2 / 100);
+        resultEl.textContent = pfRatio.toFixed(1);
+
+        if (pfRatio < 100) {
+            interpretationEl.textContent = 'Poor';
+            interpretationEl.className = 'text-sm font-semibold text-red-600';
+        } else if (pfRatio >= 100 && pfRatio < 300) {
+            interpretationEl.textContent = 'Concerning';
+            interpretationEl.className = 'text-sm font-semibold text-amber-600';
+        } else {
+            interpretationEl.textContent = 'Good';
+            interpretationEl.className = 'text-sm font-semibold text-green-600';
+        }
     }
 
     // --- DEVICE MANAGEMENT ---
@@ -228,33 +251,19 @@ document.addEventListener('DOMContentLoaded', () => {
         summary += `Observations: RR ${val('rr_input')}, SpO2 ${val('spo2_input')}% on ${val('o2_flow_input')}${val('o2_unit_input')}, HR ${val('hr_input')}, BP ${val('sbp_input')}/${val('dbp_input')}, Temp ${val('temp_input')}C\n`;
         
         summary += `\n--- RISK ASSESSMENT ---\n`;
-        summary += `Final Score: ${document.getElementById('footer-score').textContent}\nCategory & Action: ${RISK_CATEGORIES[getRiskCategory(parseInt(document.getElementById('footer-score').textContent)).class.replace('category-','')].text}\n`;
+        const finalScore = parseInt(document.getElementById('footer-score').textContent);
+        summary += `Final Score: ${finalScore}\nCategory & Action: ${getRiskCategory(finalScore).text}\n`;
         if (isChecked('flagAfterHours')) { summary += `**! FLAGGED: AFTER-HOURS DISCHARGE RISK !**\n`; }
         
         summary += `\nContributing Factors:\n`;
-        const coreItems = ['pain_score', 'fluid_status_score', 'diet_score', 'delirium_score', 'mobility_score', 'frailty_score', 'bed_type', 'env_ratio', 'concern_score'];
-        const highRiskItems = ['crit_met', 'adds_worsening', 'resp_increasing_o2', 'resp_rapid_wean', 'lines_cvc_present', 'crit_af', 'airway_altered', 'drains_high_risk', 'bowels_issue', 'systemic_los', 'systemic_comorbid'];
-        
-        document.querySelectorAll('#scoringContainer .score-group, #scoringContainer > div > label.list-score-option').forEach(element => {
-            const titleEl = element.closest('.score-group') ? element.closest('.score-group').querySelector('.score-group-title') : null;
-            element.querySelectorAll('.score-input').forEach(input => {
-                const name = input.name;
-                const note = document.getElementById(`${name}_note`)?.value || '';
-                const isTicked = input.checked;
-                const labelEl = input.closest('label');
-                const label = labelEl.querySelector('.score-label')?.textContent || "Item";
-                const title = titleEl ? titleEl.textContent : label;
-                
-                if (coreItems.includes(name)) {
-                    if (input.type === 'radio' && isTicked) {
-                         summary += `- ${title}: ${label.trim()}${note ? ` (${note})` : ''}\n`;
-                    }
-                } else if (highRiskItems.includes(name) && isTicked) {
-                     if (input.type === 'checkbox') {
-                        summary += `- Has ${label}${note ? ` (${note})` : ''}\n`;
-                    }
-                }
-            });
+        document.querySelectorAll('.score-input:checked').forEach(input => {
+            if (parseInt(input.dataset.score) !== 0 || (input.name === 'concern_score' && input.value !== '0')) {
+                const label = input.closest('label').querySelector('.score-label').textContent.trim();
+                const note = document.getElementById(`${input.name}_note`)?.value.trim();
+                const groupTitleEl = input.closest('.score-group')?.querySelector('.score-group-title');
+                const groupTitle = groupTitleEl ? groupTitleEl.textContent + ': ' : '';
+                summary += `- ${groupTitle}${label}${note ? ` (${note})` : ''}\n`;
+            }
         });
         
         const getDeviceText = (containerId, typeName) => Array.from(document.getElementById(containerId).querySelectorAll('.device-entry')).map(entry => {
@@ -268,13 +277,14 @@ document.addEventListener('DOMContentLoaded', () => {
         summary += `\n--- DEVICES ---\n${devicesSummary || 'No devices documented.'}\n`;
 
         summary += `\n--- ASSESSMENT & PLAN ---\n`;
-        summary += `Fluid Status Assessment: Weight ${val('patientWeight')}kg, 24hr Bal: ${val('fbc_24hr_input')}mL, Total ICU Bal: ${val('fbc_total_input')}mL\n`;
+        summary += `Fluid Status: Current Wt: ${val('patientWeight')}kg, Prev Wt: ${val('patientWeightPrevious')}kg. 24hr Bal: ${val('fbc_24hr_input')}mL, Total ICU Bal: ${val('fbc_total_input')}mL\n`;
+        const clinicalSigns = [];
+        if (isChecked('oedema_checkbox')) clinicalSigns.push('Oedema');
+        if (isChecked('cap_refill_checkbox')) clinicalSigns.push('Delayed Cap Refill');
+        if (clinicalSigns.length > 0) summary += `Clinical Signs: ${clinicalSigns.join(', ')}\n`;
         summary += `PICS: ${val('pics_status')}. ${val('pics_notes') || ''}\n`;
         summary += `Home Team Plan: ${isChecked('homeTeamPlanCheckbox') ? `Yes - ${val('homeTeamPlanText')}` : 'No'}\n`;
-        if (document.querySelector('input[name="concern_score"]:checked').value === '5') {
-            summary += `Nursing Concern: Yes (${val('concern_score_note') || 'No details provided'})\n`;
-        }
-
+        
         document.getElementById('emrSummary').value = summary;
     }
 
@@ -331,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('input', e => { if (e.target.classList.contains('device-date-input')) { const dwellEl = e.target.closest('.device-entry').querySelector('[data-key="dwell_time"]'); if(e.target.value) { const days = Math.round((new Date() - new Date(e.target.value)) / (1000 * 60 * 60 * 24)); dwellEl.textContent = `Dwell time: ${days} day(s)`; } else { dwellEl.textContent = ''; } } });
         
         const scoringContainer = document.getElementById('scoringContainer');
-        scoringContainer.addEventListener('change', (e) => { if(e.target.classList.contains('score-input')) { const option = e.target.closest('.list-score-option'); const noteBox = option.nextElementSibling; if (noteBox && noteBox.classList.contains('score-note')) { const shouldShow = e.target.checked && (parseInt(e.target.dataset.score, 10) !== 0 || e.target.name === 'concern_score'); noteBox.style.display = shouldShow ? 'block' : 'none'; } calculateTotalScore(); }});
+        scoringContainer.addEventListener('change', (e) => { if(e.target.classList.contains('score-input')) { const isCheckbox = e.target.type === 'checkbox'; const option = e.target.closest('.list-score-option'); const noteBox = document.getElementById(`${e.target.name}_note`); if (noteBox) { const shouldShow = e.target.checked && (parseInt(e.target.dataset.score, 10) !== 0 || e.target.name === 'concern_score'); noteBox.style.display = shouldShow ? 'block' : 'none'; } calculateTotalScore(); }});
         
         form.querySelectorAll('.vital-input').forEach(el => el.addEventListener('input', calculateADDS));
         
@@ -356,6 +366,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('resetButton').addEventListener('click', () => { if (confirm('Reset form?')) clearForm(true); });
         
         document.getElementById('generateHandoffBtn').addEventListener('click', () => { const note = generateHandoffNote(); navigator.clipboard.writeText(note).then(() => { alert('Handoff data key copied to clipboard!'); }, () => { alert('Could not copy automatically.'); }); });
+
+        document.getElementById('abg-calculator-container').addEventListener('input', e => {
+            if (e.target.id === 'pao2_input' || e.target.id === 'fio2_input') {
+                calculatePfRatio();
+            }
+        });
     }
     
     // --- DYNAMIC CONTENT INJECTION ---
@@ -396,19 +412,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateStaticContent() {
         const addsContainer = document.getElementById('adds-container');
         addsContainer.innerHTML = `<h3 class="font-semibold mb-2">ADDS Calculator</h3><div class="space-y-4"><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Resp Rate</label><div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">SpO2 (%)</label><div class="sm:col-span-2"><input type="number" id="spo2_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Oxygen Delivery</label><div class="sm:col-span-2 flex items-center space-x-2"><input type="number" id="o2_flow_input" class="vital-input mt-1 w-full rounded-md border-2 p-2" placeholder="Value"><select id="o2_unit_input" class="vital-input mt-1 w-auto rounded-md border-2 p-2"><option value="L/min">L/min</option><option value="%">% FiO2</option></select></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Heart Rate</label><div class="sm:col-span-2"><input type="number" id="hr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">SBP (mmHg)</label><div class="sm:col-span-2"><input type="number" id="sbp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">DBP (mmHg)</label><div class="sm:col-span-2"><input type="number" id="dbp_input" class="mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Consciousness</label><div class="sm:col-span-2"><select id="consciousness_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Temp (°C)</label><div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div></div><div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label for="manualADDSScore" class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label for="addsModificationText" class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div><div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border"><span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span><div id="calculatedADDSScore" class="font-bold text-5xl my-2">0</div></div>`;
+        document.getElementById('abg-calculator-container').innerHTML = `<div class="bg-gray-50 p-4 rounded-lg border"><h3 class="font-semibold text-gray-700 mb-2">ABG Data (Optional) - P/F Ratio Calculator</h3><div class="grid sm:grid-cols-3 gap-4 items-center"><div class="sm:col-span-1"><label for="pao2_input" class="block text-sm font-medium">PaO2 (mmHg)</label><input type="number" id="pao2_input" class="mt-1 w-full rounded-md border-2 p-2"></div><div class="sm:col-span-1"><label for="fio2_input" class="block text-sm font-medium">FiO2 (%)</label><input type="number" id="fio2_input" class="mt-1 w-full rounded-md border-2 p-2"></div><div class="sm:col-span-1 text-center bg-white p-3 rounded-lg"><div class="text-sm text-gray-500">P/F Ratio</div><div id="pf_ratio_result" class="font-bold text-3xl">-</div><div id="pf_ratio_interpretation" class="text-sm text-gray-500">Enter values to calculate.</div></div></div></div>`;
         document.getElementById('scoringContainer').innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2><div class="space-y-4">${generateScoringHTML()}</div>`;
-        document.getElementById('fluid-assessment-container').innerHTML = `<h3 class="font-semibold mb-2">Fluid Status Assessment</h3><div class="grid md:grid-cols-2 gap-4"><div><label class="block text-sm font-medium">Patient Weight (kg):</label><input type="number" id="patientWeight" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label class="block text-sm font-medium">24hr Fluid Balance (mL):</label><input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2" step="100"></div><div class="md:col-span-2"><label class="block text-sm font-medium">Total ICU Balance (mL):</label><input type="number" id="fbc_total_input" class="mt-1 w-full rounded-md border-2 p-2" step="100"></div></div>`;
+        document.getElementById('fluid-assessment-container').innerHTML = `<h3 class="font-semibold mb-2">Holistic Fluid Status Assessment</h3><div class="grid md:grid-cols-2 gap-4"><div class="grid grid-cols-2 gap-x-4"><div><label class="block text-sm font-medium">Current Wt (kg):</label><input type="number" id="patientWeight" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label class="block text-sm font-medium">Previous Wt (kg):</label><input type="number" id="patientWeightPrevious" class="mt-1 w-full rounded-md border-2 p-2"></div></div><div><label class="block text-sm font-medium">24hr Fluid Balance (mL):</label><input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2" step="100"></div></div><div class="mt-4"><label class="block text-sm font-medium">Total ICU Balance (mL):</label><input type="number" id="fbc_total_input" class="mt-1 w-full rounded-md border-2 p-2" step="100"></div><div class="mt-4"><label class="block text-sm font-medium">Clinical Signs:</label><div class="flex gap-x-4 mt-2"><label class="flex items-center"><input type="checkbox" id="oedema_checkbox" class="h-4 w-4 mr-2">Oedema Present</label><label class="flex items-center"><input type="checkbox" id="cap_refill_checkbox" class="h-4 w-4 mr-2">Delayed Cap Refill (>2s)</label></div></div>`;
         updateWardOptions();
         document.querySelectorAll('.blood-input').forEach(el => el.addEventListener('input', updateBloodFlags));
     }
     
     function generateScoringHTML() {
         const sections = [
-            { id: 'phys-section', title: 'Physiological & Respiratory Stability', items: [ { type: 'checkbox', label: 'Patient is in MET Criteria', score: 15, isCritical: true, name: 'crit_met' }, { type: 'group', title: 'ADDS Score', name: 'adds_score', items: [ { label: 'ADDS Score 0-2', score: 1, checked: true }, { label: 'ADDS Score 3', score: 5 }, { label: 'ADDS Score ≥ 4', score: 10, isCritical: true } ]}, { type: 'group', title: 'Respiratory Trend', items: [ { type: 'checkbox', label: 'Worsening ADDS Trend', score: 5, name: 'adds_worsening' }, { type: 'checkbox', label: 'Increasing O₂', score: 10, name: 'resp_increasing_o2' }, { type: 'checkbox', label: 'Rapid wean of resp support', score: 6, name: 'resp_rapid_wean' } ]} ]},
-            { id: 'clinical-section', title: 'Clinical', items: [ { type: 'group', title: 'Pain Score', name: 'pain_score', items: [ { label: 'No pain / Well controlled', score: 0, checked: true }, { label: 'Significant pain/PRN use', score: 3 }, { label: 'PCA, Ketamine, high pain, under APS', score: 5 } ]}, { type: 'group', title: 'Gastrointestinal Assessment', items: [{type: 'checkbox', label: 'Bowels not opened >3 days or Ileus', score: 3, name: 'bowels_issue'}]}, { type: 'group', title: 'Diet', name: 'diet_score', items: [ { label: 'Normal', score: 0, checked: true }, { label: 'Modified', score: 2 }, { label: 'NBM/NG/TPN', score: 4 }] }, { type: 'group', title: 'Delirium', name: 'delirium_score', items: [ { label: 'None', score: 0, checked: true }, { label: 'Mild', score: 4 }, { label: 'Mod-Severe', score: 8, isCritical: true }] }, { type: 'group', title: 'Mobility', name: 'mobility_score', items: [ { label: 'Baseline', score: 0, checked: true }, { label: 'Limited (due to lines/attachments)', score: 1 }, { label: 'Assisted (requires physical help)', score: 2 }, { label: 'Bed-bound', score: 5 }] } ]},
-            { id: 'systemic-section', title: 'Systemic', items: [ { type: 'group', title: 'Patient Factors', items: [ { type: 'checkbox', label: 'ICU LOS > 3 days', score: 4, name: 'systemic_los', id: 'losCheckbox' }, { type: 'checkbox', label: '≥3 chronic comorbidities', score: 4, name: 'systemic_comorbid' }] }, { type: 'group', title: 'Frailty (pre-hospital)', name: 'frailty_score', items: [ { label: 'Not Frail', score: 0, checked: true }, { label: 'Mild', score: 2 }, { label: 'Mod-Severe', score: 4 }] }, { type: 'group', title: 'Discharge Timing', items: [ { type: 'checkbox', label: 'Flag as After-Hours Discharge', score: 0, name: 'flagAfterHours' }] } ]},
-            { id: 'ward-section', title: 'Receiving Ward and Staffing', items: [ { type: 'group', title: 'Bed Type', name: 'bed_type', items: [ { label: 'Unmonitored', score: 0, checked: true }, { label: 'Monitored', score: -3 }] }, { type: 'group', title: 'Staffing', name: 'env_ratio', items: [ { label: 'Standard Ratio', score: 0, checked: true }, { label: 'Enhanced Care (e.g., 1:1, 1:2 special)', score: -5 }] } ]},
-            { id: 'concern-section', title: 'Nursing Concern', items: [ { type: 'group', title: '', name: 'concern_score', items: [ { label: 'No Concerns', score: 0, value: '0', checked: true }, { label: 'Concern Present', score: 5, value: '5', isCritical: true }] } ]}
+            { id: 'phys-section', title: 'Physiological & Respiratory Stability', items: [ { type: 'checkbox', label: 'Patient is in MET Criteria', score: 3, name: 'crit_met' }, { type: 'group', title: 'ADDS Score', name: 'adds_score', items: [ { label: 'ADDS Score 0-2', score: 0, checked: true }, { label: 'ADDS Score 3', score: 1 }, { label: 'ADDS Score ≥ 4', score: 3 } ]}, { type: 'group', title: 'Oxygenation & Respiratory Trend', name: 'resp_trend', items: [ { type: 'checkbox', label: 'Worsening ADDS Trend', score: 1, name: 'adds_worsening' }, { type: 'checkbox', label: 'Increasing O₂ Requirement', score: 3, name: 'resp_increasing_o2' }, { type: 'checkbox', label: 'Rapid wean of resp support', score: 2, name: 'resp_rapid_wean' } ]}, { type: 'group', title: 'Work of Breathing', name: 'wob_score', items: [ { label: 'Normal', score: 0, checked: true }, { label: 'Mild (e.g., accessory muscle use)', score: 1 }, { label: 'Moderate-Severe', score: 2 } ]} ]},
+            { id: 'clinical-section', title: 'Clinical Assessment', items: [ { type: 'group', title: 'Pain Score', name: 'pain_score', items: [ { label: 'No pain / Well controlled', score: 0, checked: true }, { label: 'Significant pain/PRN use', score: 1 }, { label: 'PCA, Ketamine, high pain, under APS', score: 2 } ]}, { type: 'group', title: 'Gastrointestinal Assessment', name: 'gi_assessment', items: [ { type: 'sub-group', title: 'Diet / Nutrition', name: 'diet_score', items: [ { label: 'Normal', score: 0, checked: true }, { label: 'Modified', score: 1 }, { label: 'NBM/NG/TPN', score: 2 } ]}, { type: 'sub-group-item', type: 'checkbox', label: 'Bowels not opened >3 days or Ileus', score: 1, name: 'bowels_issue'} ]}, { type: 'group', title: 'Delirium', name: 'delirium_score', items: [ { label: 'None', score: 0, checked: true }, { label: 'Mild', score: 1 }, { label: 'Mod-Severe', score: 2 }] }, { type: 'group', title: 'Mobility', name: 'mobility_score', items: [ { label: 'Baseline', score: 0, checked: true }, { label: 'Assisted (requires physical help)', score: 1 }, { label: 'Bed-bound', score: 2 }] } ]},
+            { id: 'systemic-section', title: 'Systemic & Contextual Factors', items: [ { type: 'group', title: 'Admission Source (SWIFT)', name: 'admission_source_score', items: [ { label: 'Surgical (Elective)', score: 0, checked: true }, { label: 'Surgical (Emergency) or Acute Medical', score: 1 }, { label: 'ED or Acute Ward Transfer', score: 2 } ]}, { type: 'group', title: 'Patient Factors', items: [ { type: 'checkbox', label: 'ICU LOS > 3 days', score: 1, name: 'systemic_los', id: 'losCheckbox' }, { type: 'checkbox', label: '≥3 chronic comorbidities', score: 1, name: 'systemic_comorbid' }] }, { type: 'group', title: 'Frailty (pre-hospital)', name: 'frailty_score', items: [ { label: 'Not Frail / Mild', score: 0, checked: true }, { label: 'Mod-Severe', score: 1 }] }, { type: 'group', title: 'Discharge Timing', items: [ { type: 'checkbox', label: 'Flag as After-Hours Discharge', score: 1, name: 'flagAfterHours' }] } ]},
+            { id: 'ward-section', title: 'Receiving Ward and Staffing (Reducers)', items: [ { type: 'group', title: 'Bed Type', name: 'bed_type', items: [ { label: 'Unmonitored', score: 0, checked: true }, { label: 'Monitored', score: -1 }] }, { type: 'group', title: 'Staffing', name: 'env_ratio', items: [ { label: 'Standard Ratio', score: 0, checked: true }, { label: 'Enhanced Care (e.g., 1:1, 1:2 special)', score: -1 }] } ]},
+            { id: 'concern-section', title: 'Nursing Concern', items: [ { type: 'group', title: '', name: 'concern_score', items: [ { label: 'No Concerns', score: 0, value: '0', checked: true }, { label: 'Concern Present', score: 1, value: '1'}] } ]}
         ];
         let html = '';
         sections.forEach(section => {
@@ -416,8 +433,16 @@ document.addEventListener('DOMContentLoaded', () => {
             section.items.forEach(item => {
                 if (item.type === 'group') {
                     html += `<div class="score-group"><div class="score-group-title">${item.title}</div>`;
-                    item.items.forEach(subItem => { html += buildScoreOption(subItem, item.name); });
-                    if (item.title === 'Gastrointestinal Assessment') { html += `<div class="bowel-inputs flex flex-col md:flex-row gap-x-4 p-2 text-sm mt-2 border-t"><div><label for="bowel_last_open" class="block font-medium">Last Bowel Movement:</label><input type="date" id="bowel_last_open" class="mt-1 block w-full rounded-md border-2 p-1"></div><div><label for="bowel_type" class="block font-medium">Type:</label><select id="bowel_type" class="mt-1 block w-full rounded-md border-2 p-1"><option value="">Select...</option><option>Normal</option><option>Diarrhoea</option><option>Constipated</option><option>Ileus / Not passed flatus</option><option>Stoma Active</option></select></div></div>`;}
+                    item.items.forEach(subItem => { 
+                        if (subItem.type === 'sub-group') {
+                            html += `<div class="score-sub-group-title">${subItem.title}</div>`;
+                            subItem.items.forEach(subSubItem => html += buildScoreOption(subSubItem, subItem.name));
+                        } else if (subItem.type === 'sub-group-item') {
+                            html += buildScoreOption(subItem, subItem.name);
+                        } else {
+                            html += buildScoreOption(subItem, item.name);
+                        }
+                    });
                     if (item.title === '') { html += `<textarea id="${item.name}_note" name="${item.name}_note" class="score-note mt-4 w-full rounded-md border-gray-300 hidden" rows="2" placeholder="Specify concern..."></textarea>`}
                     html += `</div>`;
                 } else { html += buildScoreOption(item, item.name); }
@@ -430,14 +455,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function buildScoreOption(item, groupName) {
         const name = item.name || groupName;
         const type = item.type || 'radio';
-        const noteHtml = `<textarea name="${name}_note" id="${name}_note" class="score-note mt-2 w-full rounded-md border-gray-300 shadow-sm text-sm p-2 hidden" rows="2" placeholder="Add details..."></textarea>`;
+        const noteHtml = (item.type === 'checkbox') ? `<textarea name="${name}_note" id="${name}_note" class="score-note mt-2 w-full rounded-md border-gray-300 shadow-sm text-sm p-2 hidden" rows="2" placeholder="Add details..."></textarea>` : '';
         const score = item.score !== undefined ? item.score : 0;
         const value = item.label || item.value;
-        const scoreText = `${score >= 0 ? '+' : ''}${score}`;
+        const scoreText = `${score > 0 ? '+' : ''}${score}`;
         const idAttr = item.id ? `id="${item.id}"` : '';
-        return `<label class="list-score-option"> <input type="${type}" name="${name}" ${idAttr} class="score-input" data-score="${score}" ${item.isCritical ? 'data-is-critical="true"' : ''} ${item.checked ? 'checked' : ''} value="${value}"> <span class="score-label">${item.label}</span><span class="score-value">${scoreText}</span> </label>${noteHtml}`;
+        return `<label class="list-score-option"> <input type="${type}" name="${name}" ${idAttr} class="score-input" data-score="${score}" ${item.checked ? 'checked' : ''} value="${value}"> <span class="score-label">${item.label}</span><span class="score-value">${scoreText}</span> </label>${noteHtml}`;
     }
         
     initializeApp();
 });
-
