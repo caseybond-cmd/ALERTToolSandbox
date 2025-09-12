@@ -24,16 +24,28 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
 .blood-score-badge.score-3 { background-color: #B91C1C; }
 
 /* Clinical Insights Panel Styles */
-.insight-item { display: flex; align-items: center; padding: 0.75rem; border-radius: 0.5rem; border-width: 1px; }
+.insight-item { display: flex; align-items: flex-start; padding: 0.75rem; border-radius: 0.5rem; border-width: 1px; }
 .insight-item.level-high { background-color: #FEF2F2; border-color: #FCA5A5; color: #991B1B; }
 .insight-item.level-medium { background-color: #FFFBEB; border-color: #FBBF24; color: #92400E; }
-.insight-item-icon { flex-shrink: 0; width: 1.5rem; height: 1.5rem; margin-right: 0.75rem; }
+.insight-item-icon { flex-shrink: 0; width: 1.5rem; height: 1.5rem; margin-right: 0.75rem; margin-top: 0.125rem; }
 .insight-item-text { font-size: 0.875rem; }
 
-/* General Styles */
-.score-input[type="number"] { width: 100px; }
+/* A-E Assessment Styles */
+.assessment-section-title { font-size: 1.125rem; font-weight: 600; color: #166534; border-bottom: 2px solid #A7F3D0; padding-bottom: 0.25rem; margin-bottom: 1rem; }
+.assessment-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; }
+@media (min-width: 640px) { .assessment-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .assessment-grid { grid-template-columns: repeat(3, 1fr); } }
 
+/* Sticky Footer */
 @media (min-width: 768px) {
     #sticky-footer { max-width: 400px; margin: 0 auto 1rem; border-radius: 0.5rem; left: 50%; transform: translateX(-50%); }
+}
+
+/* Mobile Specific Optimizations */
+@media (max-width: 639px) {
+    .blood-score-item { flex-direction: column; align-items: flex-start !important; gap: 0.5rem !important; }
+    .blood-score-item .grid { width: 100%; }
+    .blood-score-item .w-32 { width: auto; } /* Let label width be natural */
+    .blood-score-badge { margin-top: 0.5rem; }
 }
 
