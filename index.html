@@ -10,7 +10,6 @@
 </head>
 <body class="p-4 sm:p-6 md:p-8 pb-24">
 
-    <!-- Launch Screen -->
     <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex flex-col items-center justify-center p-4 z-50 no-print">
         <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 text-center max-w-lg w-full space-y-4">
             <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ALERT Nursing Risk Assessment Tool</h2>
@@ -29,7 +28,6 @@
         </div>
     </div>
 
-    <!-- Main Application Content -->
     <div id="main-content" class="max-w-4xl mx-auto" style="visibility: hidden;">
         <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print">
             <div id="top-button-bar" class="flex justify-end items-center gap-2">
@@ -46,7 +44,6 @@
             </div>
 
             <div id="fullReviewContainer">
-                <!-- Patient Details -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-section">
                     <div class="bg-gray-50 p-4 rounded-lg border">
                         <h3 class="text-lg font-semibold mb-4">Patient & Review Details</h3>
@@ -71,14 +68,12 @@
                         </div>
                     </div>
                 </div>
-                <!-- Clinical Background -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-hide">
                     <div class="bg-gray-50 p-4 rounded-lg border"><h3 class="text-lg font-semibold mb-4">Clinical Background</h3><div class="space-y-4"><div><label for="goc" class="block text-sm font-medium">Goals of Care:</label><select id="goc" class="mt-1 w-full rounded-md border-2 p-2"><option value="Not Documented">Not Documented</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select><div id="gocSpecificsContainer" class="hidden mt-2"><label for="gocSpecifics" class="block text-sm font-medium">Specifics:</label><input type="text" id="gocSpecifics" class="mt-1 w-full rounded-md border-2 p-2"></div></div><div id="allergies-section"><label class="block text-sm font-medium">Allergies:</label><div class="mt-2 space-y-2"><div class="flex items-center"><input type="checkbox" id="nkdaCheckbox" class="h-4 w-4 rounded"><label for="nkdaCheckbox" class="ml-2">No Known Drug Allergies</label></div><div id="allergies_container" class="space-y-2"></div><button type="button" id="addAllergyButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add Allergy</button></div></div><div><label class="block text-sm font-medium">Infection Control Precautions:</label><div class="mt-2 flex flex-wrap gap-x-4 gap-y-2"><label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Contact"> <span class="ml-2">Contact</span></label><label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Droplet"> <span class="ml-2">Droplet</span></label><label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Airborne"> <span class="ml-2">Airborne</span></label></div><div id="infectionControlDetails" class="hidden mt-2"><label for="infectionControlReason" class="block text-sm font-medium">Reason:</label><input type="text" id="infectionControlReason" class="mt-1 w-full rounded-md border-2 p-2"></div></div></div></div>
                     <div> <h3 class="text-lg font-semibold">Reason for ICU Admission:</h3> <textarea id="admissionReason" rows="3" class="mt-1 w-full rounded-md border-2 p-2"></textarea> </div>
                     <div> <h3 class="text-lg font-semibold">ICU Summary / Timeline:</h3> <textarea id="icuSummary" rows="10" class="mt-1 w-full rounded-md border-2 p-2"></textarea> </div>
                     <div> <h3 class="text-lg font-semibold">Past Medical History (PMH):</h3> <textarea id="pmh" rows="5" class="mt-1 w-full rounded-md border-2 p-2"></textarea> </div>
                 </div>
-                <!-- Key Bloods -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
                     <div id="bloods-container" class="bg-gray-50 p-4 rounded-lg border">
                         <h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3>
@@ -95,7 +90,8 @@
                         </div>
                     </div>
                 </div>
-                <!-- Handoff Button -->
+                <div id="abg-calculator-container" class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
+                    </div>
                 <div id="handoff-container" class="print-hide" style="display: none;">
                      <div class="bg-white rounded-xl shadow-lg mb-6 p-6 text-center">
                         <h3 class="text-lg font-semibold text-gray-800">Desktop Preparation Complete</h3>
@@ -103,26 +99,21 @@
                         <button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg">📲 Copy Data Key to Mobile</button>
                     </div>
                 </div>
-                <!-- ADDS Calculator -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
                     <div id="adds-container" class="bg-gray-50 p-4 rounded-lg border"></div>
                 </div>
             </div>
 
-            <!-- Risk Scoring Assessment -->
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-section">
                 <div id="scoringContainer">
-                    <!-- Scoring options will be injected here by JS -->
-                </div> 
+                    </div> 
             </div>
 
             <div id="fullReviewContainerBottom">
-                 <!-- Devices -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
+                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
                     <details class="bg-gray-50 p-4 rounded-lg border" open><summary class="font-semibold cursor-pointer">Device, Drain & Wound Assessment</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container"  class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div><details class="pt-4 border-t"><summary class="text-sm font-medium">Show Additional</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">IDC</h4><div id="idcs_container" class="space-y-2"></div><button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add IDC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Epicardial Pacing Wires</h4><div id="pacing_wires_container" class="space-y-2"></div><button type="button" id="addPacingWireButton" class="no-print mt-2 text-sm bg-purple-100 px-3 py-1 rounded-md">+ Add Pacing Wires</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Drains</h4><div id="drains_container" class="space-y-2"></div><button type="button" id="addDrainButton" class="no-print mt-2 text-sm bg-teal-100 px-3 py-1 rounded-md">+ Add Drain</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Other Devices & Wounds</h4><div id="others_container" class="space-y-2"></div><button type="button" id="addOtherButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add Other</button></div></div></details></div></details>
                 </div>
-                 <!-- Final Assessment Items -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-hide">
+                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-hide">
                     <h2 class="text-xl font-bold border-b pb-3">Final Assessment & Plan</h2>
                     <div id="fluid-assessment-container" class="bg-gray-50 p-4 rounded-lg border"></div>
                     <div><h3 class="text-lg font-semibold mb-2">PICS</h3><div class="p-4 rounded-lg bg-purple-50"><div class="space-y-2"><select id="pics_status" name="pics_status" class="w-full rounded-md border-2 p-2"><option value="Negative">Negative</option><option value="Positive">Positive</option><option value="Unable to assess">Unable to assess</option></select><div id="pics_details_container" class="hidden pt-2"><label for="pics_notes" class="block text-sm font-medium">Plan:</label><textarea id="pics_notes" rows="2" class="mt-1 w-full rounded-md border-2 p-2" placeholder="Plan..."></textarea></div></div></div></div>
@@ -131,7 +122,6 @@
                 </div>
             </div>
 
-            <!-- Final Score and DMR -->
             <div class="bg-white rounded-xl shadow-lg mt-6 p-6">
                 <h2 class="text-xl font-bold border-b pb-3 mb-4">DMR Summary Generator</h2>
                 <div class="flex space-x-4 mb-4 no-print">
@@ -144,19 +134,16 @@
         </form>
     </div>
     
-    <!-- Sticky Score Footer -->
     <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-between z-40">
-        <span id="footer-category" class="font-bold text-sm px-2">SINGLE</span>
+        <span id="footer-category" class="font-bold text-sm px-2">LOW RISK</span>
         <span id="footer-score" class="text-3xl font-bold bg-white/20 px-4 py-1 rounded-md">0</span>
     </div>
     
-    <!-- Print Container -->
     <div id="print-container" class="hidden"></div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 19.0.0 - Major Refactor</div>
+    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 20.0.0 - Scoring Refactor</div>
     
     <script src="js/script.js"></script>
 
 </body>
 </html>
-
