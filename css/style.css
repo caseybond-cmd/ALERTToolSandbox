@@ -1,12 +1,16 @@
 body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
-.category-critical { background-color: #DC2626 !important; color: #FFFFFF; }
-.category-intensive-escalate { background-color: #F97316 !important; color: #FFFFFF; }
-.category-intensive { background-color: #F59E0B !important; color: #1A202C; }
-.category-standard { background-color: #2DD4BF !important; color: #134E4A; }
-.category-single { background-color: #67E8F9 !important; color: #164E63; }
+
+/* New Risk Category Footer Styles */
+.category-extremely-high { background-color: #DC2626 !important; color: #FFFFFF; }
+.category-high { background-color: #F97316 !important; color: #FFFFFF; }
+.category-medium { background-color: #F59E0B !important; color: #1A202C; }
+.category-low { background-color: #2DD4BF !important; color: #134E4A; }
+
 .header-gradient { background: linear-gradient(to right, #0D9488, #0F766E); }
 
 .score-group-title { margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; color: #4b5563; }
+.score-sub-group-title { margin-top: 0.75rem; margin-bottom: 0.25rem; font-weight: 500; color: #4b5563; font-size: 0.9rem; padding-left: 0.5rem; border-left: 3px solid #67E8F9;}
+
 
 /* List-Style Button Styles */
 .list-score-option {
@@ -129,4 +133,3 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
     }
     .print-checklist .grid { display: block; }
 }
-
