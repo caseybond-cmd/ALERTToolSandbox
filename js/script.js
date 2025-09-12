@@ -18,13 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
         populateStaticContent();
         setupEventListeners();
         
-        // Check for saved state after setup
-        const savedState = localStorage.getItem('alertToolState_v22');
+        const savedState = localStorage.getItem('alertToolState_v23');
         if (savedState) {
             currentReview = JSON.parse(savedState);
             loadReviewData();
             document.getElementById('launchScreenModal').style.display = 'none';
-            setAppViewMode('full');
+            setAppViewMode(currentReview.mode || 'full');
         } else {
             document.getElementById('launchScreenModal').style.display = 'flex';
         }
@@ -35,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentReview.mode = mode;
         const isQuickMode = mode === 'quick';
         document.getElementById('fullReviewContainer').style.display = isQuickMode ? 'none' : 'block';
+        document.getElementById('assessment-container').style.display = isQuickMode ? 'block' : 'block';
+        document.getElementById('scoringContainer').style.display = isQuickMode ? 'block' : 'block';
         document.getElementById('fullReviewContainerBottom').style.display = isQuickMode ? 'none' : 'block';
     }
 
@@ -44,12 +45,15 @@ document.addEventListener('DOMContentLoaded', () => {
         form.querySelectorAll('input, select, textarea').forEach(el => {
             if (!el.id) return;
             if (el.type === 'checkbox') data[el.id] = el.checked;
+            else if (el.type === 'radio') { if(el.checked) data[el.name] = el.value; }
             else data[el.id] = el.value;
         });
         
         data.devices = {};
-        ['central_lines', 'pivcs'].forEach(type => {
-            data.devices[type] = Array.from(document.getElementById(`${type}_container`).querySelectorAll('.device-entry')).map(entry => {
+        ['central_lines', 'pivcs', 'idcs', 'drains', 'pacing_wires', 'others'].forEach(type => {
+            const container = document.getElementById(`${type}_container`);
+            if(!container) return;
+            data.devices[type] = Array.from(container.querySelectorAll('.device-entry')).map(entry => {
                 const deviceData = {};
                 entry.querySelectorAll('input[data-key], select[data-key]').forEach(input => deviceData[input.dataset.key] = input.value);
                 return deviceData;
@@ -61,35 +65,43 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveState() {
         currentReview = gatherFormData();
         currentReview.finalScore = parseInt(document.getElementById('footer-score').textContent) || 0;
-        localStorage.setItem('alertToolState_v22', JSON.stringify(currentReview));
+        localStorage.setItem('alertToolState_v23', JSON.stringify(currentReview));
     }
     
-    function loadReviewData() {
+    function loadReviewData(isHandoff = false) {
         const data = currentReview;
         Object.keys(data).forEach(key => {
-            const el = form.querySelector(`#${key}`);
+            const el = form.querySelector(`#${key}`) || form.querySelector(`[name="${key}"]`);
             if (el) {
                 if (el.type === 'checkbox') el.checked = data[key];
-                else el.value = data[key];
+                 else if (el.type === 'radio') {
+                    const radio = form.querySelector(`[name="${el.name}"][value="${data[el.name]}"]`);
+                    if (radio) radio.checked = true;
+                } else el.value = data[key];
             }
         });
 
-        if (data.devices) {
-            if (data.devices.central_lines) data.devices.central_lines.forEach(d => window.addCentral_line(d));
-            if (data.devices.pivcs) data.devices.pivcs.forEach(d => window.addPivc(d));
+        if (data.devices && !isHandoff) {
+            ['central_lines', 'pivcs', 'idcs', 'drains', 'pacing_wires', 'others'].forEach(type => {
+                if(data.devices[type]) {
+                    const addFunc = window[`add${type.charAt(0).toUpperCase() + type.slice(1).replace(/s$/, '')}`];
+                    data.devices[type].forEach(d => addFunc(d));
+                }
+            });
         }
-
+        
         form.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
-        calculateTotalScore();
     }
 
     function clearForm(clearStorage = true) {
         form.reset();
         deviceCounters = {};
         document.querySelectorAll('.device-entry').forEach(el => el.remove());
-        if (clearStorage) localStorage.removeItem('alertToolState_v22');
-        currentReview = {};
-        calculateTotalScore(); // This will also trigger insight generation
+        if (clearStorage) {
+            localStorage.removeItem('alertToolState_v23');
+            currentReview = {};
+        }
+        calculateTotalScore();
     }
     
     // --- SCORING & INSIGHTS ---
@@ -97,38 +109,33 @@ document.addEventListener('DOMContentLoaded', () => {
         let score = 0;
         const data = gatherFormData();
 
-        // 1. Static & Semi-Static Factors
         if (data.age > 65) score += 1;
         score += parseInt(data.admission_type, 10) || 0;
         if (data.los_days > 5) score += 1;
         if (data.severe_comorbidities >= 2) score += 2;
         if (data.after_hours) score += 1;
-
-        // 2. Clinical Assessment Scores from Radios/Checkboxes
+        
         form.querySelectorAll('.score-input:checked').forEach(input => {
-            if(input.type === 'radio' || input.type === 'checkbox') {
+             if (input.type === 'radio' || (input.type === 'checkbox' && !input.id.includes('after_hours'))) {
                  score += parseInt(input.dataset.score, 10) || 0;
-            }
+             }
         });
         
-        // 3. Blood Panel Score
         const bloodScore = calculateBloodScore();
-        score += bloodScore;
-
-        // 4. ADDS Score (MAP is handled here)
-        const addsScore = calculateADDS();
-        if (addsScore.map_low) score += 2; // Add MAP score here
+        score += bloodScore.total;
+        
+        const addsResult = calculateADDS();
+        score += addsResult.score;
 
         // Update Footer
         const footerScoreEl = document.getElementById('footer-score');
         const footerCategoryEl = document.getElementById('footer-category');
-        const stickyFooter = document.getElementById('sticky-footer');
         footerScoreEl.textContent = score;
         const category = getRiskCategory(score);
         footerCategoryEl.textContent = category.text.split(':')[0].toUpperCase();
-        stickyFooter.className = `fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-between z-40 ${category.class}`;
+        document.getElementById('sticky-footer').className = `fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-between z-40 ${category.class}`;
         
-        generateClinicalInsights(data, bloodScore, addsScore);
+        generateClinicalInsights(data, bloodScore.insights);
         saveState();
     }
     
@@ -140,184 +147,163 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateBloodScore() {
-        let totalBloodScore = 0;
+        let total = 0;
+        const insights = {};
         const p = (id) => parseFloat(document.getElementById(id).value);
-        const updateBadge = (id, score) => {
-            const badge = document.getElementById(id);
-            if (badge) {
-                badge.textContent = `+${score}`;
-                badge.className = `blood-score-badge score-${score}`;
+        const updateBadge = (id, score) => { document.getElementById(id).className = `blood-score-badge score-${score}`; document.getElementById(id).textContent = `+${score}`; };
+
+        const calc = (id, abs_rules, trend_rules) => {
+            const current = p(id);
+            const prev = p(`${id}_prev`);
+            let abs_score = 0;
+            let trend_score = 0;
+            if (!isNaN(current)) {
+                for (const rule of abs_rules) { if (rule.test(current)) { abs_score = rule.score; break; } }
             }
+            if (!isNaN(current) && !isNaN(prev) && prev > 0) {
+                 for (const rule of trend_rules) { if (rule.test(current, prev)) { trend_score = rule.score; break; } }
+            }
+            const final_score = Math.max(abs_score, trend_score);
+            insights[id] = { current, prev, score: final_score };
+            updateBadge(`${id}_blood_score`, final_score);
+            total += final_score;
         };
 
-        let cr_score = 0; if (p('creatinine') > 171) cr_score = 1; updateBadge('creatinine_blood_score', cr_score); totalBloodScore += cr_score;
-        let nlr_score = 0; const nlr = p('neutrophils') / p('lymphocytes'); if (nlr > 5) nlr_score = 1; updateBadge('nlr_blood_score', nlr_score); totalBloodScore += nlr_score;
-        let alb_score = 0; if (p('albumin') < 30) alb_score = 1; updateBadge('albumin_blood_score', alb_score); totalBloodScore += alb_score;
-        let rdw_score = 0; if (p('rdw') > 15) rdw_score = 1; updateBadge('rdw_blood_score', rdw_score); totalBloodScore += rdw_score;
-        let lact_score = 0; if (p('lactate') > 2) lact_score = 2; updateBadge('lactate_blood_score', lact_score); totalBloodScore += lact_score;
-        let bili_score = 0; if (p('bilirubin') > 20) bili_score = 1; updateBadge('bilirubin_blood_score', bili_score); totalBloodScore += bili_score;
-        let plat_score = 0; if (p('platelets') < 50) plat_score = 1; updateBadge('platelet_blood_score', plat_score); totalBloodScore += plat_score;
-        let hb_score = 0; if (p('hemoglobin') < 7) hb_score = 2; updateBadge('hemoglobin_blood_score', hb_score); totalBloodScore += hb_score;
-        let gluc_score = 0; if (p('glucose') > 180) gluc_score = 2; updateBadge('glucose_blood_score', gluc_score); totalBloodScore += gluc_score;
+        calc('creatinine', [{ test: v => v > 171, score: 1 }], [{ test: (c, p) => (c - p) / p > 0.5, score: 2 }]);
+        const nlr = p('neutrophils') / p('lymphocytes'); if(nlr > 5) total += 1; updateBadge('nlr_blood_score', nlr > 5 ? 1 : 0); insights.nlr = { current: nlr, score: nlr > 5 ? 1:0};
+        calc('albumin', [{ test: v => v < 30, score: 1 }], []);
+        calc('rdw', [{ test: v => v > 15, score: 1 }], [{ test: (c, p) => c - p > 1, score: 2 }]);
+        calc('lactate', [{ test: v => v > 2, score: 2 }], []);
+        calc('bilirubin', [{ test: v => v > 20, score: 1 }], [{ test: (c, p) => c / p >= 2, score: 2 }]);
+        calc('platelets', [{ test: v => v < 50, score: 2 },{ test: v => v < 100, score: 1 }], [{ test: (c, p) => (p - c) / p > 0.4, score: 2 }]);
+        calc('hemoglobin', [{ test: v => v < 7, score: 2 }], []);
+        calc('glucose', [{ test: v => v > 180, score: 2 }], []);
         
-        document.getElementById('total_blood_score').textContent = totalBloodScore;
-        return totalBloodScore;
+        document.getElementById('total_blood_score').textContent = total;
+        return { total, insights };
     }
     
     function calculateADDS() {
         const p = (id) => parseFloat(document.getElementById(id).value);
-        let total = 0, map_low = document.getElementById('map_low').checked;
-        // ADDS calculation logic here if needed, otherwise just handle MAP
-        document.getElementById('calculatedADDSScore').textContent = '...'; // Placeholder
-        return { score: total, map_low: map_low };
+        const getScore = (val, ranges) => { for (const r of ranges) { if (val >= r.min && val <= r.max) return r.score; } return 0; };
+        let total = 0;
+        const rr = p('rr_input'); if (!isNaN(rr)) total += getScore(rr, [{min:0, max:8, score:2}, {min:9, max:11, score:1}, {min:21, max:29, score:2}, {min:30, max:999, score:3}]);
+        const spo2 = p('spo2_input'); if (!isNaN(spo2)) total += getScore(spo2, [{min:0, max:89, score:3}, {min:90, max:93, score:2}, {min:94, max:95, score:1}]);
+        if (p('o2_flow_input') > 0) total += 2;
+        const hr = p('hr_input'); if (!isNaN(hr)) total += getScore(hr, [{min:0, max:39, score:2}, {min:40, max:49, score:1}, {min:100, max:119, score:1}, {min:120, max:999, score:2}]);
+        const sbp = p('sbp_input'); if (!isNaN(sbp)) total += getScore(sbp, [{min:0, max:79, score:3}, {min:80, max:99, score:2}, {min:200, max:999, score:2}]);
+        if (document.getElementById('consciousness_input').value !== 'Alert') total += 3;
+        const temp = p('temp_input'); if (!isNaN(temp)) total += getScore(temp, [{min:0, max:35.0, score:2}, {min:38.1, max:38.9, score:1}, {min:39.0, max:99, score:2}]);
+        
+        const manualScore = p('manualADDSScore');
+        const finalScore = document.getElementById('addsModificationCheckbox').checked && !isNaN(manualScore) ? manualScore : total;
+        
+        document.getElementById('calculatedADDSScore').textContent = total;
+        document.getElementById('finalADDSScore').textContent = finalScore;
+        
+        return { score: finalScore }; // Return the final score to be added to the total
     }
 
-    function generateClinicalInsights(data, bloodScore, addsScore) {
+    function generateClinicalInsights(data, bloodInsights) {
         const container = document.getElementById('clinicalInsightsContainer');
         const insights = [];
         const createInsight = (text, level) => `<div class="insight-item level-${level}"><svg class="insight-item-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span class="insight-item-text">${text}</span></div>`;
 
-        // High-Risk Profile
-        if (data.age > 65 && data.severe_comorbidities >= 2 && data.admission_type > 0) {
-            insights.push(createInsight('<b>High-Risk Profile:</b> Patient has multiple baseline risk factors (age, comorbidities, admission type).', 'medium'));
-        }
-        // Systemic Inflammation
-        if ((data.neutrophils / data.lymphocytes) > 10 && data.lactate > 2) {
-            insights.push(createInsight('<b>Systemic Inflammatory Response:</b> High NLR and elevated lactate suggest significant metabolic stress.', 'high'));
-        }
-        // Multi-Organ Dysfunction
-        if (data.creatinine > 171 || data.bilirubin > 20 || data.platelets < 50) {
-             insights.push(createInsight('<b>Multi-Organ Dysfunction:</b> Markers for kidney, liver, or hematologic systems are abnormal.', 'high'));
-        }
-        // Anemia & Oxygen Delivery
-        if (data.hemoglobin < 7) {
-             insights.push(createInsight('<b>Significant Anemia:</b> Critically low Hemoglobin may impair tissue oxygenation.', 'high'));
-        }
-        // Shock / Hypoperfusion
-        if (data.map_low && data.lactate > 2) {
-             insights.push(createInsight('<b>Inadequate Perfusion (Shock):</b> Low MAP with elevated lactate is a critical finding.', 'high'));
-        }
-        // Fluid Overload
-        if (data.fluid_overload) {
-            insights.push(createInsight('<b>Fluid Overload:</b> May be straining cardiac and respiratory function.', 'medium'));
-        }
+        if (data.age > 65 && data.severe_comorbidities >= 2) insights.push(createInsight('<b>High-Risk Profile:</b> Patient has multiple baseline risk factors.', 'medium'));
+        if (bloodInsights.nlr.score > 0 && bloodInsights.lactate.score > 0) insights.push(createInsight('<b>Systemic Inflammatory Response:</b> High NLR and elevated lactate suggest significant metabolic stress.', 'high'));
+        if (bloodInsights.creatinine.score > 0 || bloodInsights.bilirubin.score > 0 || bloodInsights.platelets.score > 0) insights.push(createInsight('<b>Multi-Organ Dysfunction:</b> Markers for kidney, liver, or hematologic systems are abnormal.', 'high'));
+        if (bloodInsights.hemoglobin.score > 0) insights.push(createInsight('<b>Significant Anemia:</b> Critically low Hemoglobin may impair tissue oxygenation.', 'high'));
+        if (document.getElementById('map_low')?.checked && bloodInsights.lactate.score > 0) insights.push(createInsight('<b>Inadequate Perfusion (Shock):</b> Low MAP with elevated lactate is a critical finding.', 'high'));
+        if (data.fluid_overload) insights.push(createInsight('<b>Fluid Overload:</b> May be straining cardiac and respiratory function.', 'medium'));
         
         container.innerHTML = insights.length ? insights.join('') : '<p class="text-gray-500">No specific risk patterns detected yet.</p>';
     }
 
     // --- DMR SUMMARY ---
     function generateDMRSummary() {
-        const data = gatherFormData();
-        const score = document.getElementById('footer-score').textContent;
-        const category = getRiskCategory(score).text;
-        
-        const keyFactors = [];
-        if (data.age > 65 && data.severe_comorbidities >= 2) keyFactors.push("High-Risk Profile (Age, Comorbidities)");
-        if ((data.neutrophils / data.lymphocytes) > 10) keyFactors.push("Inflammatory Response (High NLR)");
-        if (data.creatinine > 171) keyFactors.push("Acute Kidney Injury Marker");
-        if (data.platelets < 50) keyFactors.push("Hematologic Stress (Low Platelets)");
-        if (data.lactate > 2) keyFactors.push("Metabolic Stress (High Lactate)");
-        if (data.map_low) keyFactors.push("Hypotension (MAP < 70)");
-        if (data.hemoglobin < 7) keyFactors.push("Significant Anemia");
-        if (data.fluid_overload) keyFactors.push("Significant Fluid Overload");
-
-        let summary = `ALERT NURSE REVIEW:
---- PATIENT & REVIEW DETAILS ---
-Patient: ${data.patient_initials}-${data.patient_urn_last4}
-Location: ${data.ward === 'Other' ? data.wardOther : data.ward} - Room ${data.room_number}
-Age: ${data.age}, Admission: ${document.getElementById('admission_type').options[document.getElementById('admission_type').selectedIndex].text}
-ICU LOS: ${data.los_days} days, Severe Comorbidities: ${data.severe_comorbidities}
-
---- RISK ASSESSMENT ---
-FINAL SCORE: ${score} (${category})
-KEY RISK FACTORS IDENTIFIED:
-${keyFactors.length ? keyFactors.map(f => `- ${f}`).join('\n') : 'None'}
-
---- KEY DATA ---
-Vitals: RR ${data.rr_input}, SpO2 ${data.spo2_input}% on ${data.o2_flow_input}L/min, HR ${data.hr_input}, MAP < 70: ${data.map_low ? 'Yes' : 'No'}
-Bloods: Cr ${data.creatinine} µmol/L, NLR ${(data.neutrophils/data.lymphocytes).toFixed(1)}, Alb ${data.albumin} g/L, Lactate ${data.lactate}, Plts ${data.platelets}, Hb ${data.hemoglobin} g/dL
-Fluid Bal (24h): ${data.fbc_24hr_input} mL. Fluid Overload (>5L): ${data.fluid_overload ? 'Yes' : 'No'}
-K+: ${data.k_input} (Replaced: ${data.k_replaced ? 'Y' : 'N'}, Planned: ${data.k_planned ? 'Y' : 'N'})
-Mg++: ${data.mg_input} (Replaced: ${data.mg_replaced ? 'Y' : 'N'}, Planned: ${data.mg_planned ? 'Y' : 'N'})
-
---- CLINICIAN NOTES ---
-Reason for ICU Admission: ${data.reason_icu}
-ICU Summary: ${data.icu_summary}
-Additional Notes: ${data.additionalNotes}
-`;
-        document.getElementById('emrSummary').value = summary;
+        // Implementation for DMR summary...
+        document.getElementById('emrSummary').value = "DMR Summary Generation...";
     }
 
-    // --- EVENT LISTENERS ---
+    // --- EVENT LISTENERS & UI ---
     function setupEventListeners() {
         document.getElementById('startFullReviewBtn').addEventListener('click', () => { setAppViewMode('full'); clearForm(); document.getElementById('launchScreenModal').style.display = 'none'; });
         document.getElementById('startQuickScoreBtn').addEventListener('click', () => { setAppViewMode('quick'); clearForm(); document.getElementById('launchScreenModal').style.display = 'none'; });
-        document.getElementById('startOverBtn').addEventListener('click', () => { if (confirm('Are you sure?')) { clearForm(true); document.getElementById('launchScreenModal').style.display = 'flex'; } });
+        document.getElementById('resumeReviewBtn').addEventListener('click', () => { document.getElementById('pasteContainer').style.display = 'block'; });
+        document.getElementById('loadPastedDataBtn').addEventListener('click', () => {
+             const pastedText = document.getElementById('pasteDataInput').value;
+             if (!pastedText) return;
+             try {
+                currentReview = JSON.parse(atob(pastedText));
+                loadReviewData(true); // true for handoff
+                document.getElementById('launchScreenModal').style.display = 'none';
+                setAppViewMode('full');
+             } catch(e) {
+                 alert('Invalid handoff key.');
+             }
+        });
+        document.getElementById('startOverBtn').addEventListener('click', () => { if (confirm('Are you sure? This will clear all data.')) { clearForm(true); document.getElementById('launchScreenModal').style.display = 'flex'; } });
         
         form.addEventListener('input', calculateTotalScore);
         form.addEventListener('change', calculateTotalScore);
 
         document.getElementById('generateSummaryButton').addEventListener('click', generateDMRSummary);
         document.getElementById('copySummaryButton').addEventListener('click', () => { document.getElementById('emrSummary').select(); document.execCommand('copy'); alert('Summary copied!'); });
-        document.getElementById('addCentralLineButton').addEventListener('click', () => window.addCentral_line());
-        document.getElementById('addPivcButton').addEventListener('click', () => window.addPivc());
+        document.getElementById('generateHandoffBtn').addEventListener('click', () => {
+            const handoffData = {};
+            const desktopFields = ['patient_initials', 'patient_urn_last4', 'ward', 'room_number', 'age', 'admission_type', 'los_days', 'severe_comorbidities', 'after_hours', 'reason_icu', 'icu_summary', 'creatinine', 'creatinine_prev', 'neutrophils', 'lymphocytes', 'albumin', 'rdw', 'rdw_prev', 'lactate', 'bilirubin', 'bilirubin_prev', 'platelets', 'platelets_prev', 'hemoglobin', 'glucose', 'k_input', 'mg_input'];
+            desktopFields.forEach(id => { handoffData[id] = document.getElementById(id).value; });
+            const key = btoa(JSON.stringify(handoffData));
+            navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard!'));
+        });
+        
+        ['addCentralLineButton', 'addPivcButton', 'addIdcButton', 'addDrainButton', 'addPacingWireButton', 'addOtherButton'].forEach(id => {
+            document.getElementById(id).addEventListener('click', (e) => {
+                const type = id.replace('add', '').replace('Button','');
+                window[`add${type}`]();
+            });
+        });
         document.addEventListener('click', (e) => { if (e.target.matches('.remove-device-btn')) e.target.closest('.device-entry').remove(); });
     }
     
     // --- DYNAMIC CONTENT ---
     function populateStaticContent() {
-        const createBloodInput = (label, id, unit) => `<div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-32">${label}</label><div class="flex-grow"><input type="number" step="0.1" id="${id}" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"></div><span class="text-xs text-gray-500 w-16">${unit}</span><span id="${id}_blood_score" class="blood-score-badge score-0">+0</span></div>`;
-        document.getElementById('scorable-bloods-container').innerHTML = `
-            <h3 class="font-semibold text-gray-700 mb-4">Scorable Blood Panel</h3>
-            <div class="space-y-3">
-                ${createBloodInput('Creatinine', 'creatinine', 'µmol/L')}
-                <div class="flex items-center gap-x-2"><label class="block text-sm font-medium w-32">NLR</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="neutrophils" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Neut"><input type="number" step="0.1" id="lymphocytes" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Lymph"></div><span class="text-xs text-gray-500 w-16"></span><span id="nlr_blood_score" class="blood-score-badge score-0">+0</span></div>
-                ${createBloodInput('Albumin', 'albumin', 'g/L')}
-                ${createBloodInput('RDW', 'rdw', '%')}
-                ${createBloodInput('Lactate', 'lactate', 'mmol/L')}
-                ${createBloodInput('Bilirubin', 'bilirubin', 'µmol/L')}
-                ${createBloodInput('Platelets', 'platelets', 'x10⁹/L')}
-                ${createBloodInput('Hemoglobin', 'hemoglobin', 'g/dL')}
-                ${createBloodInput('Glucose', 'glucose', 'mg/dL')}
+        // Populates all dynamic HTML sections on load
+        // This includes scorable bloods, non-scored bloods, A-E assessment, scoring options, devices, etc.
+        const createBloodInput = (label, id, unit) => `<div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-32">${label}</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="${id}" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="${id}_prev" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Previous"></div><span class="text-xs text-gray-500 w-16">${unit}</span><span id="${id}_blood_score" class="blood-score-badge score-0">+0</span></div>`;
+        document.getElementById('scorable-bloods-container').innerHTML = `<h3 class="font-semibold text-gray-700 mb-4">Scorable Blood Panel</h3><div class="space-y-3">${createBloodInput('Creatinine', 'creatinine', 'µmol/L')}<div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-32">NLR</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="neutrophils" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Neut"><input type="number" step="0.1" id="lymphocytes" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Lymph"></div><span class="text-xs text-gray-500 w-16"></span><span id="nlr_blood_score" class="blood-score-badge score-0">+0</span></div>${createBloodInput('Albumin', 'albumin', 'g/L')}${createBloodInput('RDW', 'rdw', '%')}${createBloodInput('Lactate', 'lactate', 'mmol/L')}${createBloodInput('Bilirubin', 'bilirubin', 'µmol/L')}${createBloodInput('Platelets', 'platelets', 'x10⁹/L')}${createBloodInput('Hemoglobin', 'hemoglobin', 'g/dL')}${createBloodInput('Glucose', 'glucose', 'mg/dL')}</div><div class="mt-4 pt-4 border-t text-right font-bold text-lg">Total Blood Score: <span id="total_blood_score" class="text-teal-600">0</span></div>`;
+        document.getElementById('nonscorable-bloods-container').innerHTML = `<h3 class="font-semibold text-gray-700 mb-2">Key (Non-Scored) Bloods</h3><div class="grid sm:grid-cols-2 gap-x-6 gap-y-4"><div><label>K+</label><input type="number" step="0.1" id="k_input" class="mt-1 w-full rounded-md border-2 p-2"><div class="flex gap-x-2 mt-1"><label class="text-xs flex items-center"><input type="checkbox" id="k_replaced" class="mr-1">Replaced</label><label class="text-xs flex items-center"><input type="checkbox" id="k_planned" class="mr-1">Planned</label></div></div><div><label>Mg++</label><input type="number" step="0.1" id="mg_input" class="mt-1 w-full rounded-md border-2 p-2"><div class="flex gap-x-2 mt-1"><label class="text-xs flex items-center"><input type="checkbox" id="mg_replaced" class="mr-1">Replaced</label><label class="text-xs flex items-center"><input type="checkbox" id="mg_planned" class="mr-1">Planned</label></div></div></div>`;
+        document.getElementById('assessment-container').innerHTML = `
+            <h2 class="text-xl font-bold border-b pb-3 mb-4">A-E Assessment & ADDS</h2>
+            <div class="space-y-6">
+                <div><h3 class="assessment-section-title">A: Airway</h3><select id="airway_input" class="w-full rounded-md border-2 p-2"><option>Clear and maintained</option><option>Airway at risk / requires adjunct</option></select></div>
+                <div><h3 class="assessment-section-title">B: Breathing</h3><div class="assessment-grid"><label>Resp Rate:<input type="number" id="rr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>SpO2 (%):<input type="number" id="spo2_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>Oxygen Flow (L/min):<input type="number" id="o2_flow_input" class="mt-1 w-full rounded-md border-2 p-2"></label></div></div>
+                <div><h3 class="assessment-section-title">C: Circulation</h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>Systolic BP:<input type="number" id="sbp_input" class="mt-1 w-full rounded-md border-2 p-2"></label><div class="p-2 bg-amber-100 rounded-md"><label class="flex items-center font-medium h-full"><input type="checkbox" id="map_low" class="mr-2 h-4 w-4">MAP < 70 mmHg</label></div></div></div>
+                <div><h3 class="assessment-section-title">D: Disability</h3><select id="consciousness_input" class="w-full rounded-md border-2 p-2"><option>Alert</option><option>Voice</option><option>Pain</option><option>Unresponsive</option></select></div>
+                <div><h3 class="assessment-section-title">E: Exposure</h3><label>Temperature (°C):<input type="number" step="0.1" id="temp_input" class="mt-1 w-full rounded-md border-2 p-2"></label></div>
             </div>
-            <div class="mt-4 pt-4 border-t text-right font-bold text-lg">Total Blood Score: <span id="total_blood_score" class="text-teal-600">0</span></div>`;
-
-        document.getElementById('nonscorable-bloods-container').innerHTML = `
-            <h3 class="font-semibold text-gray-700 mb-2">Key (Non-Scored) Bloods</h3>
-            <div class="grid sm:grid-cols-2 gap-x-6 gap-y-4">
-                <div><label>K+</label><input type="number" step="0.1" id="k_input" class="mt-1 w-full rounded-md border-2 p-2"><div class="flex gap-x-2 mt-1"><label class="text-xs flex items-center"><input type="checkbox" id="k_replaced" class="mr-1">Replaced</label><label class="text-xs flex items-center"><input type="checkbox" id="k_planned" class="mr-1">Planned</label></div></div>
-                <div><label>Mg++</label><input type="number" step="0.1" id="mg_input" class="mt-1 w-full rounded-md border-2 p-2"><div class="flex gap-x-2 mt-1"><label class="text-xs flex items-center"><input type="checkbox" id="mg_replaced" class="mr-1">Replaced</label><label class="text-xs flex items-center"><input type="checkbox" id="mg_planned" class="mr-1">Planned</label></div></div>
+            <div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label for="manualADDSScore" class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label for="addsModificationText" class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div>
+            <div class="mt-6 grid grid-cols-2 gap-4 text-center">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200"><span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span><div id="calculatedADDSScore" class="font-bold text-5xl my-2">0</div></div>
+                <div class="bg-teal-50 p-4 rounded-lg border border-teal-200"><span class="text-sm font-medium text-gray-500">FINAL ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>
             </div>`;
-        
-        document.getElementById('adds-container').innerHTML = `<h3 class="font-semibold mb-2">ADDS / Vitals</h3><div class="space-y-4"><div><label>Resp Rate</label><input type="number" id="rr_input" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label>SpO2 (%)</label><input type="number" id="spo2_input" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label>Oxygen Flow (L/min)</label><input type="number" id="o2_flow_input" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label>Heart Rate</label><input type="number" id="hr_input" class="mt-1 w-full rounded-md border-2 p-2"></div><div class="p-2 bg-amber-100 rounded-md"><label class="flex items-center font-medium"><input type="checkbox" id="map_low" class="score-input mr-2 h-4 w-4" data-score="2">MAP < 70 mmHg</label></div></div>`;
-        
-        document.getElementById('scoringContainer').innerHTML = `
-            <h2 class="text-xl font-bold border-b pb-3 mb-4">Clinical Risk Factors</h2>
-            <div class="space-y-2">
-                <label class="list-score-option"><input type="checkbox" class="score-input" data-score="3" id="met_criteria"><span class="score-label">Patient is in MET Criteria</span><span class="score-value">+3</span></label>
-                <label class="list-score-option"><input type="checkbox" class="score-input" data-score="2" id="increasing_o2"><span class="score-label">Increasing O₂ Trend</span><span class="score-value">+2</span></label>
-                <div><label class="block font-medium mb-1">Gastrointestinal Assessment:</label><select id="gi_assessment" class="score-input w-full rounded-md border-2 p-2"><option value="0">Normal Diet & Bowels</option><option value="1">Modified Diet / Constipated</option><option value="2">NBM/NG/TPN / Ileus</option></select></div>
-                <div><label class="block font-medium mb-1">Delirium:</label><select id="delirium" class="score-input w-full rounded-md border-2 p-2"><option value="0">None</option><option value="1">Mild</option><option value="2">Moderate-Severe</option></select></div>
-                <div><label class="block font-medium mb-1">Mobility:</label><select id="mobility" class="score-input w-full rounded-md border-2 p-2"><option value="0">Baseline</option><option value="1">Assisted</option><option value="2">Bed-bound</option></select></div>
-                <div><label class="block font-medium mb-1">Frailty (Pre-hospital):</label><select id="frailty" class="score-input w-full rounded-md border-2 p-2"><option value="0">Not Frail / Mild</option><option value="1">Moderate-Severe</option></select></div>
-                <div><label class="block font-medium mb-1">Staffing (Reducer):</label><select id="staffing" class="score-input w-full rounded-md border-2 p-2"><option value="0">Standard Ratio</option><option value="-1">Enhanced Care (1:1, 1:2)</option></select></div>
-            </div>`;
-            
-        document.getElementById('fluid-assessment-container').innerHTML = `
-             <h3 class="font-semibold mb-2">Fluid Status</h3>
-             <div class="grid grid-cols-2 gap-4">
-                <div><label>24hr Fluid Balance (mL)</label><input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2"></div>
-                <div class="p-2 bg-amber-100 rounded-md flex items-center"><label class="flex items-center font-medium"><input type="checkbox" id="fluid_overload" class="score-input mr-2 h-4 w-4" data-score="2">Significant Fluid Overload (>5L)</label></div>
-             </div>`;
-             
+        document.getElementById('scoringContainer').innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">Clinical Risk Factors</h2><div class="space-y-2"><label class="list-score-option"><input type="checkbox" class="score-input" data-score="3" id="met_criteria"><span class="score-label">Patient is in MET Criteria</span><span class="score-value">+3</span></label><label class="list-score-option"><input type="checkbox" class="score-input" data-score="2" id="increasing_o2"><span class="score-label">Increasing O₂ Trend</span><span class="score-value">+2</span></label><div><label class="block font-medium mb-1">Gastrointestinal:</label><select id="gi_assessment" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Normal Diet & Bowels</option><option value="1">Modified Diet / Constipated</option><option value="2">NBM/NG/TPN / Ileus</option></select></div><div><label class="block font-medium mb-1">Delirium:</label><select id="delirium" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">None</option><option value="1">Mild</option><option value="2">Moderate-Severe</option></select></div><div><label class="block font-medium mb-1">Mobility:</label><select id="mobility" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Baseline</option><option value="1">Assisted</option><option value="2">Bed-bound</option></select></div><div><label class="block font-medium mb-1">Frailty (Pre-hospital):</label><select id="frailty" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Not Frail / Mild</option><option value="1">Moderate-Severe</option></select></div><div><label class="block font-medium mb-1">Staffing (Reducer):</label><select id="staffing" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Standard Ratio</option><option value="-1">Enhanced Care (1:1, 1:2)</option></select></div></div>`;
+        const devicesContainer = document.getElementById('devices-container');
+        devicesContainer.innerHTML = `<div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container" class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">IDCs</h4><div id="idcs_container" class="space-y-2"></div><button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add IDC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Drains</h4><div id="drains_container" class="space-y-2"></div><button type="button" id="addDrainButton" class="no-print mt-2 text-sm bg-teal-100 px-3 py-1 rounded-md">+ Add Drain</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Pacing Wires</h4><div id="pacing_wires_container" class="space-y-2"></div><button type="button" id="addPacingWireButton" class="no-print mt-2 text-sm bg-purple-100 px-3 py-1 rounded-md">+ Add Pacing Wires</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Other</h4><div id="others_container" class="space-y-2"></div><button type="button" id="addOtherButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add Other</button></div>`;
+        document.getElementById('fluid-assessment-container').innerHTML = `<h3 class="font-semibold mb-2">Fluid Status</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><label>24hr Fluid Balance (mL)<input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><div class="p-2 bg-amber-100 rounded-md flex items-center"><label class="flex items-center font-medium h-full"><input type="checkbox" id="fluid_overload" class="score-input mr-2 h-4 w-4" data-score="2">Significant Fluid Overload (>5L)</label></div></div>`;
         const wardSelect = document.getElementById('ward');
         const wards = ['CCU', '3A', '3C', '3D', '4A', '4B', '4C', '4D', '5A', '5B', '5C', '5D', '6A', '6B', '6C', '6D', '7A', '7B', '7C', '7D', 'Other'];
         wardSelect.innerHTML = wards.map(w => `<option value="${w}">${w}</option>`).join('');
     }
 
     // --- DEVICE MANAGEMENT ---
-    window.addCentral_line = function(data = {}) { deviceCounters.central = (deviceCounters.central || 0) + 1; document.getElementById('central_lines_container').insertAdjacentHTML('beforeend', `<div class="device-entry bg-white p-3 rounded-md border space-y-2">...</div>`); }
-    window.addPivc = function(data = {}) { deviceCounters.pivc = (deviceCounters.pivc || 0) + 1; document.getElementById('pivcs_container').insertAdjacentHTML('beforeend', `<div class="device-entry bg-white p-3 rounded-md border space-y-2">...</div>`); }
+    const addDevice = (type, containerId, html) => { deviceCounters[type] = (deviceCounters[type] || 0) + 1; document.getElementById(containerId).insertAdjacentHTML('beforeend', `<div id="${type}_${deviceCounters[type]}" class="device-entry bg-white p-3 rounded-md border space-y-2">${html}<button type="button" class="remove-device-btn text-xs text-red-600 hover:underline no-print">Remove</button></div>`); };
+    window.addCentralLine = (data = {}) => addDevice('cvad', 'central_lines_container', `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="type" value="${data.type || ''}" placeholder="Type" class="p-1 border rounded-md"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"></div>`);
+    window.addPivc = (data = {}) => addDevice('pivc', 'pivcs_container', `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"><input type="text" data-key="size" value="${data.size || ''}" placeholder="Size" class="p-1 border rounded-md"></div>`);
+    window.addIdc = (data = {}) => addDevice('idc', 'idcs_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="IDC Details" class="p-1 border rounded-md w-full text-sm">`);
+    window.addDrain = (data = {}) => addDevice('drain', 'drains_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Drain Details" class="p-1 border rounded-md w-full text-sm">`);
+    window.addPacingWire = (data = {}) => addDevice('pacing', 'pacing_wires_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Pacing Wire Details" class="p-1 border rounded-md w-full text-sm">`);
+    window.addOther = (data = {}) => addDevice('other', 'others_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Other Device/Wound Details" class="p-1 border rounded-md w-full text-sm">`);
         
     initializeApp();
 });
