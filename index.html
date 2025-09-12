@@ -78,22 +78,22 @@
                     <div> <h3 class="text-lg font-semibold">ICU Summary / Timeline:</h3> <textarea id="icuSummary" rows="10" class="mt-1 w-full rounded-md border-2 p-2"></textarea> </div>
                     <div> <h3 class="text-lg font-semibold">Past Medical History (PMH):</h3> <textarea id="pmh" rows="5" class="mt-1 w-full rounded-md border-2 p-2"></textarea> </div>
                 </div>
-                <!-- Key Bloods -->
+
+                <!-- Scorable Bloods -->
+                <div id="scorable-bloods-container" class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
+                    <!-- Content injected by JS -->
+                </div>
+                
+                <!-- Key (Non-Scored) Bloods -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
                     <div id="bloods-container" class="bg-gray-50 p-4 rounded-lg border">
-                        <h3 class="font-semibold text-gray-700 mb-2">Key Bloods</h3>
-                        <div class="grid sm:grid-cols-2 gap-x-6 gap-y-4 bloods-mobile-stack">
-                            <div><div class="flex items-center gap-x-2"><label id="wcc_label" class="blood-label block text-sm font-medium w-20">WCC</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="wcc_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="wcc_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
-                            <div><div class="flex items-center gap-x-2"><label id="neut_label" class="blood-label block text-sm font-medium w-20">Neut</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="neut_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="neut_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
-                            <div><div class="flex items-center gap-x-2"><label id="crp_label" class="blood-label block text-sm font-medium w-20">CRP</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="crp_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="crp_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
-                            <div><div class="flex items-center gap-x-2"><label id="lactate_label" class="blood-label block text-sm font-medium w-20">Lactate</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="lactate_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="lactate_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
-                            <div><div class="flex items-center gap-x-2"><label id="hb_label" class="blood-label block text-sm font-medium w-20">Hb</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="hb_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="hb_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
-                            <div><div class="flex items-center gap-x-2"><label id="k_label" class="blood-label block text-sm font-medium w-20">K+</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="k_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="k_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="k_planned_checkbox" class="h-3 w-3 mr-1"> Planned</label></div></div>
-                            <div><div class="flex items-center gap-x-2"><label id="mg_label" class="blood-label block text-sm font-medium w-20">Mg++</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="mg_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="mg_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="mg_planned_checkbox" class="h-3 w-3 mr-1"> Planned</label></div></div>
-                            <div><div class="flex items-center gap-x-2"><label id="creatinine_label" class="blood-label block text-sm font-medium w-20">Creatinine</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="creatinine_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="creatinine_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
-                            <div><div class="flex items-center gap-x-2"><label id="albumin_label" class="blood-label block text-sm font-medium w-20">Albumin</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="albumin_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="albumin_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
-                        </div>
+                        <!-- Content injected by JS -->
                     </div>
+                </div>
+
+                <!-- ABG Calculator -->
+                <div id="abg-calculator-container" class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
+                    <!-- Content injected by JS -->
                 </div>
                 <!-- Handoff Button -->
                 <div id="handoff-container" class="print-hide" style="display: none;">
@@ -146,14 +146,14 @@
     
     <!-- Sticky Score Footer -->
     <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-between z-40">
-        <span id="footer-category" class="font-bold text-sm px-2">SINGLE</span>
+        <span id="footer-category" class="font-bold text-sm px-2">LOW RISK</span>
         <span id="footer-score" class="text-3xl font-bold bg-white/20 px-4 py-1 rounded-md">0</span>
     </div>
     
     <!-- Print Container -->
     <div id="print-container" class="hidden"></div>
     
-    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 19.0.0 - Major Refactor</div>
+    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 21.0.1 - Bug Fix</div>
     
     <script src="js/script.js"></script>
 
