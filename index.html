@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="p-4 sm:p-6 md:p-8 pb-24">
+<body class="p-4 sm:p-6 md:p-8 pb-32">
 
     <!-- Launch Screen -->
     <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex flex-col items-center justify-center p-4 z-50 no-print">
@@ -18,6 +18,13 @@
             <div class="flex flex-col gap-4 pt-4">
                 <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review</button>
                 <button id="startQuickScoreBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg">⚡ Start Quick Score Only</button>
+                <div>
+                    <button id="resumeReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Continue from Desktop <span class="block text-xs font-normal">(Paste handoff key)</span></button>
+                </div>
+            </div>
+            <div id="pasteContainer" class="hidden mt-4">
+                <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your data key here..."></textarea>
+                <button id="loadPastedDataBtn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Load Data</button>
             </div>
         </div>
     </div>
@@ -26,7 +33,6 @@
     <div id="main-content" class="max-w-4xl mx-auto" style="visibility: hidden;">
         <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print">
             <div id="top-button-bar" class="flex justify-end items-center gap-2">
-                 <button id="printBlankBtn" type="button" class="bg-gray-100 text-gray-800 hover:bg-gray-200 font-semibold py-2 px-3 rounded-lg text-sm">Print Blank Form</button>
                  <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
             </div>
         </div>
@@ -34,7 +40,7 @@
         <form id="assessmentForm" onsubmit="return false;">
             <div class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
                 <div class="header-gradient p-6 flex items-center justify-center text-white">
-                    <h1 class="text-2xl sm:text-3xl font-bold">ALERT Nursing Risk Assessment Tool</h1>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-center">ALERT Nursing Risk Assessment Tool</h1>
                 </div>
             </div>
 
@@ -44,26 +50,26 @@
                     <div class="bg-gray-50 p-4 rounded-lg border">
                         <h3 class="text-lg font-semibold mb-4">Patient & Review Details</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                            <div class="grid grid-cols-2 gap-x-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
                                 <label>Patient Initials:<input type="text" id="patient_initials" class="mt-1 w-full rounded-md border-2 p-2"></label>
                                 <label>URN (Last 4):<input type="number" id="patient_urn_last4" class="mt-1 w-full rounded-md border-2 p-2"></label>
                             </div>
-                            <div class="grid grid-cols-2 gap-x-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
                                 <label>Ward:<select id="ward" class="mt-1 w-full rounded-md border-2 p-2"></select></label>
                                 <label>Room No.:<input type="text" id="room_number" class="mt-1 w-full rounded-md border-2 p-2"></label>
                             </div>
                             <div class="md:col-span-2" id="wardOtherContainer" style="display: none;"><input type="text" id="wardOther" placeholder="Enter other ward name" class="w-full rounded-md border-2 p-2 text-sm"></div>
-                            
-                            <label>Age:<input type="number" id="age" class="score-input mt-1 w-full rounded-md border-2 p-2" data-score-group="age"></label>
+                            <label>Age:<input type="number" id="age" class="score-input mt-1 w-full rounded-md border-2 p-2"></label>
                             <label>Admission Type:
-                                <select id="admission_type" class="score-input mt-1 w-full rounded-md border-2 p-2" data-score-group="admission">
+                                <select id="admission_type" class="score-input mt-1 w-full rounded-md border-2 p-2">
                                     <option value="0">Surgical (Elective)</option>
                                     <option value="1">Surgical (Emergency)</option>
                                     <option value="2">Medical or ED Admission</option>
                                 </select>
                             </label>
-                            <label>ICU LOS (days):<input type="number" id="los_days" class="score-input mt-1 w-full rounded-md border-2 p-2" data-score-group="los"></label>
-                            <label>Severe Comorbidities (≥2):<input type="number" id="severe_comorbidities" min="0" class="score-input mt-1 w-full rounded-md border-2 p-2" data-score-group="comorbidities"></label>
+                            <label>ICU LOS (days):<input type="number" id="los_days" class="score-input mt-1 w-full rounded-md border-2 p-2"></label>
+                            <label>Severe Comorbidities (≥2):<input type="number" id="severe_comorbidities" min="0" class="score-input mt-1 w-full rounded-md border-2 p-2"></label>
+                             <div class="md:col-span-2 pt-2"><label class="flex items-center"><input type="checkbox" id="after_hours" class="h-4 w-4 mr-2">After-Hours Discharge</label></div>
                         </div>
                     </div>
                 </div>
@@ -82,12 +88,17 @@
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
                     <div id="nonscorable-bloods-container"></div>
                 </div>
-
-                <!-- ADDS Calculator -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
-                    <div id="adds-container"></div>
+                
+                <!-- Handoff to Mobile Section -->
+                <div id="handoff-container" class="bg-purple-50 border-2 border-purple-200 rounded-xl shadow-lg mb-6 p-6 text-center">
+                    <h3 class="text-lg font-semibold text-purple-800">Ready for Bedside Assessment?</h3>
+                    <p class="text-sm text-purple-700 mt-2 mb-4">You have entered the pre-review data. To continue on your mobile, click the button below to copy the handoff key.</p>
+                    <button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg">📲 Copy Data Key to Mobile</button>
                 </div>
             </div>
+
+            <!-- A-E Assessment (ADDS) -->
+            <div id="assessment-container" class="bg-white rounded-xl shadow-lg mb-6 p-6"></div>
 
             <!-- Risk Scoring Assessment -->
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
@@ -105,13 +116,12 @@
             <div id="fullReviewContainerBottom">
                  <!-- Devices -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
-                    <details class="bg-gray-50 p-4 rounded-lg border" open><summary class="font-semibold cursor-pointer">Device, Drain & Wound Assessment</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container"  class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div></div></details>
+                    <details class="bg-gray-50 p-4 rounded-lg border" open><summary class="font-semibold cursor-pointer">Device, Drain & Wound Assessment</summary><div id="devices-container" class="space-y-6 pt-4"></div></details>
                 </div>
 
                  <!-- Final Assessment & Plan -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6">
                     <h2 class="text-xl font-bold border-b pb-3">Final Assessment & Plan</h2>
-                    <div id="fluid-assessment-container"></div>
                     <div><label for="additionalNotes" class="block font-medium">Additional Notes (Allergies, Precautions, etc.):</label><textarea id="additionalNotes" rows="4" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div>
                 </div>
             </div>
