@@ -1,6 +1,6 @@
 body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
 
-/* New Risk Category Footer Styles */
+/* Risk Category Footer Styles */
 .category-extremely-high { background-color: #DC2626 !important; color: #FFFFFF; }
 .category-high { background-color: #F97316 !important; color: #FFFFFF; }
 .category-medium { background-color: #F59E0B !important; color: #1A202C; }
@@ -8,152 +8,32 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
 
 .header-gradient { background: linear-gradient(to right, #0D9488, #0F766E); }
 
-.score-group-title { margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; color: #4b5563; }
-.score-sub-group-title { margin-top: 0.75rem; margin-bottom: 0.25rem; font-weight: 500; color: #4b5563; font-size: 0.9rem; padding-left: 0.5rem; border-left: 3px solid #67E8F9;}
-
-
 /* List-Style Button Styles */
-.list-score-option {
-    display: flex;
-    align-items: center;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    background-color: #ffffff;
-}
+.list-score-option { display: flex; align-items: center; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s ease-in-out; background-color: #ffffff; }
 .list-score-option input { display: none; }
-.list-score-option .score-label {
-    flex-grow: 1;
-    padding-left: 1rem;
-}
-.list-score-option .score-value {
-    font-size: 1.25rem;
-    font-weight: 700;
-    width: 3rem;
-    text-align: center;
-    color: #4b5563;
-    border-right: 1px solid #e5e7eb;
-}
+.list-score-option .score-label { flex-grow: 1; padding-left: 1rem; }
+.list-score-option .score-value { font-size: 1.25rem; font-weight: 700; width: 3rem; text-align: center; color: #4b5563; border-right: 1px solid #e5e7eb; }
+.list-score-option:has(input:checked) { border-color: #2563eb; background-color: #eff6ff; }
+.list-score-option:has(input:checked) .score-value, .list-score-option:has(input:checked) .score-label { color: #1e40af; font-weight: 600; }
 
-.list-score-option:has(input:checked) {
-    border-color: #2563eb;
-    background-color: #eff6ff;
-}
-.list-score-option:has(input:checked) .score-value,
-.list-score-option:has(input:checked) .score-label {
-    color: #1e40af;
-    font-weight: 600;
-}
+/* Blood Score Badge Styles */
+.blood-score-badge { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 1.5rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem; color: white; }
+.blood-score-badge.score-0 { background-color: #10B981; }
+.blood-score-badge.score-1 { background-color: #F59E0B; }
+.blood-score-badge.score-2 { background-color: #EF4444; }
+.blood-score-badge.score-3 { background-color: #B91C1C; }
 
-/* Bloods Flagging */
-.blood-label.flag-amber {
-    border-left: 4px solid #F59E0B;
-    padding-left: 0.5rem;
-    font-weight: 600;
-}
-.blood-label.flag-red {
-    border-left: 4px solid #DC2626;
-    padding-left: 0.5rem;
-    font-weight: 600;
-    color: #DC2626;
-}
+/* Clinical Insights Panel Styles */
+.insight-item { display: flex; align-items: center; padding: 0.75rem; border-radius: 0.5rem; border-width: 1px; }
+.insight-item.level-high { background-color: #FEF2F2; border-color: #FCA5A5; color: #991B1B; }
+.insight-item.level-medium { background-color: #FFFBEB; border-color: #FBBF24; color: #92400E; }
+.insight-item-icon { flex-shrink: 0; width: 1.5rem; height: 1.5rem; margin-right: 0.75rem; }
+.insight-item-text { font-size: 0.875rem; }
 
-/* New Blood Score Badge Styles */
-.blood-score-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 1.5rem;
-    border-radius: 0.375rem;
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: white;
-}
-.blood-score-badge.score-0 { background-color: #10B981; /* Green-500 */ }
-.blood-score-badge.score-1 { background-color: #F59E0B; /* Amber-500 */ }
-.blood-score-badge.score-2 { background-color: #EF4444; /* Red-500 */ }
-.blood-score-badge.score-3 { background-color: #B91C1C; /* Red-700 */ }
+/* General Styles */
+.score-input[type="number"] { width: 100px; }
 
-
-/* Sticky Footer */
-#sticky-footer {
-    transition: background-color 0.3s ease-in-out;
-}
 @media (min-width: 768px) {
-    #sticky-footer {
-        max-width: 400px;
-        margin: 0 auto 1rem;
-        border-radius: 0.5rem;
-        left: 50%;
-        transform: translateX(-50%);
-    }
+    #sticky-footer { max-width: 400px; margin: 0 auto 1rem; border-radius: 0.5rem; left: 50%; transform: translateX(-50%); }
 }
 
-
-/* Fix for various inputs on mobile */
-@media (max-width: 767px) {
-    .bowel-inputs, .fluid-balance-inputs {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    .bloods-mobile-stack .flex-grow {
-        width: 100%;
-    }
-    .bloods-mobile-stack .w-20 {
-        width: 100%;
-        margin-bottom: 0.25rem;
-    }
-    .bloods-mobile-stack > div {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .blood-score-item {
-        flex-direction: column;
-        align-items: flex-start !important;
-    }
-    .blood-score-item .grid {
-        width: 100%;
-    }
-}
-
-/* Print Styles */
-@media print {
-    @page { size: A4; margin: 0.5in; }
-    body { font-size: 8pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .no-print, .print-hide, #sticky-footer { display: none !important; }
-
-    #print-container { display: block !important; }
-    body.print-blank-mode > *:not(#print-container) { display: none !important; }
-    
-    .print-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.5rem;
-        height: 100%;
-    }
-    .print-checklist { 
-        break-inside: avoid; 
-        border: 1px solid #ccc;
-        padding: 0.5rem;
-        border-radius: 6px;
-    }
-    
-    .print-checklist h3 { font-size: 9pt; font-weight: bold; margin: 0 0 4px 0 !important; padding: 0 0 2px 0 !important; border-bottom: 1px solid #333; }
-    .print-checklist .score-group-title { font-size: 8pt; font-weight: bold; margin-top: 4px; }
-    
-    .print-checklist .list-score-option { border: 1px solid #ccc !important; padding: 1px 2px; margin-bottom: 2px; display: flex; align-items: center; }
-    .print-checklist .score-value { display:inline-block; font-size: 7pt; width: 25px; text-align: right; padding-right: 4px; }
-    .print-checklist .score-label { font-size: 7pt; padding-left: 0.25rem; }
-    .print-checklist .list-score-option::before {
-        content: '';
-        border: 1px solid black;
-        width: 10px;
-        height: 10px;
-        display: inline-block;
-    }
-    .print-checklist .grid { display: block; }
-}
