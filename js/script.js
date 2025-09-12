@@ -79,11 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveState() {
         currentReview = gatherFormData();
         currentReview.finalScore = parseInt(document.getElementById('footer-score').textContent) || 0;
-        localStorage.setItem('alertToolState_v20', JSON.stringify(currentReview));
+        localStorage.setItem('alertToolState_v21', JSON.stringify(currentReview));
     }
     
     function loadState() {
-        const savedState = localStorage.getItem('alertToolState_v20');
+        const savedState = localStorage.getItem('alertToolState_v21');
         if (savedState) {
             currentReview = JSON.parse(savedState);
         }
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
              el.dispatchEvent(new Event('change', { bubbles: true }));
         });
         currentReview = {};
-        if (clearStorage) localStorage.removeItem('alertToolState_v20');
+        if (clearStorage) localStorage.removeItem('alertToolState_v21');
         calculateTotalScore();
         calculateADDS();
         updateBloodFlags();
@@ -132,6 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- SCORING & CALCULATIONS ---
     function calculateTotalScore() {
+        calculateBloodScore(); // Run this first to update the hidden input for blood score
+    
         let score = 0;
         form.querySelectorAll('.score-input:checked').forEach(input => {
             score += parseInt(input.dataset.score, 10) || 0;
@@ -202,6 +204,120 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function calculateBloodScore() {
+        let totalBloodScore = 0;
+        const p = (id) => document.getElementById(id) ? parseFloat(document.getElementById(id).value) : NaN;
+        const updateScoreBadge = (badgeId, score) => {
+            const badge = document.getElementById(badgeId);
+            if (!badge) return;
+            badge.textContent = `+${score}`;
+            badge.className = 'blood-score-badge';
+            badge.classList.add(`score-${score}`);
+        };
+
+        // 1. Creatinine
+        const cr_current = p('creatinine_input'), cr_prev = p('creatinine_input_prev');
+        let cr_score = 0;
+        if (!isNaN(cr_current) && !isNaN(cr_prev) && cr_prev > 0) {
+            const increase = ((cr_current - cr_prev) / cr_prev) * 100;
+            if (increase > 100) cr_score = 3;
+            else if (increase > 50) cr_score = 2;
+            else if (increase >= 25) cr_score = 1;
+        }
+        updateScoreBadge('creatinine_blood_score', cr_score);
+        totalBloodScore += cr_score;
+
+        // 2. NLR
+        const neut = p('neut_input'), lymph = p('lymph_input');
+        let nlr_score = 0;
+        const nlrRatioEl = document.getElementById('nlr_ratio_result');
+        if (!isNaN(neut) && !isNaN(lymph) && lymph > 0) {
+            const nlr = neut / lymph;
+            if(nlrRatioEl) nlrRatioEl.textContent = nlr.toFixed(1);
+            if (nlr > 15) nlr_score = 3;
+            else if (nlr >= 10) nlr_score = 2;
+            else if (nlr >= 6) nlr_score = 1;
+        } else {
+            if(nlrRatioEl) nlrRatioEl.textContent = '-';
+        }
+        updateScoreBadge('nlr_blood_score', nlr_score);
+        totalBloodScore += nlr_score;
+
+        // 3. Albumin
+        const albumin = p('albumin_input');
+        let albumin_score = 0;
+        if (!isNaN(albumin)) {
+            if (albumin < 25) albumin_score = 3;
+            else if (albumin < 30) albumin_score = 2;
+            else if (albumin < 36) albumin_score = 1;
+        }
+        updateScoreBadge('albumin_blood_score', albumin_score);
+        totalBloodScore += albumin_score;
+
+        // 4. RDW
+        const rdw_current = p('rdw_input'), rdw_prev = p('rdw_input_prev');
+        let rdw_score_abs = 0, rdw_score_trend = 0;
+        if (!isNaN(rdw_current)) {
+            if (rdw_current > 16.5) rdw_score_abs = 3;
+            else if (rdw_current >= 15.6) rdw_score_abs = 2;
+            else if (rdw_current >= 14.6) rdw_score_abs = 1;
+        }
+        if (!isNaN(rdw_current) && !isNaN(rdw_prev) && (rdw_current - rdw_prev) > 1) rdw_score_trend = 3;
+        const rdw_score = Math.max(rdw_score_abs, rdw_score_trend);
+        updateScoreBadge('rdw_blood_score', rdw_score);
+        totalBloodScore += rdw_score;
+
+        // 5. Platelets
+        const plat_current = p('platelet_input'), plat_prev = p('platelet_input_prev');
+        let plat_score_abs = 0, plat_score_trend = 0;
+        if (!isNaN(plat_current)) {
+            if (plat_current < 50) plat_score_abs = 3;
+            else if (plat_current < 100) plat_score_abs = 2;
+            else if (plat_current <= 150) plat_score_abs = 1;
+        }
+        if (!isNaN(plat_current) && !isNaN(plat_prev) && plat_prev > 0) {
+            const drop = ((plat_prev - plat_current) / plat_prev) * 100;
+            if (drop > 40) plat_score_trend = 3;
+            else if (drop >= 25) plat_score_trend = 2;
+        }
+        const plat_score = Math.max(plat_score_abs, plat_score_trend);
+        updateScoreBadge('platelet_blood_score', plat_score);
+        totalBloodScore += plat_score;
+
+        // 6. Bilirubin
+        const bili_current = p('bilirubin_input'), bili_prev = p('bilirubin_input_prev');
+        let bili_score_abs = 0, bili_score_trend = 0;
+        if (!isNaN(bili_current)) {
+            if (bili_current > 100) bili_score_abs = 3;
+            else if (bili_current >= 34) bili_score_abs = 2;
+            else if (bili_current >= 21) bili_score_abs = 1;
+        }
+        if (!isNaN(bili_current) && !isNaN(bili_prev) && bili_prev > 0 && (bili_current / bili_prev) >= 2) bili_score_trend = 3;
+        const bili_score = Math.max(bili_score_abs, bili_score_trend);
+        updateScoreBadge('bilirubin_blood_score', bili_score);
+        totalBloodScore += bili_score;
+        
+        // 7. Lactate
+        const lactate = p('lactate_input');
+        let lactate_score = 0;
+        if (!isNaN(lactate)) {
+            if (lactate >= 3.0) lactate_score = 3;
+            else if (lactate >= 2.1) lactate_score = 2;
+            else if (lactate >= 1.5) lactate_score = 1;
+        }
+        updateScoreBadge('lactate_blood_score', lactate_score);
+        totalBloodScore += lactate_score;
+
+        // Update total score display and hidden input for main scoring function
+        const totalBloodScoreEl = document.getElementById('total_blood_score');
+        const bloodScoreInput = document.getElementById('blood_panel_score_input');
+        if (totalBloodScoreEl) totalBloodScoreEl.textContent = totalBloodScore;
+        if (bloodScoreInput) {
+            bloodScoreInput.value = totalBloodScore;
+            bloodScoreInput.dataset.score = totalBloodScore;
+        }
+    }
+
     // --- DEVICE MANAGEMENT ---
     function createDeviceEntryHTML(id, content) { return `<div id="${id}" class="device-entry bg-white p-3 rounded-md border space-y-2">${content}<button type="button" class="remove-device-btn text-xs text-red-600 hover:underline no-print">Remove</button></div>`;}
     window.addCentral_line = function(data = {}) { deviceCounters.central = (deviceCounters.central || 0) + 1; document.getElementById('central_lines_container').insertAdjacentHTML('beforeend', createDeviceEntryHTML(`central_${deviceCounters.central}`, `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="type" value="${data.type || ''}" placeholder="Type (e.g., PICC)" class="p-1 border rounded-md"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"><input type="date" data-key="insertion_date" value="${data.insertion_date || ''}" class="p-1 border rounded-md col-span-2 device-date-input"><span data-key="dwell_time" class="text-xs text-gray-500 col-span-2"></span></div>`)); }
@@ -256,8 +372,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isChecked('flagAfterHours')) { summary += `**! FLAGGED: AFTER-HOURS DISCHARGE RISK !**\n`; }
         
         summary += `\nContributing Factors:\n`;
+        summary += `Blood Panel Score: ${val('blood_panel_score_input')}\n`;
         document.querySelectorAll('.score-input:checked').forEach(input => {
             if (parseInt(input.dataset.score) !== 0 || (input.name === 'concern_score' && input.value !== '0')) {
+                if(input.id === 'blood_panel_score_input') return; // Don't double-report blood score
                 const label = input.closest('label').querySelector('.score-label').textContent.trim();
                 const note = document.getElementById(`${input.name}_note`)?.value.trim();
                 const groupTitleEl = input.closest('.score-group')?.querySelector('.score-group-title');
@@ -291,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateHandoffNote() {
         saveState();
         const keyData = {};
-        ['reviewType', 'patientInitials', 'ward', 'roomNumber', 'wardOther', 'icuStepdownDate', 'icuStepdownTime', 'losDays', 'goc', 'gocSpecifics', 'nkdaCheckbox', 'allergies', 'precautions', 'infectionControlReason', 'admissionReason', 'icuSummary', 'pmh', 'lactate_input', 'lactate_input_prev', 'hb_input', 'hb_input_prev', 'k_input', 'k_input_prev', 'mg_input', 'mg_input_prev', 'creatinine_input', 'creatinine_input_prev', 'crp_input', 'crp_input_prev', 'albumin_input', 'albumin_input_prev', 'wcc_input', 'wcc_input_prev', 'neut_input', 'neut_input_prev'].forEach(k => {
+        ['reviewType', 'patientInitials', 'ward', 'roomNumber', 'wardOther', 'icuStepdownDate', 'icuStepdownTime', 'losDays', 'goc', 'gocSpecifics', 'nkdaCheckbox', 'allergies', 'precautions', 'infectionControlReason', 'admissionReason', 'icuSummary', 'pmh', 'lactate_input', 'hb_input', 'hb_input_prev', 'k_input', 'k_input_prev', 'mg_input', 'mg_input_prev', 'creatinine_input', 'creatinine_input_prev', 'crp_input', 'crp_input_prev', 'albumin_input', 'wcc_input', 'wcc_input_prev', 'neut_input', 'lymph_input', 'rdw_input', 'rdw_input_prev', 'platelet_input', 'platelet_input_prev', 'bilirubin_input', 'bilirubin_input_prev'].forEach(k => {
             if(currentReview[k]) keyData[k] = currentReview[k];
         });
         return btoa(JSON.stringify(keyData));
@@ -372,6 +490,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 calculatePfRatio();
             }
         });
+        
+        document.getElementById('scorable-bloods-container').addEventListener('input', calculateTotalScore);
     }
     
     // --- DYNAMIC CONTENT INJECTION ---
@@ -387,6 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateBloodFlags() {
         const check = (id, labelId, low, high) => {
             const el = document.getElementById(labelId);
+            if(!el) return;
             const val = parseFloat(document.getElementById(id).value);
             el.classList.remove('flag-red', 'flag-amber');
             if (isNaN(val)) return;
@@ -400,27 +521,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         check('hb_input', 'hb_label', { red: 80, amber: 100 }, null);
-        check('lactate_input', 'lactate_label', null, { red: 4.0, amber: 2.0 });
         check('k_input', 'k_label', { red: 3.0, amber: 4.0 }, { red: 5.5, amber: 5.0 });
         check('mg_input', 'mg_label', { red: 0.7, amber: 1.0 }, { red: 1.5, amber: 1.3 });
-        check('creatinine_input', 'creatinine_label', null, { red: 200, amber: 150 });
         check('crp_input', 'crp_label', null, { red: 200, amber: 100 });
         check('wcc_input', 'wcc_label', { red: 2.0, amber: 4.0 }, { red: 20, amber: 12 });
-        check('neut_input', 'neut_label', { red: 1.0, amber: 2.0 }, { red: 15, amber: 8 });
     }
     
     function populateStaticContent() {
-        const addsContainer = document.getElementById('adds-container');
-        addsContainer.innerHTML = `<h3 class="font-semibold mb-2">ADDS Calculator</h3><div class="space-y-4"><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Resp Rate</label><div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">SpO2 (%)</label><div class="sm:col-span-2"><input type="number" id="spo2_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Oxygen Delivery</label><div class="sm:col-span-2 flex items-center space-x-2"><input type="number" id="o2_flow_input" class="vital-input mt-1 w-full rounded-md border-2 p-2" placeholder="Value"><select id="o2_unit_input" class="vital-input mt-1 w-auto rounded-md border-2 p-2"><option value="L/min">L/min</option><option value="%">% FiO2</option></select></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Heart Rate</label><div class="sm:col-span-2"><input type="number" id="hr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">SBP (mmHg)</label><div class="sm:col-span-2"><input type="number" id="sbp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">DBP (mmHg)</label><div class="sm:col-span-2"><input type="number" id="dbp_input" class="mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Consciousness</label><div class="sm:col-span-2"><select id="consciousness_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Temp (°C)</label><div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div></div><div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label for="manualADDSScore" class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label for="addsModificationText" class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div><div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border"><span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span><div id="calculatedADDSScore" class="font-bold text-5xl my-2">0</div></div>`;
+        document.getElementById('adds-container').innerHTML = `<h3 class="font-semibold mb-2">ADDS Calculator</h3><div class="space-y-4"><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Resp Rate</label><div class="sm:col-span-2"><input type="number" id="rr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">SpO2 (%)</label><div class="sm:col-span-2"><input type="number" id="spo2_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Oxygen Delivery</label><div class="sm:col-span-2 flex items-center space-x-2"><input type="number" id="o2_flow_input" class="vital-input mt-1 w-full rounded-md border-2 p-2" placeholder="Value"><select id="o2_unit_input" class="vital-input mt-1 w-auto rounded-md border-2 p-2"><option value="L/min">L/min</option><option value="%">% FiO2</option></select></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Heart Rate</label><div class="sm:col-span-2"><input type="number" id="hr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">SBP (mmHg)</label><div class="sm:col-span-2"><input type="number" id="sbp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">DBP (mmHg)</label><div class="sm:col-span-2"><input type="number" id="dbp_input" class="mt-1 w-full rounded-md border-2 p-2"></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Consciousness</label><div class="sm:col-span-2"><select id="consciousness_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"><option value="0">Alert</option><option value="1">Voice</option><option value="2">Pain</option><option value="3">Unresponsive</option></select></div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center"><label class="block text-sm font-medium sm:col-span-1">Temp (°C)</label><div class="sm:col-span-2"><input type="number" step="0.1" id="temp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></div></div></div><div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label for="manualADDSScore" class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label for="addsModificationText" class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div><div class="mt-6 bg-teal-50 p-4 rounded-lg text-center border"><span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span><div id="calculatedADDSScore" class="font-bold text-5xl my-2">0</div></div>`;
         document.getElementById('abg-calculator-container').innerHTML = `<div class="bg-gray-50 p-4 rounded-lg border"><h3 class="font-semibold text-gray-700 mb-2">ABG Data (Optional) - P/F Ratio Calculator</h3><div class="grid sm:grid-cols-3 gap-4 items-center"><div class="sm:col-span-1"><label for="pao2_input" class="block text-sm font-medium">PaO2 (mmHg)</label><input type="number" id="pao2_input" class="mt-1 w-full rounded-md border-2 p-2"></div><div class="sm:col-span-1"><label for="fio2_input" class="block text-sm font-medium">FiO2 (%)</label><input type="number" id="fio2_input" class="mt-1 w-full rounded-md border-2 p-2"></div><div class="sm:col-span-1 text-center bg-white p-3 rounded-lg"><div class="text-sm text-gray-500">P/F Ratio</div><div id="pf_ratio_result" class="font-bold text-3xl">-</div><div id="pf_ratio_interpretation" class="text-sm text-gray-500">Enter values to calculate.</div></div></div></div>`;
         document.getElementById('scoringContainer').innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">RISK SCORING ASSESSMENT</h2><div class="space-y-4">${generateScoringHTML()}</div>`;
         document.getElementById('fluid-assessment-container').innerHTML = `<h3 class="font-semibold mb-2">Holistic Fluid Status Assessment</h3><div class="grid md:grid-cols-2 gap-4"><div class="grid grid-cols-2 gap-x-4"><div><label class="block text-sm font-medium">Current Wt (kg):</label><input type="number" id="patientWeight" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label class="block text-sm font-medium">Previous Wt (kg):</label><input type="number" id="patientWeightPrevious" class="mt-1 w-full rounded-md border-2 p-2"></div></div><div><label class="block text-sm font-medium">24hr Fluid Balance (mL):</label><input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2" step="100"></div></div><div class="mt-4"><label class="block text-sm font-medium">Total ICU Balance (mL):</label><input type="number" id="fbc_total_input" class="mt-1 w-full rounded-md border-2 p-2" step="100"></div><div class="mt-4"><label class="block text-sm font-medium">Clinical Signs:</label><div class="flex gap-x-4 mt-2"><label class="flex items-center"><input type="checkbox" id="oedema_checkbox" class="h-4 w-4 mr-2">Oedema Present</label><label class="flex items-center"><input type="checkbox" id="cap_refill_checkbox" class="h-4 w-4 mr-2">Delayed Cap Refill (>2s)</label></div></div>`;
+        document.getElementById('scorable-bloods-container').innerHTML = generateScorableBloodsHTML();
+        document.getElementById('bloods-container').innerHTML = generateNonScoredBloodsHTML();
         updateWardOptions();
         document.querySelectorAll('.blood-input').forEach(el => el.addEventListener('input', updateBloodFlags));
     }
     
     function generateScoringHTML() {
         const sections = [
+            { id: 'blood-score-section', title: 'Blood Panel Score', items: [ { type: 'checkbox', label: 'Total Score from Blood Panel', name: 'blood_panel_score_input', score: 0, checked: true, hidden: true } ]},
             { id: 'phys-section', title: 'Physiological & Respiratory Stability', items: [ { type: 'checkbox', label: 'Patient is in MET Criteria', score: 3, name: 'crit_met' }, { type: 'group', title: 'ADDS Score', name: 'adds_score', items: [ { label: 'ADDS Score 0-2', score: 0, checked: true }, { label: 'ADDS Score 3', score: 1 }, { label: 'ADDS Score ≥ 4', score: 3 } ]}, { type: 'group', title: 'Oxygenation & Respiratory Trend', name: 'resp_trend', items: [ { type: 'checkbox', label: 'Worsening ADDS Trend', score: 1, name: 'adds_worsening' }, { type: 'checkbox', label: 'Increasing O₂ Requirement', score: 3, name: 'resp_increasing_o2' }, { type: 'checkbox', label: 'Rapid wean of resp support', score: 2, name: 'resp_rapid_wean' } ]}, { type: 'group', title: 'Work of Breathing', name: 'wob_score', items: [ { label: 'Normal', score: 0, checked: true }, { label: 'Mild (e.g., accessory muscle use)', score: 1 }, { label: 'Moderate-Severe', score: 2 } ]} ]},
             { id: 'clinical-section', title: 'Clinical Assessment', items: [ { type: 'group', title: 'Pain Score', name: 'pain_score', items: [ { label: 'No pain / Well controlled', score: 0, checked: true }, { label: 'Significant pain/PRN use', score: 1 }, { label: 'PCA, Ketamine, high pain, under APS', score: 2 } ]}, { type: 'group', title: 'Gastrointestinal Assessment', name: 'gi_assessment', items: [ { type: 'sub-group', title: 'Diet / Nutrition', name: 'diet_score', items: [ { label: 'Normal', score: 0, checked: true }, { label: 'Modified', score: 1 }, { label: 'NBM/NG/TPN', score: 2 } ]}, { type: 'sub-group-item', type: 'checkbox', label: 'Bowels not opened >3 days or Ileus', score: 1, name: 'bowels_issue'} ]}, { type: 'group', title: 'Delirium', name: 'delirium_score', items: [ { label: 'None', score: 0, checked: true }, { label: 'Mild', score: 1 }, { label: 'Mod-Severe', score: 2 }] }, { type: 'group', title: 'Mobility', name: 'mobility_score', items: [ { label: 'Baseline', score: 0, checked: true }, { label: 'Assisted (requires physical help)', score: 1 }, { label: 'Bed-bound', score: 2 }] } ]},
             { id: 'systemic-section', title: 'Systemic & Contextual Factors', items: [ { type: 'group', title: 'Admission Source (SWIFT)', name: 'admission_source_score', items: [ { label: 'Surgical (Elective)', score: 0, checked: true }, { label: 'Surgical (Emergency) or Acute Medical', score: 1 }, { label: 'ED or Acute Ward Transfer', score: 2 } ]}, { type: 'group', title: 'Patient Factors', items: [ { type: 'checkbox', label: 'ICU LOS > 3 days', score: 1, name: 'systemic_los', id: 'losCheckbox' }, { type: 'checkbox', label: '≥3 chronic comorbidities', score: 1, name: 'systemic_comorbid' }] }, { type: 'group', title: 'Frailty (pre-hospital)', name: 'frailty_score', items: [ { label: 'Not Frail / Mild', score: 0, checked: true }, { label: 'Mod-Severe', score: 1 }] }, { type: 'group', title: 'Discharge Timing', items: [ { type: 'checkbox', label: 'Flag as After-Hours Discharge', score: 1, name: 'flagAfterHours' }] } ]},
@@ -429,14 +549,15 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         let html = '';
         sections.forEach(section => {
-            html += `<div id="${section.id}" class="mb-4"><h3 class="font-bold text-xl mb-3 text-gray-800">${section.title}</h3>`;
+            const isHidden = section.items.every(item => item.hidden);
+            html += `<div id="${section.id}" class="mb-4 ${isHidden ? 'hidden' : ''}"><h3 class="font-bold text-xl mb-3 text-gray-800">${section.title}</h3>`;
             section.items.forEach(item => {
                 if (item.type === 'group') {
                     html += `<div class="score-group"><div class="score-group-title">${item.title}</div>`;
                     item.items.forEach(subItem => { 
                         if (subItem.type === 'sub-group') {
                             html += `<div class="score-sub-group-title">${subItem.title}</div>`;
-                            subItem.items.forEach(subSubItem => html += buildScoreOption(subSubItem, subItem.name));
+                            subSubItem.items.forEach(subSubItem => html += buildScoreOption(subSubItem, subItem.name));
                         } else if (subItem.type === 'sub-group-item') {
                             html += buildScoreOption(subItem, subItem.name);
                         } else {
@@ -458,9 +579,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const noteHtml = (item.type === 'checkbox') ? `<textarea name="${name}_note" id="${name}_note" class="score-note mt-2 w-full rounded-md border-gray-300 shadow-sm text-sm p-2 hidden" rows="2" placeholder="Add details..."></textarea>` : '';
         const score = item.score !== undefined ? item.score : 0;
         const value = item.label || item.value;
-        const scoreText = `${score > 0 ? '+' : ''}${score}`;
-        const idAttr = item.id ? `id="${item.id}"` : '';
-        return `<label class="list-score-option"> <input type="${type}" name="${name}" ${idAttr} class="score-input" data-score="${score}" ${item.checked ? 'checked' : ''} value="${value}"> <span class="score-label">${item.label}</span><span class="score-value">${scoreText}</span> </label>${noteHtml}`;
+        const scoreText = `${score >= 0 ? '+' : ''}${score}`;
+        const idAttr = item.id || name;
+        return `<label class="list-score-option ${item.hidden ? 'hidden' : ''}"> <input type="${type}" name="${name}" id="${idAttr}" class="score-input" data-score="${score}" ${item.checked ? 'checked' : ''} value="${value}"> <span class="score-label">${item.label}</span><span class="score-value">${scoreText}</span> </label>${noteHtml}`;
+    }
+
+    function generateScorableBloodsHTML() {
+        return `
+            <div class="bg-gray-50 p-4 rounded-lg border">
+                <h3 class="font-semibold text-gray-700 mb-4">Scorable Blood Panel</h3>
+                <div class="space-y-3">
+                    <!-- Creatinine -->
+                    <div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-40">Creatinine</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="creatinine_input" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"><input type="number" id="creatinine_input_prev" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Baseline/Prev."></div><span id="creatinine_blood_score" class="blood-score-badge score-0">+0</span></div>
+                    <!-- NLR -->
+                    <div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-40">NLR</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="neut_input" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Neutrophils"><input type="number" step="0.1" id="lymph_input" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Lymphocytes"></div><div class="text-xs text-gray-600 w-20">Ratio: <span id="nlr_ratio_result">-</span></div><span id="nlr_blood_score" class="blood-score-badge score-0">+0</span></div>
+                    <!-- Albumin -->
+                    <div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-40">Albumin</label><div class="flex-grow"><input type="number" id="albumin_input" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"></div><span id="albumin_blood_score" class="blood-score-badge score-0">+0</span></div>
+                    <!-- RDW -->
+                    <div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-40">RDW (%)</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="rdw_input" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="rdw_input_prev" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Previous"></div><span id="rdw_blood_score" class="blood-score-badge score-0">+0</span></div>
+                    <!-- Platelets -->
+                    <div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-40">Platelets</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="platelet_input" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"><input type="number" id="platelet_input_prev" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Previous"></div><span id="platelet_blood_score" class="blood-score-badge score-0">+0</span></div>
+                    <!-- Bilirubin -->
+                    <div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-40">Bilirubin</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="bilirubin_input" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"><input type="number" id="bilirubin_input_prev" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Previous"></div><span id="bilirubin_blood_score" class="blood-score-badge score-0">+0</span></div>
+                    <!-- Lactate -->
+                    <div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-40">Lactate</label><div class="flex-grow"><input type="number" step="0.1" id="lactate_input" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"></div><span id="lactate_blood_score" class="blood-score-badge score-0">+0</span></div>
+                </div>
+                <div class="mt-4 pt-4 border-t text-right font-bold text-lg">Total Blood Score: <span id="total_blood_score" class="text-teal-600">0</span></div>
+            </div>
+        `;
+    }
+
+    function generateNonScoredBloodsHTML() {
+        return `
+            <h3 class="font-semibold text-gray-700 mb-2">Key (Non-Scored) Bloods</h3>
+            <div class="grid sm:grid-cols-2 gap-x-6 gap-y-4 bloods-mobile-stack">
+                <div><div class="flex items-center gap-x-2"><label id="wcc_label" class="blood-label block text-sm font-medium w-20">WCC</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="wcc_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="wcc_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
+                <div><div class="flex items-center gap-x-2"><label id="crp_label" class="blood-label block text-sm font-medium w-20">CRP</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="crp_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="crp_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
+                <div><div class="flex items-center gap-x-2"><label id="hb_label" class="blood-label block text-sm font-medium w-20">Hb</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" id="hb_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" id="hb_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div></div>
+                <div><div class="flex items-center gap-x-2"><label id="k_label" class="blood-label block text-sm font-medium w-20">K+</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="k_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="k_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="k_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="k_planned_checkbox" class="h-3 w-3 mr-1"> Planned</label></div></div>
+                <div><div class="flex items-center gap-x-2"><label id="mg_label" class="blood-label block text-sm font-medium w-20">Mg++</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="mg_input" class="blood-input w-full rounded-md border-2 p-2" placeholder="Current"><input type="number" step="0.1" id="mg_input_prev" class="blood-input w-full rounded-md border-2 p-2" placeholder="Prev."></div></div><div class="flex gap-x-4 mt-2 pl-24"><label class="flex items-center text-xs"><input type="checkbox" id="mg_replaced_checkbox" class="h-3 w-3 mr-1"> Replaced</label> <label class="flex items-center text-xs"><input type="checkbox" id="mg_planned_checkbox" class="h-3 w-3 mr-1"> Planned</label></div></div>
+            </div>
+        `;
     }
         
     initializeApp();
