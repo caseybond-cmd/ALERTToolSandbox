@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateHandoffNote() {
         saveState();
-        const keyData = { /* Omitted for brevity */ };
+        const keyData = { details: {}, clinical: {}, bloods: {} };
         ['reviewType', 'patientInitials', 'ward', 'roomNumber', 'wardOther', 'icuStepdownDate', 'icuStepdownTime', 'losDays'].forEach(k => keyData.details[k] = currentReview[k]);
         ['goc', 'gocSpecifics', 'nkdaCheckbox', 'allergies', 'precautions', 'infectionControlReason', 'admissionReason', 'icuSummary', 'pmh'].forEach(k => keyData.clinical[k] = currentReview[k]);
         ['lactate_input', 'lactate_input_prev', 'hb_input', 'hb_input_prev', 'k_input', 'k_input_prev', 'mg_input', 'mg_input_prev', 'creatinine_input', 'creatinine_input_prev', 'crp_input', 'crp_input_prev', 'albumin_input', 'albumin_input_prev', 'pct_input'].forEach(k => keyData.bloods[k] = currentReview[k]);
