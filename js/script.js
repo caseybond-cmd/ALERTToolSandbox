@@ -34,8 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentReview.mode = mode;
         const isQuickMode = mode === 'quick';
         document.getElementById('fullReviewContainer').style.display = isQuickMode ? 'none' : 'block';
-        document.getElementById('assessment-container').style.display = isQuickMode ? 'block' : 'block';
-        document.getElementById('scoringContainer').style.display = isQuickMode ? 'block' : 'block';
+        document.getElementById('assessment-container').style.display = 'block';
+        document.getElementById('scoringContainer').style.display = 'block';
         document.getElementById('fullReviewContainerBottom').style.display = isQuickMode ? 'none' : 'block';
     }
 
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ['central_lines', 'pivcs', 'idcs', 'drains', 'pacing_wires', 'others'].forEach(type => {
                 if(data.devices[type]) {
                     const addFunc = window[`add${type.charAt(0).toUpperCase() + type.slice(1).replace(/s$/, '')}`];
-                    data.devices[type].forEach(d => addFunc(d));
+                    if(addFunc) data.devices[type].forEach(d => addFunc(d));
                 }
             });
         }
@@ -127,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const addsResult = calculateADDS();
         score += addsResult.score;
 
-        // Update Footer
         const footerScoreEl = document.getElementById('footer-score');
         const footerCategoryEl = document.getElementById('footer-category');
         footerScoreEl.textContent = score;
@@ -157,12 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const prev = p(`${id}_prev`);
             let abs_score = 0;
             let trend_score = 0;
-            if (!isNaN(current)) {
-                for (const rule of abs_rules) { if (rule.test(current)) { abs_score = rule.score; break; } }
-            }
-            if (!isNaN(current) && !isNaN(prev) && prev > 0) {
-                 for (const rule of trend_rules) { if (rule.test(current, prev)) { trend_score = rule.score; break; } }
-            }
+            if (!isNaN(current)) { for (const rule of abs_rules) { if (rule.test(current)) { abs_score = rule.score; break; } } }
+            if (!isNaN(current) && !isNaN(prev) && prev > 0) { for (const rule of trend_rules) { if (rule.test(current, prev)) { trend_score = rule.score; break; } } }
             const final_score = Math.max(abs_score, trend_score);
             insights[id] = { current, prev, score: final_score };
             updateBadge(`${id}_blood_score`, final_score);
@@ -170,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         calc('creatinine', [{ test: v => v > 171, score: 1 }], [{ test: (c, p) => (c - p) / p > 0.5, score: 2 }]);
-        const nlr = p('neutrophils') / p('lymphocytes'); if(nlr > 5) total += 1; updateBadge('nlr_blood_score', nlr > 5 ? 1 : 0); insights.nlr = { current: nlr, score: nlr > 5 ? 1:0};
+        const nlr_val = p('neutrophils') / p('lymphocytes'); const nlr_score = nlr_val > 5 ? 1 : 0; total += nlr_score; updateBadge('nlr_blood_score', nlr_score); insights.nlr = { current: nlr_val, score: nlr_score };
         calc('albumin', [{ test: v => v < 30, score: 1 }], []);
         calc('rdw', [{ test: v => v > 15, score: 1 }], [{ test: (c, p) => c - p > 1, score: 2 }]);
         calc('lactate', [{ test: v => v > 2, score: 2 }], []);
@@ -201,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('calculatedADDSScore').textContent = total;
         document.getElementById('finalADDSScore').textContent = finalScore;
         
-        return { score: finalScore }; // Return the final score to be added to the total
+        return { score: finalScore };
     }
 
     function generateClinicalInsights(data, bloodInsights) {
@@ -221,8 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DMR SUMMARY ---
     function generateDMRSummary() {
-        // Implementation for DMR summary...
-        document.getElementById('emrSummary').value = "DMR Summary Generation...";
+        const data = gatherFormData();
+        const score = document.getElementById('footer-score').textContent;
+        const category = getRiskCategory(score).text;
+        document.getElementById('emrSummary').value = `ALERT Summary. Score: ${score} (${category}). See tool for full details.`;
     }
 
     // --- EVENT LISTENERS & UI ---
@@ -235,12 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
              if (!pastedText) return;
              try {
                 currentReview = JSON.parse(atob(pastedText));
-                loadReviewData(true); // true for handoff
+                loadReviewData(true);
                 document.getElementById('launchScreenModal').style.display = 'none';
                 setAppViewMode('full');
-             } catch(e) {
-                 alert('Invalid handoff key.');
-             }
+             } catch(e) { alert('Invalid handoff key.'); }
         });
         document.getElementById('startOverBtn').addEventListener('click', () => { if (confirm('Are you sure? This will clear all data.')) { clearForm(true); document.getElementById('launchScreenModal').style.display = 'flex'; } });
         
@@ -251,25 +246,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('copySummaryButton').addEventListener('click', () => { document.getElementById('emrSummary').select(); document.execCommand('copy'); alert('Summary copied!'); });
         document.getElementById('generateHandoffBtn').addEventListener('click', () => {
             const handoffData = {};
-            const desktopFields = ['patient_initials', 'patient_urn_last4', 'ward', 'room_number', 'age', 'admission_type', 'los_days', 'severe_comorbidities', 'after_hours', 'reason_icu', 'icu_summary', 'creatinine', 'creatinine_prev', 'neutrophils', 'lymphocytes', 'albumin', 'rdw', 'rdw_prev', 'lactate', 'bilirubin', 'bilirubin_prev', 'platelets', 'platelets_prev', 'hemoglobin', 'glucose', 'k_input', 'mg_input'];
-            desktopFields.forEach(id => { handoffData[id] = document.getElementById(id).value; });
+            const desktopFields = ['patient_initials', 'patient_urn_last4', 'ward', 'room_number', 'age', 'admission_type', 'los_days', 'severe_comorbidities', 'after_hours', 'reason_icu', 'icu_summary', 'creatinine', 'creatinine_prev', 'neutrophils', 'lymphocytes', 'albumin', 'albumin_prev', 'rdw', 'rdw_prev', 'lactate', 'lactate_prev', 'bilirubin', 'bilirubin_prev', 'platelets', 'platelets_prev', 'hemoglobin', 'hemoglobin_prev', 'glucose', 'glucose_prev', 'k_input', 'mg_input'];
+            desktopFields.forEach(id => { const el = document.getElementById(id); if(el) handoffData[id] = el.type === 'checkbox' ? el.checked : el.value; });
             const key = btoa(JSON.stringify(handoffData));
             navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard!'));
         });
         
-        ['addCentralLineButton', 'addPivcButton', 'addIdcButton', 'addDrainButton', 'addPacingWireButton', 'addOtherButton'].forEach(id => {
-            document.getElementById(id).addEventListener('click', (e) => {
-                const type = id.replace('add', '').replace('Button','');
-                window[`add${type}`]();
-            });
+        document.getElementById('devices-container').addEventListener('click', e => {
+            if(e.target.id && e.target.id.includes('add')) {
+                 const type = e.target.id.replace('add', '').replace('Button','');
+                 window[`add${type}`]();
+            }
+             if (e.target.matches('.remove-device-btn')) {
+                e.target.closest('.device-entry').remove();
+            }
         });
-        document.addEventListener('click', (e) => { if (e.target.matches('.remove-device-btn')) e.target.closest('.device-entry').remove(); });
     }
     
     // --- DYNAMIC CONTENT ---
     function populateStaticContent() {
-        // Populates all dynamic HTML sections on load
-        // This includes scorable bloods, non-scored bloods, A-E assessment, scoring options, devices, etc.
         const createBloodInput = (label, id, unit) => `<div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-32">${label}</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="${id}" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="${id}_prev" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Previous"></div><span class="text-xs text-gray-500 w-16">${unit}</span><span id="${id}_blood_score" class="blood-score-badge score-0">+0</span></div>`;
         document.getElementById('scorable-bloods-container').innerHTML = `<h3 class="font-semibold text-gray-700 mb-4">Scorable Blood Panel</h3><div class="space-y-3">${createBloodInput('Creatinine', 'creatinine', 'µmol/L')}<div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-32">NLR</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="neutrophils" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Neut"><input type="number" step="0.1" id="lymphocytes" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Lymph"></div><span class="text-xs text-gray-500 w-16"></span><span id="nlr_blood_score" class="blood-score-badge score-0">+0</span></div>${createBloodInput('Albumin', 'albumin', 'g/L')}${createBloodInput('RDW', 'rdw', '%')}${createBloodInput('Lactate', 'lactate', 'mmol/L')}${createBloodInput('Bilirubin', 'bilirubin', 'µmol/L')}${createBloodInput('Platelets', 'platelets', 'x10⁹/L')}${createBloodInput('Hemoglobin', 'hemoglobin', 'g/dL')}${createBloodInput('Glucose', 'glucose', 'mg/dL')}</div><div class="mt-4 pt-4 border-t text-right font-bold text-lg">Total Blood Score: <span id="total_blood_score" class="text-teal-600">0</span></div>`;
         document.getElementById('nonscorable-bloods-container').innerHTML = `<h3 class="font-semibold text-gray-700 mb-2">Key (Non-Scored) Bloods</h3><div class="grid sm:grid-cols-2 gap-x-6 gap-y-4"><div><label>K+</label><input type="number" step="0.1" id="k_input" class="mt-1 w-full rounded-md border-2 p-2"><div class="flex gap-x-2 mt-1"><label class="text-xs flex items-center"><input type="checkbox" id="k_replaced" class="mr-1">Replaced</label><label class="text-xs flex items-center"><input type="checkbox" id="k_planned" class="mr-1">Planned</label></div></div><div><label>Mg++</label><input type="number" step="0.1" id="mg_input" class="mt-1 w-full rounded-md border-2 p-2"><div class="flex gap-x-2 mt-1"><label class="text-xs flex items-center"><input type="checkbox" id="mg_replaced" class="mr-1">Replaced</label><label class="text-xs flex items-center"><input type="checkbox" id="mg_planned" class="mr-1">Planned</label></div></div></div>`;
@@ -277,33 +272,32 @@ document.addEventListener('DOMContentLoaded', () => {
             <h2 class="text-xl font-bold border-b pb-3 mb-4">A-E Assessment & ADDS</h2>
             <div class="space-y-6">
                 <div><h3 class="assessment-section-title">A: Airway</h3><select id="airway_input" class="w-full rounded-md border-2 p-2"><option>Clear and maintained</option><option>Airway at risk / requires adjunct</option></select></div>
-                <div><h3 class="assessment-section-title">B: Breathing</h3><div class="assessment-grid"><label>Resp Rate:<input type="number" id="rr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>SpO2 (%):<input type="number" id="spo2_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>Oxygen Flow (L/min):<input type="number" id="o2_flow_input" class="mt-1 w-full rounded-md border-2 p-2"></label></div></div>
-                <div><h3 class="assessment-section-title">C: Circulation</h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>Systolic BP:<input type="number" id="sbp_input" class="mt-1 w-full rounded-md border-2 p-2"></label><div class="p-2 bg-amber-100 rounded-md"><label class="flex items-center font-medium h-full"><input type="checkbox" id="map_low" class="mr-2 h-4 w-4">MAP < 70 mmHg</label></div></div></div>
-                <div><h3 class="assessment-section-title">D: Disability</h3><select id="consciousness_input" class="w-full rounded-md border-2 p-2"><option>Alert</option><option>Voice</option><option>Pain</option><option>Unresponsive</option></select></div>
-                <div><h3 class="assessment-section-title">E: Exposure</h3><label>Temperature (°C):<input type="number" step="0.1" id="temp_input" class="mt-1 w-full rounded-md border-2 p-2"></label></div>
+                <div><h3 class="assessment-section-title">B: Breathing</h3><div class="assessment-grid"><label>Resp Rate:<input type="number" id="rr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></label><label>SpO2 (%):<input type="number" id="spo2_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></label><label>Oxygen Flow (L/min):<input type="number" id="o2_flow_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></label></div></div>
+                <div><h3 class="assessment-section-title">C: Circulation</h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></label><label>Systolic BP:<input type="number" id="sbp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></label><div class="p-2 bg-amber-100 rounded-md"><label class="flex items-center font-medium h-full"><input type="checkbox" id="map_low" class="score-input mr-2 h-4 w-4" data-score="2">MAP < 70 mmHg</label></div></div></div>
+                <div><h3 class="assessment-section-title">D: Disability</h3><select id="consciousness_input" class="vital-input w-full rounded-md border-2 p-2"><option>Alert</option><option>Voice</option><option>Pain</option><option>Unresponsive</option></select></div>
+                <div><h3 class="assessment-section-title">E: Exposure</h3><label>Temperature (°C):<input type="number" step="0.1" id="temp_input" class="vital-input mt-1 w-full rounded-md border-2 p-2"></label></div>
             </div>
-            <div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label for="manualADDSScore" class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label for="addsModificationText" class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div>
+            <div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div>
             <div class="mt-6 grid grid-cols-2 gap-4 text-center">
                 <div class="bg-blue-50 p-4 rounded-lg border border-blue-200"><span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span><div id="calculatedADDSScore" class="font-bold text-5xl my-2">0</div></div>
                 <div class="bg-teal-50 p-4 rounded-lg border border-teal-200"><span class="text-sm font-medium text-gray-500">FINAL ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>
             </div>`;
-        document.getElementById('scoringContainer').innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">Clinical Risk Factors</h2><div class="space-y-2"><label class="list-score-option"><input type="checkbox" class="score-input" data-score="3" id="met_criteria"><span class="score-label">Patient is in MET Criteria</span><span class="score-value">+3</span></label><label class="list-score-option"><input type="checkbox" class="score-input" data-score="2" id="increasing_o2"><span class="score-label">Increasing O₂ Trend</span><span class="score-value">+2</span></label><div><label class="block font-medium mb-1">Gastrointestinal:</label><select id="gi_assessment" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Normal Diet & Bowels</option><option value="1">Modified Diet / Constipated</option><option value="2">NBM/NG/TPN / Ileus</option></select></div><div><label class="block font-medium mb-1">Delirium:</label><select id="delirium" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">None</option><option value="1">Mild</option><option value="2">Moderate-Severe</option></select></div><div><label class="block font-medium mb-1">Mobility:</label><select id="mobility" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Baseline</option><option value="1">Assisted</option><option value="2">Bed-bound</option></select></div><div><label class="block font-medium mb-1">Frailty (Pre-hospital):</label><select id="frailty" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Not Frail / Mild</option><option value="1">Moderate-Severe</option></select></div><div><label class="block font-medium mb-1">Staffing (Reducer):</label><select id="staffing" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Standard Ratio</option><option value="-1">Enhanced Care (1:1, 1:2)</option></select></div></div>`;
-        const devicesContainer = document.getElementById('devices-container');
-        devicesContainer.innerHTML = `<div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container" class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">IDCs</h4><div id="idcs_container" class="space-y-2"></div><button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add IDC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Drains</h4><div id="drains_container" class="space-y-2"></div><button type="button" id="addDrainButton" class="no-print mt-2 text-sm bg-teal-100 px-3 py-1 rounded-md">+ Add Drain</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Pacing Wires</h4><div id="pacing_wires_container" class="space-y-2"></div><button type="button" id="addPacingWireButton" class="no-print mt-2 text-sm bg-purple-100 px-3 py-1 rounded-md">+ Add Pacing Wires</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Other</h4><div id="others_container" class="space-y-2"></div><button type="button" id="addOtherButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add Other</button></div>`;
-        document.getElementById('fluid-assessment-container').innerHTML = `<h3 class="font-semibold mb-2">Fluid Status</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><label>24hr Fluid Balance (mL)<input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><div class="p-2 bg-amber-100 rounded-md flex items-center"><label class="flex items-center font-medium h-full"><input type="checkbox" id="fluid_overload" class="score-input mr-2 h-4 w-4" data-score="2">Significant Fluid Overload (>5L)</label></div></div>`;
+        document.getElementById('scoringContainer').innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">Clinical Risk Factors</h2><div class="space-y-2"><label class="list-score-option"><input type="checkbox" class="score-input" data-score="3" id="met_criteria"><span class="score-label">Patient is in MET Criteria</span><span class="score-value">+3</span></label><label class="list-score-option"><input type="checkbox" class="score-input" data-score="2" id="increasing_o2"><span class="score-label">Increasing O₂ Trend</span><span class="score-value">+2</span></label><div><label class="block font-medium mb-1">Gastrointestinal:</label><select id="gi_assessment" name="gi_assessment" class="score-input w-full rounded-md border-2 p-2"><option value="0">Normal Diet & Bowels</option><option value="1">Modified Diet / Constipated</option><option value="2">NBM/NG/TPN / Ileus</option></select></div><div><label class="block font-medium mb-1">Delirium:</label><select id="delirium" name="delirium" class="score-input w-full rounded-md border-2 p-2"><option value="0">None</option><option value="1">Mild</option><option value="2">Moderate-Severe</option></select></div><div><label class="block font-medium mb-1">Mobility:</label><select id="mobility" name="mobility" class="score-input w-full rounded-md border-2 p-2"><option value="0">Baseline</option><option value="1">Assisted</option><option value="2">Bed-bound</option></select></div><div><label class="block font-medium mb-1">Frailty (Pre-hospital):</label><select id="frailty" name="frailty" class="score-input w-full rounded-md border-2 p-2"><option value="0">Not Frail / Mild</option><option value="1">Moderate-Severe</option></select></div><div><label class="block font-medium mb-1">Staffing (Reducer):</label><select id="staffing" name="staffing" class="score-input w-full rounded-md border-2 p-2"><option value="0">Standard Ratio</option><option value="-1">Enhanced Care (1:1, 1:2)</option></select></div></div>`;
+        document.getElementById('devices-container').innerHTML = `<div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container" class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">IDCs</h4><div id="idcs_container" class="space-y-2"></div><button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add IDC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Drains</h4><div id="drains_container" class="space-y-2"></div><button type="button" id="addDrainButton" class="no-print mt-2 text-sm bg-teal-100 px-3 py-1 rounded-md">+ Add Drain</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Pacing Wires</h4><div id="pacing_wires_container" class="space-y-2"></div><button type="button" id="addPacingWireButton" class="no-print mt-2 text-sm bg-purple-100 px-3 py-1 rounded-md">+ Add Pacing Wires</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Other</h4><div id="others_container" class="space-y-2"></div><button type="button" id="addOtherButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add Other</button></div>`;
+        document.getElementById('fluid-assessment-container').innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">Fluid Status</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><label>24hr Fluid Balance (mL)<input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><div class="p-2 bg-amber-100 rounded-md flex items-center"><label class="flex items-center font-medium h-full"><input type="checkbox" id="fluid_overload" class="score-input mr-2 h-4 w-4" data-score="2">Significant Fluid Overload (>5L)</label></div></div>`;
         const wardSelect = document.getElementById('ward');
         const wards = ['CCU', '3A', '3C', '3D', '4A', '4B', '4C', '4D', '5A', '5B', '5C', '5D', '6A', '6B', '6C', '6D', '7A', '7B', '7C', '7D', 'Other'];
-        wardSelect.innerHTML = wards.map(w => `<option value="${w}">${w}</option>`).join('');
+        wardSelect.innerHTML = `<option value="">Select Ward...</option>` + wards.map(w => `<option value="${w}">${w}</option>`).join('');
     }
 
     // --- DEVICE MANAGEMENT ---
     const addDevice = (type, containerId, html) => { deviceCounters[type] = (deviceCounters[type] || 0) + 1; document.getElementById(containerId).insertAdjacentHTML('beforeend', `<div id="${type}_${deviceCounters[type]}" class="device-entry bg-white p-3 rounded-md border space-y-2">${html}<button type="button" class="remove-device-btn text-xs text-red-600 hover:underline no-print">Remove</button></div>`); };
-    window.addCentralLine = (data = {}) => addDevice('cvad', 'central_lines_container', `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="type" value="${data.type || ''}" placeholder="Type" class="p-1 border rounded-md"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"></div>`);
-    window.addPivc = (data = {}) => addDevice('pivc', 'pivcs_container', `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"><input type="text" data-key="size" value="${data.size || ''}" placeholder="Size" class="p-1 border rounded-md"></div>`);
-    window.addIdc = (data = {}) => addDevice('idc', 'idcs_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="IDC Details" class="p-1 border rounded-md w-full text-sm">`);
-    window.addDrain = (data = {}) => addDevice('drain', 'drains_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Drain Details" class="p-1 border rounded-md w-full text-sm">`);
-    window.addPacingWire = (data = {}) => addDevice('pacing', 'pacing_wires_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Pacing Wire Details" class="p-1 border rounded-md w-full text-sm">`);
-    window.addOther = (data = {}) => addDevice('other', 'others_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Other Device/Wound Details" class="p-1 border rounded-md w-full text-sm">`);
+    window.addCentralLine = (d={}) => addDevice('cvad', 'central_lines_container', `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="type" value="${d.type||''}" placeholder="Type" class="p-1 border rounded-md"><input type="text" data-key="location" value="${d.location||''}" placeholder="Location" class="p-1 border rounded-md"></div>`);
+    window.addPivc = (d={}) => addDevice('pivc', 'pivcs_container', `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="location" value="${d.location||''}" placeholder="Location" class="p-1 border rounded-md"><input type="text" data-key="size" value="${d.size||''}" placeholder="Size" class="p-1 border rounded-md"></div>`);
+    window.addIdc = (d={}) => addDevice('idc', 'idcs_container', `<input type="text" data-key="details" value="${d.details||''}" placeholder="IDC Details" class="p-1 border rounded-md w-full text-sm">`);
+    window.addDrain = (d={}) => addDevice('drain', 'drains_container', `<input type="text" data-key="details" value="${d.details||''}" placeholder="Drain Details" class="p-1 border rounded-md w-full text-sm">`);
+    window.addPacingWire = (d={}) => addDevice('pacing', 'pacing_wires_container', `<input type="text" data-key="details" value="${d.details||''}" placeholder="Pacing Wire Details" class="p-1 border rounded-md w-full text-sm">`);
+    window.addOther = (d={}) => addDevice('other', 'others_container', `<input type="text" data-key="details" value="${d.details||''}" placeholder="Other Device/Wound Details" class="p-1 border rounded-md w-full text-sm">`);
         
     initializeApp();
 });
