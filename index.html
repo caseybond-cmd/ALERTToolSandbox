@@ -48,7 +48,7 @@
                 <!-- Patient Details -->
                 <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6">
                     <div class="bg-gray-50 p-4 rounded-lg border">
-                        <h3 class="text-lg font-semibold mb-4">Patient & Review Details</h3>
+                        <h3 class="text-lg font-semibold mb-4">Patient Details</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
                                 <label>Patient Initials:<input type="text" id="patient_initials" class="mt-1 w-full rounded-md border-2 p-2"></label>
@@ -59,17 +59,6 @@
                                 <label>Room No.:<input type="text" id="room_number" class="mt-1 w-full rounded-md border-2 p-2"></label>
                             </div>
                             <div class="md:col-span-2" id="wardOtherContainer" style="display: none;"><input type="text" id="wardOther" placeholder="Enter other ward name" class="w-full rounded-md border-2 p-2 text-sm"></div>
-                            <label>Age:<input type="number" id="age" class="score-input mt-1 w-full rounded-md border-2 p-2"></label>
-                            <label>Admission Type:
-                                <select id="admission_type" class="score-input mt-1 w-full rounded-md border-2 p-2">
-                                    <option value="0">Surgical (Elective)</option>
-                                    <option value="1">Surgical (Emergency)</option>
-                                    <option value="2">Medical or ED Admission</option>
-                                </select>
-                            </label>
-                            <label>ICU LOS (days):<input type="number" id="los_days" class="score-input mt-1 w-full rounded-md border-2 p-2"></label>
-                            <label>Severe Comorbidities (≥2):<input type="number" id="severe_comorbidities" min="0" class="score-input mt-1 w-full rounded-md border-2 p-2"></label>
-                             <div class="md:col-span-2 pt-2"><label class="flex items-center"><input type="checkbox" id="after_hours" class="h-4 w-4 mr-2">After-Hours Discharge</label></div>
                         </div>
                     </div>
                 </div>
