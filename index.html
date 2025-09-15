@@ -1,23 +1,22 @@
-<DOCUMENT filename="index.html">
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ICU Readmission Prevention Tool</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
         <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
             <h1 class="text-2xl font-bold mb-4">ICU Readmission Prevention Tool</h1>
             <p class="text-gray-600 mb-6">A lean, evidence-based risk engine.</p>
-            <button id="startNewReviewBtn" class="bg-teal-500 text-white px-4 py-2 rounded mb-4">➕ Start New Review</button>
-            <button id="resumeReviewBtn" class="bg-blue-500 text-white px-4 py-2 rounded">📲 Continue from Desktop (Paste handoff key)</button>
+            <button id="startNewReviewBtn" class="bg-teal-500 text-white px-4 py-2 rounded mb-4 w-full">➕ Start New Review</button>
+            <button id="resumeReviewBtn" class="bg-blue-500 text-white px-4 py-2 rounded w-full">📲 Continue from Desktop (Paste handoff key)</button>
             <div id="pasteContainer" class="mt-4 hidden">
                 <textarea id="pasteDataInput" class="w-full p-2 border rounded" placeholder="Paste handoff key here..."></textarea>
-                <button id="loadPastedDataBtn" class="bg-green-500 text-white px-4 py-2 rounded mt-2">Load Data</button>
+                <button id="loadPastedDataBtn" class="bg-green-500 text-white px-4 py-2 rounded mt-2 w-full">Load Data</button>
             </div>
         </div>
     </div>
@@ -56,14 +55,7 @@
                 </details>
             </section>
 
-            <!-- Desktop Entry Section -->
-            <section id="desktop-entry-section">
-                <h2 class="form-section-title">Ready for Bedside Assessment?</h2>
-                <p>You have entered the pre-review data. To continue on your mobile, click the button below to copy the handoff key.</p>
-                <button id="generateHandoffBtn" class="bg-blue-500 text-white px-4 py-2 rounded">📲 Copy Data Key to Mobile</button>
-            </section>
-
-            <!-- Bloods Section -->
+             <!-- Bloods Section -->
             <section id="bloods-section">
                 <h2 class="form-section-title">Bloods</h2>
                 <div class="domain-container">
@@ -80,12 +72,20 @@
                     </div>
                 </div>
             </section>
+            
+            <!-- Desktop Entry Section -->
+            <section id="desktop-entry-section" class="text-center p-4 bg-blue-50 rounded-lg">
+                <h2 class="text-lg font-semibold text-blue-800">Ready for Bedside Assessment?</h2>
+                <p class="text-sm text-blue-700 my-2">You have entered the pre-review data. To continue on your mobile, click the button below to copy the handoff key.</p>
+                <button type="button" id="generateHandoffBtn" class="bg-blue-500 text-white px-4 py-2 rounded">📲 Copy Data Key to Mobile</button>
+            </section>
+
 
             <!-- Context, Devices & Frailty -->
             <section id="context-frailty-section">
                 <h2 class="form-section-title">Context, Devices & Frailty</h2>
                 <div class="space-y-4">
-                    <div class="flex items-center space-x-4">
+                    <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
                         <label class="flex items-center"><input type="checkbox" id="context_discharge" class="input-checkbox"> Out-of-Hours Discharge</label>
                         <label class="flex items-center"><input type="checkbox" id="context_ward" class="input-checkbox"> Ward Capacity/Capability Mismatch</label>
                     </div>
@@ -98,14 +98,13 @@
 
             <!-- A-E Assessment -->
             <section id="assessment-container">
-                <!-- Existing A-E content, with added trends where applicable -->
                 <h2 class="form-section-title">A-E Assessment</h2>
                 <div class="space-y-6">
-                    <div><h3 class="assessment-section-title">A: </h3><select id="airway_input" class="input-field"><option value="Clear">Clear and maintained</option><option value="At Risk">Airway at risk / requires adjunct</option></select></div>
-                    <div><h3 class="assessment-section-title">B: </h3><div class="assessment-grid"><label>O₂ Device:<select id="resp_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HF">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><label>O₂ Trend:<select id="resp_trend" class="input-field"><option value="stable">Stable</option><option value="worsening">Worsening</option></select></label><label>Resp Rate:<input type="number" id="rr" class="input-field" min="0" required></label><label>SpO2 (%):<input type="number" id="spo2" class="input-field" min="0" max="100" required></label></div></div>
-                    <div><h3 class="assessment-section-title">C: </h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr" class="input-field" min="0" required></label><label>Systolic BP:<input type="number" id="sbp" class="input-field" min="0" required></label></div></div>
-                    <div><h3 class="assessment-section-title">D: </h3><div class="assessment-grid"><label>Consciousness:<select id="neuro_consciousness" class="input-field"><option>Alert</option><option>Voice</option><option>Pain</option><option>Unresponsive</option></select></label><label>Delirium Present:<select id="neuro_delirium" class="input-field"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>
-                    <div><h3 class="assessment-section-title">E: </h3><label>Temperature (°C):<input type="number" step="0.1" id="temp" class="input-field" min="0" required></label></div>
+                    <div><h3 class="assessment-section-title">A: Airway</h3><select id="airway_input" class="input-field"><option value="Clear">Clear and maintained</option><option value="At Risk">Airway at risk / requires adjunct</option></select></div>
+                    <div><h3 class="assessment-section-title">B: Breathing</h3><div class="assessment-grid"><label>O₂ Device:<select id="resp_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HF">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><label>O₂ Trend:<select id="resp_trend" class="input-field"><option value="stable">Stable</option><option value="worsening">Worsening</option></select></label><label>Resp Rate:<input type="number" id="rr" class="input-field" min="0" required></label><label>SpO2 (%):<input type="number" id="spo2" class="input-field" min="0" max="100" required></label></div></div>
+                    <div><h3 class="assessment-section-title">C: Circulation</h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr" class="input-field" min="0" required></label><label>Systolic BP:<input type="number" id="sbp" class="input-field" min="0" required></label></div></div>
+                    <div><h3 class="assessment-section-title">D: Disability</h3><div class="assessment-grid"><label>Consciousness:<select id="neuro_consciousness" class="input-field"><option>Alert</option><option>Voice</option><option>Pain</option><option>Unresponsive</option></select></label><label>Delirium Present:<select id="neuro_delirium" class="input-field"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>
+                    <div><h3 class="assessment-section-title">E: Exposure</h3><label>Temperature (°C):<input type="number" step="0.1" id="temp" class="input-field" min="0" required></label></div>
                 </div>
                 <div class="mt-6 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center">
                     <span class="text-sm font-medium text-gray-500">CALCULATED ADDS SCORE</span>
@@ -130,15 +129,16 @@
         <!-- DMR Summary -->
         <div class="mt-8">
             <h2 class="form-section-title">DMR Summary Generator</h2>
-            <button id="generateSummaryButton" class="bg-green-500 text-white px-4 py-2 rounded">Generate & Copy to Clipboard</button>
-            <textarea id="emrSummary" class="w-full mt-4 p-2 border rounded" style="display: none;"></textarea>
+            <button type="button" id="generateSummaryButton" class="bg-green-500 text-white px-4 py-2 rounded">Generate & Copy to Clipboard</button>
+            <textarea id="emrSummary" class="w-full mt-4 p-2 border rounded" style="display: none;" rows="20"></textarea>
         </div>
     </div>
 
     <!-- Sticky Footer -->
     <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-center z-40 category-green">
-        <span id="footer-category">LOW RISK</span>
+        <span id="footer-category" class="font-bold text-lg">LOW RISK</span>
     </div>
+    <script src="js/script.js"></script>
 </body>
 </html>
-</DOCUMENT>
+
