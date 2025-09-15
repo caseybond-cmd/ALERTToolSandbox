@@ -1,3 +1,4 @@
+<DOCUMENT filename="style.css">
 body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
 
 /* New Category Footer Styles */
@@ -46,3 +47,16 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
     }
 }
 
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+    .grid-cols-2 { grid-template-columns: 1fr; }
+    .grid-cols-3 { grid-template-columns: 1fr; }
+}
+
+/* Accessibility */
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid #0D9488;
+    outline-offset: 2px;
+}
+
+</DOCUMENT>
