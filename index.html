@@ -1,136 +1,209 @@
+<DOCUMENT filename="index.html">
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ICU Readmission Prevention Tool</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
 </head>
-<body class="p-4 sm:p-6 md:p-8 pb-32">
-
-    <!-- Launch Screen -->
-    <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex flex-col items-center justify-center p-4 z-50 no-print">
-        <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 text-center max-w-lg w-full space-y-4">
-            <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ICU Readmission Prevention Tool</h2>
-            <p class="text-gray-600">A lean, evidence-based risk engine.</p>
-            <div class="flex flex-col gap-4 pt-4">
-                <button id="startNewReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Review</button>
-                <div>
-                    <button id="resumeReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Continue from Desktop <span class="block text-xs font-normal">(Paste handoff key)</span></button>
-                </div>
-            </div>
-            <div id="pasteContainer" class="hidden mt-4">
-                <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your data key here..."></textarea>
-                <button id="loadPastedDataBtn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Load Data</button>
+<body>
+    <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
+            <h1 class="text-2xl font-bold mb-4">ICU Readmission Prevention Tool</h1>
+            <p class="text-gray-600 mb-6">A lean, evidence-based risk engine.</p>
+            <button id="startNewReviewBtn" class="bg-teal-500 text-white px-4 py-2 rounded mb-4">➕ Start New Review</button>
+            <button id="resumeReviewBtn" class="bg-blue-500 text-white px-4 py-2 rounded">📲 Continue from Desktop (Paste handoff key)</button>
+            <div id="pasteContainer" class="mt-4 hidden">
+                <textarea id="pasteDataInput" class="w-full p-2 border rounded" placeholder="Paste handoff key here..."></textarea>
+                <button id="loadPastedDataBtn" class="bg-green-500 text-white px-4 py-2 rounded mt-2">Load Data</button>
             </div>
         </div>
     </div>
 
-    <!-- Main Application Content -->
-    <div id="main-content" class="max-w-4xl mx-auto" style="visibility: hidden;">
-        <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print">
-            <div id="top-button-bar" class="flex justify-end items-center gap-2">
-                 <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
+    <div id="main-content" class="container mx-auto p-4 max-w-4xl" style="visibility: hidden;">
+        <header class="header-gradient text-white p-4 rounded-t-lg">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold">Acute Risk Engine</h1>
+                <button id="startOverBtn" class="bg-red-500 text-white px-2 py-1 rounded">Start Over</button>
             </div>
-        </div>
+        </header>
 
-        <form id="assessmentForm" onsubmit="return false;">
-            <div class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
-                <div class="header-gradient p-6 flex items-center justify-center text-white">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-center">Acute Risk Engine</h1>
+        <form id="assessmentForm" class="bg-white shadow-md rounded-b-lg p-6 space-y-8">
+            <!-- Patient & Clinical Context -->
+            <section id="patient-context-section">
+                <h2 class="form-section-title">Patient & Clinical Context</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label>Patient Initials:<input type="text" id="patient_initials" class="input-field" required></label>
+                    <label>URN (Last 4):<input type="text" id="patient_urn_last4" class="input-field" required></label>
+                    <label>Ward:<input type="text" id="ward" class="input-field" required></label>
+                    <label>Room No.:<input type="text" id="room_number" class="input-field"></label>
                 </div>
-            </div>
+                <details class="context-details mt-4">
+                    <summary>Add Clinical Context (Optional)</summary>
+                    <div class="space-y-4">
+                        <label>Goals of Care (GOC):
+                            <select id="goc" class="input-field">
+                                <option>For full resuscitation</option>
+                                <option>Medical treatment, not for ICU</option>
+                                <option>Palliative</option>
+                            </select>
+                        </label>
+                        <label>Reason for ICU Admission:<textarea id="reason_icu" class="input-field"></textarea></label>
+                        <label>Past Medical History (PMH):<textarea id="pmh" class="input-field"></textarea></label>
+                    </div>
+                </details>
+            </section>
 
-            <!-- DESKTOP ENTRY SECTION -->
-            <div id="desktop-entry-section">
-                <!-- Patient Details -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
-                    <h2 class="form-section-title">Patient & Clinical Context</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                            <label>Patient Initials:<input type="text" id="patient_initials" class="input-field"></label>
-                            <label>URN (Last 4):<input type="number" id="patient_urn_last4" class="input-field"></label>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                            <label>Ward:<input type="text" id="ward" class="input-field"></label>
-                            <label>Room No.:<input type="text" id="room_number" class="input-field"></label>
-                        </div>
-                        <div class="md:col-span-2">
-                            <details class="context-details">
-                                <summary class="context-summary">Add Clinical Context (Optional)</summary>
-                                <div class="pt-4 space-y-4">
-                                    <label>Goals of Care (GOC):<select id="goc" class="input-field"><option>For full resuscitation</option><option>Medical treatment, not for ICU</option><option>Palliative</option></select></label>
-                                    <label>Reason for ICU Admission:<textarea id="reason_icu" rows="2" class="input-field"></textarea></label>
-                                    <label>Past Medical History (PMH):<textarea id="pmh" rows="3" class="input-field"></textarea></label>
-                                </div>
-                            </details>
-                        </div>
+            <!-- Desktop Entry Section -->
+            <section id="desktop-entry-section">
+                <h2 class="form-section-title">Ready for Bedside Assessment?</h2>
+                <p>You have entered the pre-review data. To continue on your mobile, click the button below to copy the handoff key.</p>
+                <button id="generateHandoffBtn" class="bg-blue-500 text-white px-4 py-2 rounded">📲 Copy Data Key to Mobile</button>
+            </section>
+
+            <!-- Bloods Section -->
+            <section id="bloods-section">
+                <h2 class="form-section-title">Bloods</h2>
+                <div class="domain-container">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <label>Lactate:<input type="number" step="0.1" id="lactate" class="input-field" min="0" required><select id="lactate_trend" class="input-field mt-1"><option>stable</option><option>improving</option><option>worsening</option></select></label>
+                        <label>Creatinine (Current):<input type="number" id="creatinine" class="input-field" min="0" required><select id="creatinine_trend" class="input-field mt-1"><option>stable</option><option>improving</option><option>worsening</option></select></label>
+                        <label>Creatinine (Baseline):<input type="number" id="creatinine_baseline" class="input-field" min="0" required></label>
+                        <label>Platelets:<input type="number" id="platelets" class="input-field" min="0" required><select id="platelets_trend" class="input-field mt-1"><option>stable</option><option>improving</option><option>worsening</option></select></label>
+                        <label>Albumin:<input type="number" id="albumin" class="input-field" min="0"><select id="albumin_trend" class="input-field mt-1"><option>stable</option><option>improving</option><option>worsening</option></select></label>
+                        <label>Bilirubin:<input type="number" id="bilirubin" class="input-field" min="0"><select id="bilirubin_trend" class="input-field mt-1"><option>stable</option><option>improving</option><option>worsening</option></select></label>
+                        <label>CRP:<input type="number" id="crp" class="input-field" min="0"><select id="crp_trend" class="input-field mt-1"><option>stable</option><option>improving</option><option>worsening</option></select></label>
+                        <label>WBC:<input type="number" id="wbc" class="input-field" min="0"><select id="wbc_trend" class="input-field mt-1"><option>stable</option><option>improving</option><option>worsening</option></select></label>
+                        <label>Hb:<input type="number" id="hb" class="input-field" min="0"><select id="hb_trend" class="input-field mt-1"><option>stable</option><option>improving</option><option>worsening</option></select></label>
                     </div>
                 </div>
+            </section>
 
-                <!-- Bloods -->
-                <div id="bloods-container" class="bg-white rounded-xl shadow-lg mb-6 p-6"></div>
-                
-                <!-- Handoff to Mobile Section -->
-                <div id="handoff-container" class="bg-purple-50 border-2 border-purple-200 rounded-xl shadow-lg mb-6 p-6 text-center">
-                    <h3 class="text-lg font-semibold text-purple-800">Ready for Bedside Assessment?</h3>
-                    <p class="text-sm text-purple-700 mt-2 mb-4">You have entered the pre-review data. To continue on your mobile, click the button below to copy the handoff key.</p>
-                    <button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg">📲 Copy Data Key to Mobile</button>
-                </div>
-            </div>
-
-            <!-- BEDSIDE ENTRY SECTION -->
-            <div id="bedside-entry-section">
-                <!-- A-E Assessment (ADDS) -->
-                <div id="assessment-container" class="bg-white rounded-xl shadow-lg mb-6 p-6"></div>
-                
-                <!-- Context, Devices & Frailty -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6">
-                     <h2 class="form-section-title">Context, Devices & Frailty</h2>
-                     <div class="domain-container">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="space-y-2">
-                               <label class="flex items-center"><input type="checkbox" id="context_discharge" class="input-checkbox"> Out-of-Hours Discharge</label>
-                               <label class="flex items-center"><input type="checkbox" id="context_ward" class="input-checkbox"> Ward Capacity/Capability Mismatch</label>
-                            </div>
-                             <div class="space-y-2">
-                                <label class="flex items-center"><input type="checkbox" id="frailty_impression" class="input-checkbox"> Clinical Impression of Frailty / Low Reserve</label>
-                                <label class="flex items-center"><input type="checkbox" id="complex_device" class="input-checkbox"> Complex Device Present (CVC, Chest Drain, etc.)</label>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <label>List Devices (for DMR):<textarea id="device_list" rows="2" class="input-field" placeholder="e.g., IDC Day 3, R IJ CVC, Blake's drain R chest"></textarea></label>
-                        </div>
+            <!-- Context, Devices & Frailty -->
+            <section id="context-frailty-section">
+                <h2 class="form-section-title">Context, Devices & Frailty</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center"><input type="checkbox" id="context_discharge" class="input-checkbox"> Out-of-Hours Discharge</label>
+                        <label class="flex items-center"><input type="checkbox" id="context_ward" class="input-checkbox"> Ward Capacity/Capability Mismatch</label>
                     </div>
+                    <label class="flex items-center"><input type="checkbox" id="frailty_impression" class="input-checkbox"> Clinical Impression of Frailty / Low Reserve</label>
+                    <label>Frailty Score (Rockwood CFS 1-9):<input type="number" id="frailty_score" class="input-field" min="1" max="9"></label>
+                    <label class="flex items-center"><input type="checkbox" id="complex_device" class="input-checkbox"> Complex Device Present (CVC, Chest Drain, etc.)</label>
+                    <label>List Devices (for DMR):<textarea id="device_list" class="input-field"></textarea></label>
                 </div>
-            </div>
-            
-            <!-- Output Panel -->
-            <div id="output-panel" class="bg-gray-50 rounded-xl shadow-lg mb-6 p-6" style="display: none;">
-                <h2 class="form-section-title">Assessment Summary</h2>
-                <div id="summary-container" class="space-y-4"></div>
-            </div>
+            </section>
 
-            <!-- DMR Summary -->
-            <div class="bg-white rounded-xl shadow-lg mt-6 p-6">
-                <h2 class="form-section-title">DMR Summary Generator</h2>
-                <div class="flex space-x-4 mb-4 no-print">
-                    <button type="button" id="generateSummaryButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate & Copy to Clipboard</button>
+            <!-- A-E Assessment -->
+            <section id="assessment-container">
+                <!-- Existing A-E content, with added trends where applicable -->
+                <h2 class="form-section-title">A-E Assessment</h2>
+                <div class="space-y-6">
+                    <div><h3 class="assessment-section-title">A: </h3><select id="airway_input" class="input-field"><option value="Clear">Clear and maintained</option><option value="At Risk">Airway at risk / requires adjunct</option></select></div>
+                    <div><h3 class="assessment-section-title">B: </h3><div class="assessment-grid"><label>O₂ Device:<select id="resp_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HF">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><label>O₂ Trend:<select id="resp_trend" class="input-field"><option value="stable">Stable</option><option value="worsening">Worsening</option></select></label><label>Resp Rate:<input type="number" id="rr" class="input-field" min="0" required></label><label>SpO2 (%):<input type="number" id="spo2" class="input-field" min="0" max="100" required></label></div></div>
+                    <div><h3 class="assessment-section-title">C: </h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr" class="input-field" min="0" required></label><label>Systolic BP:<input type="number" id="sbp" class="input-field" min="0" required></label></div></div>
+                    <div><h3 class="assessment-section-title">D: </h3><div class="assessment-grid"><label>Consciousness:<select id="neuro_consciousness" class="input-field"><option>Alert</option><option>Voice</option><option>Pain</option><option>Unresponsive</option></select></label><label>Delirium Present:<select id="neuro_delirium" class="input-field"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>
+                    <div><h3 class="assessment-section-title">E: </h3><label>Temperature (°C):<input type="number" step="0.1" id="temp" class="input-field" min="0" required></label></div>
                 </div>
-                <textarea id="emrSummary" rows="15" class="w-full p-2 border rounded-md bg-gray-50 font-mono text-xs" placeholder="Your summary will appear here..."></textarea>
-            </div>
+                <div class="mt-6 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center">
+                    <span class="text-sm font-medium text-gray-500">CALCULATED ADDS SCORE</span>
+                    <div id="finalADDSScore" class="font-bold text-5xl my-2">0</div>
+                </div>
+            </section>
+
+            <!-- Manual Override -->
+            <section>
+                <h2 class="form-section-title">Manual Override</h2>
+                <label class="flex items-center"><input type="checkbox" id="override_checkbox" class="input-checkbox"> Escalate Category Due to Clinical Concern</label>
+                <label>Override Reason:<textarea id="override_reason" class="input-field"></textarea></label>
+            </section>
         </form>
-    </div>
-    
-    <!-- Sticky Score Footer -->
-    <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-center z-40">
-        <span id="footer-category" class="font-bold text-lg px-4 py-2 rounded-md">LOW RISK</span>
-    </div>
-    
-    <script src="js/script.js"></script>
 
+        <!-- Output Panel -->
+        <div id="output-panel" class="mt-8 bg-white shadow-md rounded-lg p-6" style="display: none;">
+            <h2 class="text-xl font-bold mb-4">Assessment Summary</h2>
+            <div id="summary-container"></div>
+        </div>
+
+        <!-- DMR Summary -->
+        <div class="mt-8">
+            <h2 class="form-section-title">DMR Summary Generator</h2>
+            <button id="generateSummaryButton" class="bg-green-500 text-white px-4 py-2 rounded">Generate & Copy to Clipboard</button>
+            <textarea id="emrSummary" class="w-full mt-4 p-2 border rounded" style="display: none;"></textarea>
+        </div>
+    </div>
+
+    <!-- Sticky Footer -->
+    <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-center z-40 category-green">
+        <span id="footer-category">LOW RISK</span>
+    </div>
 </body>
 </html>
+</DOCUMENT>
 
+
+
+<DOCUMENT filename="style.css">
+body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
+
+/* New Category Footer Styles */
+.category-red { background-color: #DC2626 !important; color: #FFFFFF; }
+.category-amber { background-color: #F59E0B !important; color: #1A202C; }
+.category-green { background-color: #10B981 !important; color: #FFFFFF; }
+
+.header-gradient { background: linear-gradient(to right, #0D9488, #0F766E); }
+
+/* Form Styling */
+.form-section-title { font-size: 1.25rem; font-weight: 600; color: #111827; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+.domain-container { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; }
+.domain-title { font-weight: 600; margin-bottom: 0.75rem; color: #4b5563; }
+.input-field { width: 100%; border-radius: 0.375rem; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem; background-color: #fff; margin-top: 0.25rem;}
+.input-checkbox { height: 1.25rem; width: 1.25rem; margin-right: 0.5rem; }
+
+/* Context Details Styling */
+.context-details summary { cursor: pointer; font-weight: 500; color: #1d4ed8; }
+.context-details[open] summary { margin-bottom: 1rem; }
+
+/* Tooltip */
+.tooltip { cursor: help; color: #6b7280; font-weight: bold; }
+
+/* A-E Assessment Styles */
+.assessment-section-title { font-size: 1.125rem; font-weight: 600; color: #166534; border-bottom: 2px solid #A7F3D0; padding-bottom: 0.25rem; margin-bottom: 1rem; }
+.assessment-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; }
+@media (min-width: 640px) { .assessment-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .assessment-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* Output Panel Styling */
+.summary-category { font-size: 1.5rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 0.5rem; text-align: center; }
+.summary-plan { background-color: #f3f4f6; border-left: 4px solid #4b5563; padding: 1rem; }
+.summary-plan h4 { font-weight: 600; margin-bottom: 0.5rem; }
+
+/* Sticky Footer */
+#sticky-footer {
+    transition: background-color 0.3s ease-in-out;
+}
+@media (min-width: 768px) {
+    #sticky-footer {
+        max-width: 400px;
+        margin: 0 auto 1rem;
+        border-radius: 0.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+    .grid-cols-2 { grid-template-columns: 1fr; }
+    .grid-cols-3 { grid-template-columns: 1fr; }
+}
+
+/* Accessibility */
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid #0D9488;
+    outline-offset: 2px;
+}
+
+</DOCUMENT>
