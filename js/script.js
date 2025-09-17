@@ -335,17 +335,35 @@ CLINICAL CONTEXT:
             navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard!'));
         });
 
-        document.getElementById('o2_device').addEventListener('change', e => {
-            const showSettings = ['HFNP', 'NIV'].includes(e.target.value);
-            document.getElementById('o2_settings_container').classList.toggle('hidden', !showSettings);
-            const showNiv = e.target.value === 'NIV';
-            document.getElementById('peep_ps_container').classList.toggle('hidden', !showNiv);
-        });
+        // ROBUST LISTENER ATTACHMENT -- START of FIX
+        const o2DeviceEl = document.getElementById('o2_device');
+        if (o2DeviceEl) {
+            o2DeviceEl.addEventListener('change', e => {
+                const showSettings = ['HFNP', 'NIV'].includes(e.target.value);
+                const o2SettingsContainer = document.getElementById('o2_settings_container');
+                const peepPsContainer = document.getElementById('peep_ps_container');
 
-        document.getElementById('goc').addEventListener('change', e => {
-            const showDetails = ['B', 'C'].includes(e.target.value);
-            document.getElementById('goc_details_container').classList.toggle('hidden', !showDetails);
-        });
+                if (o2SettingsContainer) {
+                    o2SettingsContainer.classList.toggle('hidden', !showSettings);
+                }
+                const showNiv = e.target.value === 'NIV';
+                if (peepPsContainer) {
+                    peepPsContainer.classList.toggle('hidden', !showNiv);
+                }
+            });
+        }
+
+        const gocEl = document.getElementById('goc');
+        if (gocEl) {
+            gocEl.addEventListener('change', e => {
+                const showDetails = ['B', 'C'].includes(e.target.value);
+                const gocDetailsContainer = document.getElementById('goc_details_container');
+                if (gocDetailsContainer) {
+                    gocDetailsContainer.classList.toggle('hidden', !showDetails);
+                }
+            });
+        }
+        // ROBUST LISTENER ATTACHMENT -- END of FIX
     }
 
     // --- DYNAMIC CONTENT ---
@@ -385,4 +403,4 @@ CLINICAL CONTEXT:
         
     initializeApp();
 });
-
+// --- SCRIPT END ---
