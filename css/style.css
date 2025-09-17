@@ -1,4 +1,4 @@
-body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
+body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; margin-bottom: 60px; /* Add margin to prevent footer overlap */ }
 
 /* New Category Footer Styles */
 .category-red { background-color: #DC2626 !important; color: #FFFFFF; }
@@ -31,9 +31,11 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; }
 /* Sticky Footer */
 #sticky-footer {
     transition: background-color 0.3s ease-in-out;
+    padding: 0.25rem; /* Make footer smaller on mobile */
 }
 @media (min-width: 768px) {
     #sticky-footer {
+        padding: 0.5rem;
         max-width: 400px;
         margin: 0 auto 1rem;
         border-radius: 0.5rem;
