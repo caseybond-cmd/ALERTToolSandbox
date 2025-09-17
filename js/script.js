@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INITIALIZATION ---
     function initializeApp() {
         setupEventListeners();
-        const savedState = sessionStorage.getItem('icuRiskToolState_v4');
+        const savedState = sessionStorage.getItem('icuRiskToolState_v5');
         if (savedState) {
             currentReview = JSON.parse(savedState);
             loadReviewData();
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveState() {
         currentReview = gatherFormData();
-        sessionStorage.setItem('icuRiskToolState_v4', JSON.stringify(currentReview));
+        sessionStorage.setItem('icuRiskToolState_v5', JSON.stringify(currentReview));
     }
 
     function loadReviewData(isHandoff = false) {
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clearForm() {
         form.reset();
-        sessionStorage.removeItem('icuRiskToolState_v4');
+        sessionStorage.removeItem('icuRiskToolState_v5');
         currentReview = {};
         updateRiskAssessment();
         document.getElementById('output-panel').style.display = 'none';
@@ -64,18 +64,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CORE LOGIC: RISK ASSESSMENT ENGINE ---
     function updateRiskAssessment() {
         const data = gatherFormData();
-        if (Object.keys(data).length === 0 || !data.patient_initials) return; // Don't run on empty form
+        if (Object.keys(data).length === 0 || !data.patient_initials) return;
         
         const flags = { red: [], amber: [] };
         let score = 0;
         const p = (val) => parseFloat(val);
 
         const addsResult = calculateADDS();
-        if (addsResult.score >= 5) { flags.red.push(`High ADDS Score (${addsResult.score})`); score += 3; }
-        else if (addsResult.score >= 3) { flags.amber.push(`Moderate ADDS Score (${addsResult.score})`); score += 1; }
+        if(addsResult.metCall) flags.red.push(`MET Call Criteria: ${addsResult.metReason}`);
+        score += addsResult.score;
         
         if (data.resp_trend === 'worsening') { flags.red.push('Worsening respiratory trend'); score += 3; }
-        if (p(data.sbp) < 90) { flags.red.push(`Hypotension (SBP < 90 mmHg)`); score += 3; }
         
         if (p(data.lactate) > 4) { flags.red.push(`Very High Lactate (${data.lactate})`); score += 3; }
         else if (p(data.lactate) > 2) { flags.red.push(`High Lactate (${data.lactate})`); score += 3; }
@@ -113,22 +112,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateADDS() {
         const p = (val) => parseFloat(val);
-        const getScore = (val, ranges) => { for (const r of ranges) { if (val >= r.min && val <= r.max) return r.score; } return 0; };
-        let total = 0;
+        const getScore = (val, ranges) => {
+            for (const r of ranges) {
+                if ((r.min === -Infinity || val >= r.min) && (r.max === Infinity || val <= r.max)) {
+                    if (r.score === 'E') return { metCall: true, metReason: r.note.replace('=>', `(${val}) =>`) };
+                    return { score: r.score };
+                }
+            }
+            return { score: 0 };
+        };
+        let totalScore = 0;
+        let metCall = false;
+        let metReason = '';
         const data = gatherFormData();
+
+        const checkParam = (value, ranges) => {
+            if (isNaN(value)) return;
+            const result = getScore(value, ranges);
+            if(result.metCall) {
+                metCall = true;
+                metReason = result.metReason;
+            } else {
+                totalScore += result.score;
+            }
+        };
         
-        if (!isNaN(p(data.rr))) total += getScore(p(data.rr), [{min:0, max:8, score:2}, {min:9, max:11, score:1}, {min:12, max:20, score:0}, {min:21, max:29, score:2}, {min:30, max:999, score:3}]);
-        if (!isNaN(p(data.spo2))) total += getScore(p(data.spo2), [{min:0, max:89, score:3}, {min:90, max:93, score:2}, {min:94, max:95, score:1}, {min:96, max:100, score:0}]);
-        if (data.resp_device !== 'RA') total += 2;
-        if (p(data.spo2) < 90 && data.resp_device !== 'RA') total += 1;
-        if (!isNaN(p(data.hr))) total += getScore(p(data.hr), [{min:0, max:39, score:2}, {min:40, max:49, score:1}, {min:50, max:99, score:0}, {min:100, max:119, score:1}, {min:120, max:999, score:2}]);
-        if (!isNaN(p(data.sbp))) total += getScore(p(data.sbp), [{min:0, max:79, score:3}, {min:80, max:99, score:2}, {min:100, max:199, score:0}, {min:200, max:999, score:2}]);
-        if (data.neuro_consciousness !== 'Alert') total += 3;
-        if (!isNaN(p(data.temp))) total += getScore(p(data.temp), [{min:0, max:35.0, score:2}, {min:35.1, max:38.0, score:0}, {min:38.1, max:38.9, score:1}, {min:39.0, max:99, score:2}]);
+        checkParam(p(data.rr), [{min: -Infinity, max: 4, score: 'E', note: '<=4 => MET'}, {min: 5, max: 8, score: 3}, {min: 9, max: 10, score: 2}, {min: 11, max: 20, score: 0}, {min: 21, max: 24, score: 1}, {min: 25, max: 30, score: 2}, {min: 31, max: 35, score: 3}, {min: 36, max: Infinity, score: 'E', note: '>=36 => MET'}]);
+        checkParam(p(data.spo2), [{min: -Infinity, max: 84, score: 'E', note: '<=84 => MET'}, {min: 85, max: 88, score: 3}, {min: 89, max: 90, score: 2}, {min: 91, max: 93, score: 1}, {min: 94, max: Infinity, score: 0}]);
+        checkParam(p(data.hr), [{min: -Infinity, max: 30, score: 'E', note: '<=30 => MET'}, {min: 31, max: 40, score: 3}, {min: 41, max: 50, score: 2}, {min: 51, max: 99, score: 0}, {min: 100, max: 109, score: 1}, {min: 110, max: 120, score: 2}, {min: 121, max: 129, score: 1}, {min: 130, max: 139, score: 3}, {min: 140, max: Infinity, score: 'E', note: '>=140 => MET'}]);
+        checkParam(p(data.sbp), [{min: -Infinity, max: 40, score: 'E', note: 'extreme low -> MET'}, {min: 41, max: 50, score: 3}, {min: 51, max: 60, score: 2}, {min: 61, max: 70, score: 1}, {min: 71, max: 80, score: 0}, {min: 81, max: 90, score: 3}, {min: 91, max: 100, score: 2}, {min: 101, max: 110, score: 1}, {min: 111, max: 139, score: 0}, {min: 140, max: 180, score: 1}, {min: 181, max: 200, score: 2}, {min: 201, max: 220, score: 3}, {min: 221, max: Infinity, score: 'E', note: '>=221 => MET'}]);
+        checkParam(p(data.temp), [{min: -Infinity, max: 35, score: 3}, {min: 35.1, max: 36.0, score: 1}, {min: 36.1, max: 37.5, score: 0}, {min: 37.6, max: 38.0, score: 1}, {min: 38.1, max: 39.0, score: 2}, {min: 39.1, max: Infinity, score: 'E', note: '>=39.1 => MET'}]);
+
+        if (data.neuro_consciousness === 'Unresponsive') { metCall = true; metReason = 'Unresponsive'; }
+        else if (data.neuro_consciousness === 'Pain') totalScore += 2;
+        else if (data.neuro_consciousness === 'Voice') totalScore += 1;
+
+        if (data.resp_device === 'HFNP') totalScore += 1;
+        if (data.resp_device === 'NIV') totalScore += 2;
+        checkParam(p(data.o2_flow), [{min: 0, max: 5, score: 0}, {min: 6, max: 7, score: 1}, {min: 8, max: 9, score: 2}, {min: 10, max: Infinity, score: 3}]);
+        checkParam(p(data.fio2), [{min: 28, max: 28, score: 2}, {min: 40, max: Infinity, score: 3}]);
         
-        if(document.getElementById('finalADDSScore')) document.getElementById('finalADDSScore').textContent = total;
-        
-        return { score: total };
+        if(document.getElementById('finalADDSScore')) document.getElementById('finalADDSScore').textContent = totalScore;
+        return { score: totalScore, metCall, metReason };
     }
 
     // --- UI & OUTPUT ---
@@ -139,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const footerCategory = document.getElementById('footer-category');
 
         footerCategory.textContent = `${category.text} (Score: ${score})`;
-        document.getElementById('sticky-footer').className = `fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-center z-40 ${category.class}`;
+        document.getElementById('sticky-footer').className = `fixed bottom-0 left-0 right-0 p-1 shadow-lg transition-colors duration-300 flex items-center justify-center z-40 ${category.class}`;
 
         const allFlags = flags.red.concat(flags.amber);
         const plan = generateActionPlan(categoryKey, allFlags);
@@ -164,14 +189,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let plan = '';
         switch (categoryKey) {
             case 'RED':
-                plan = 'CAT 1: Reviews twice daily (q12h) for up to 72 hours. Escalate to ICU Liaison/Medical Team immediately. ';
+                plan = 'Category 1: Reviews twice daily (q12h) for up to 72 hours. Escalate to ICU Liaison/Medical Team immediately. ';
                 if (flags.some(f => f.includes('Kidney') || f.includes('Creatinine'))) plan += 'Repeat Creatinine in 24h. ';
                 if (flags.some(f => f.includes('Lactate'))) plan += 'Repeat Lactate in 6h. ';
                 return plan;
             case 'AMBER':
-                return 'CAT 2: Reviews twice daily (q12h) for up to 24 hours, then daily if stable. Extend to 48h if needed.';
+                return 'Category 2: Reviews twice daily (q12h) for up to 24 hours, then daily if stable. Extend to 48h if needed.';
             case 'GREEN':
-                return 'CAT 3: Single review within 12 hours. No structured follow-up required if stable.';
+                return 'Category 3: Single review within 12 hours. No structured follow-up required if stable.';
         }
     }
 
@@ -244,10 +269,14 @@ ${plan}
         
         document.getElementById('generateHandoffBtn').addEventListener('click', () => {
             const handoffData = {};
-            const desktopFields = ['patient_initials', 'patient_urn_last4', 'ward', 'room_number', 'goc', 'reason_icu', 'pmh', 'lactate', 'creatinine', 'creatinine_baseline', 'platelets', 'albumin', 'bilirubin', 'crp', 'wbc', 'hb'];
+            const desktopFields = ['patient_initials', 'patient_urn_last4', 'ward', 'room_number', 'goc', 'reason_icu', 'pmh', 'lactate', 'lactate_trend', 'creatinine', 'creatinine_trend', 'creatinine_baseline', 'platelets', 'platelets_trend', 'albumin', 'albumin_trend', 'bilirubin', 'bilirubin_trend', 'crp', 'crp_trend', 'wbc', 'wbc_trend', 'hb', 'hb_trend'];
             desktopFields.forEach(id => { const el = document.getElementById(id); if(el) handoffData[id] = el.value; });
             const key = btoa(JSON.stringify(handoffData));
             navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard!'));
+        });
+
+        document.getElementById('resp_device').addEventListener('change', e => {
+            document.getElementById('o2_settings_container').classList.toggle('hidden', e.target.value === 'RA');
         });
     }
 
