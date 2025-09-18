@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateRiskAssessment();
 
-        // Manually trigger change events for dynamic fields after loading data
         document.getElementById('pain_score')?.dispatchEvent(new Event('input'));
         document.getElementById('bowels')?.dispatchEvent(new Event('change'));
     }
@@ -397,7 +396,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let stableLongStay = (p(data.icu_los) > 3 && flags.red.length === 0) ? " (Stable Long-Stay)" : "";
 
-        // --- START of DMR SUMMARY REFACTOR ---
         const summary = `
 ALERT RISK ASSESSMENT
 ---------------------
@@ -433,28 +431,20 @@ CLINICAL CONTEXT:
 - PMH: ${data.pmh || 'N/A'}
 - GOC: ${data.goc} ${data.goc_details ? `(${data.goc_details})` : ''}
 `.trim();
-        // --- END of DMR SUMMARY REFACTOR ---
 
         document.getElementById('emrSummary').value = summary;
     }
 
     // --- START of EVENT LISTENER CHANGES ---
     function setupEventListeners() {
-        ['startFullReviewBtn', 'startQuickScoreBtn', 'resumeReviewBtn', 'loadDataBtn'].forEach(id => {
-            document.getElementById(id).addEventListener('click', (e) => {
-                const isQuick = id === 'startQuickScoreBtn';
-                const isResume = id === 'resumeReviewBtn' || id === 'loadDataBtn';
-                if (isResume) {
-                    document.getElementById('pasteContainer').style.display = 'block';
-                    return;
-                }
-                clearForm();
-                document.getElementById('launchScreenModal').style.display = 'none';
-                document.getElementById('main-content').style.visibility = 'visible';
-                if(isQuick) {
-                    document.getElementById('desktop-entry-container').style.display = 'none';
-                }
-            });
+        document.getElementById('startFullReviewBtn').addEventListener('click', () => {
+            clearForm();
+            document.getElementById('launchScreenModal').style.display = 'none';
+            document.getElementById('main-content').style.visibility = 'visible';
+        });
+
+        document.getElementById('loadReviewBtn').addEventListener('click', () => {
+            document.getElementById('pasteContainer').style.display = 'block';
         });
         
         document.getElementById('loadPastedDataBtn').addEventListener('click', () => {
@@ -517,7 +507,6 @@ CLINICAL CONTEXT:
             });
         }
 
-        // New event listeners for dynamic fields
         document.getElementById('assessment-container').addEventListener('input', (e) => {
             if (e.target.id === 'pain_score') {
                 const painScore = p(e.target.value);
