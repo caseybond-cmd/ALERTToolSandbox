@@ -49,10 +49,13 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; margin-botto
     #sticky-footer {
         padding: 0.5rem 1rem;
         max-width: 500px;
-        margin: 0 auto 1rem;
         border-radius: 0.5rem;
-        left: 50%;
-        transform: translateX(-50%);
+        /* UPDATED STYLES FOR RIGHT ALIGNMENT */
+        left: auto;
+        right: 2rem; /* 32px from the right edge */
+        bottom: 1rem; /* 16px from the bottom */
+        transform: translateX(0);
+        margin: 0;
     }
 }
 /* Style for abnormal input fields */
