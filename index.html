@@ -50,8 +50,50 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                         <label>Review Type:<select id="review_type" class="input-field"><option value="post">Post-ICU stepdown review</option><option value="pre">Pre-ICU stepdown review</option></select></label>
                         <div class="grid grid-cols-2 gap-4">
-                           <label>Location:<input type="text" id="location" class="input-field"></label>
-                           <label>Room No.:<input type="text" id="room_number" class="input-field"></label>
+<label>Location (Ward):
+    <select id="location" class="input-field">
+        <option value="" disabled selected>Select a Ward</option>
+        <optgroup label="Towers">
+            <option value="3A">3A</option>
+            <option value="3B">3B</option>
+            <option value="3C">3C</option>
+            <option value="3D">3D</option>
+            <option value="4A">4A</option>
+            <option value="4B">4B</option>
+            <option value="4C">4C</option>
+            <option value="4D">4D</option>
+            <option value="5A">5A</option>
+            <option value="5B">5B</option>
+            <option value="5C">5C</option>
+            <option value="5D">5D</option>
+            <option value="6A">6A</option>
+            <option value="6B">6B</option>
+            <option value="6C">6C</option>
+            <option value="6D">6D</option>
+            <option value="7A">7A</option>
+            <option value="7B">7B</option>
+            <option value="7C">7C</option>
+            <option value="7D">7D</option>
+            <option value="CCU">CCU</option>
+        </optgroup>
+        <optgroup label="Medihotel">
+            <option value="Medihotel 5">Medihotel 5</option>
+            <option value="Medihotel 6">Medihotel 6</option>
+            <option value="Medihotel 7">Medihotel 7</option>
+            <option value="Medihotel 8">Medihotel 8</option>
+        </optgroup>
+        <optgroup label="SRS">
+            <option value="SRS 1A">SRS 1A</option>
+            <option value="SRS 2A">SRS 2A</option>
+            <option value="SRS A">SRS A</option>
+            <option value="SRS B">SRS B</option>
+        </optgroup>
+        <optgroup label="Mental Health">
+            <option value="Mental Health Adult">Mental Health Adult</option>
+            <option value="Mental Health Youth">Mental Health Youth</option>
+        </optgroup>
+    </select>
+</label>                           <label>Room No.:<input type="text" id="room_number" class="input-field"></label>
                         </div>
                         <label>Patient ID (Initials + URN):<input type="text" id="patient_id" class="input-field"></label>
                         <label>Stepdown Date:<input type="date" id="stepdown_date" class="input-field"></label>
