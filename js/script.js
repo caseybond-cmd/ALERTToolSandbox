@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- STATE & CONFIG ---
     let currentReview = {};
     const form = document.getElementById('assessmentForm');
+    const p = (val) => parseFloat(val); // MOVED HERE - Now a global helper function
 
     const CATEGORIES = {
         RED: { text: 'CAT 1: RED', class: 'category-red' },
@@ -69,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let score = 0;
         const flags = { red: [], green: [] };
-        const p = (val) => parseFloat(val);
+        // const p = (val) => parseFloat(val); // REMOVED FROM HERE
 
         // Desktop Data Scoring
         if (p(data.icu_los) > 3) score += 1;
@@ -142,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateADDS(data) {
         let score = 0, metCall = false, metReason = '';
-        const p = (val) => parseFloat(val);
         const getScore = (val, ranges) => {
             for (const r of ranges) {
                 if ((r.min === -Infinity || val >= r.min) && (r.max === Infinity || val <= r.max)) {
@@ -335,7 +335,6 @@ CLINICAL CONTEXT:
             navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard!'));
         });
 
-        // ROBUST LISTENER ATTACHMENT -- START of FIX
         const o2DeviceEl = document.getElementById('o2_device');
         if (o2DeviceEl) {
             o2DeviceEl.addEventListener('change', e => {
@@ -363,7 +362,6 @@ CLINICAL CONTEXT:
                 }
             });
         }
-        // ROBUST LISTENER ATTACHMENT -- END of FIX
     }
 
     // --- DYNAMIC CONTENT ---
