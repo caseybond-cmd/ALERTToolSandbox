@@ -52,6 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('desktop-entry-container').style.display = 'none';
         }
         updateRiskAssessment();
+
+        // Manually trigger change events for dynamic fields after loading data
+        document.getElementById('pain_score')?.dispatchEvent(new Event('input'));
+        document.getElementById('bowels')?.dispatchEvent(new Event('change'));
     }
 
     function clearForm() {
@@ -64,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- CORE LOGIC: RISK ASSESSMENT ENGINE ---
-    // --- START of CHANGES ---
     function updateRiskAssessment() {
         const data = gatherFormData();
         if (Object.keys(data).length === 0) return;
@@ -118,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (!b.isLow && !b.thresholdHigh && b.val > b.threshold) triggered = true;
             }
             
-            b.isTriggered = triggered; // Store trigger state for highlighting
+            b.isTriggered = triggered; 
 
             if (triggered) {
                 score += b.score;
@@ -127,7 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (b.trend === 'worsening') flags.red.push(`Worsening ${b.name} trend`);
         });
         
-        // Real-time highlighting of abnormal blood fields
         bloods.forEach(b => {
             const el = document.getElementById(b.id);
             if (el) {
@@ -135,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // Glucose Control Check
         if (data.glucose_control) {
             score += 1;
             flags.red.push('Poorly controlled glucose');
@@ -158,6 +159,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (deliriumScore > 0) {
             score += deliriumScore;
             flags.red.push('Delirium Present');
+        }
+
+        // Bowels, Diet, Fluid Balance & Mobility Scoring
+        if (data.bowels === 'Diarrhoea/Loose' || data.bowels === 'Constipated/Absent') {
+            score += 1;
+            flags.red.push(`Bowel Issue: ${data.bowels}`);
+        }
+        if (['Nausea/Vomiting', 'NBM'].includes(data.diet)) {
+            score += 2;
+            flags.red.push(`Poor Diet Tolerance: ${data.diet}`);
+        }
+        const urineOutput = p(data.urine_output);
+        if (!isNaN(urineOutput) && urineOutput < 500) {
+            score += 2;
+            flags.red.push(`Oliguria: UO < 500mL/24h`);
+        }
+        const fluidBalance = p(data.fluid_balance);
+        if (!isNaN(fluidBalance) && fluidBalance > 1000) {
+            score += 1;
+            flags.red.push(`Fluid Overload: Balance > +1000mL`);
+        }
+        if (data.mobility === 'Requires Physical Assistance') {
+            score += 1;
+            flags.red.push('Mobility: Requires Assistance');
+        } else if (data.mobility === 'Bedbound/Immobile') {
+            score += 2;
+            flags.red.push('Mobility: Bedbound/Immobile');
+        }
+        
+        // Pain Score
+        const painScore = p(data.pain_score);
+        if (!isNaN(painScore)) {
+            if (painScore >= 7) {
+                score += 2;
+                flags.red.push(`Severe Pain (Score: ${painScore}/10)`);
+            } else if (painScore >= 4) {
+                score += 1;
+                flags.red.push(`Moderate Pain (Score: ${painScore}/10)`);
+            }
         }
 
         // Context & Frailty Scoring
@@ -194,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState();
         generateDMRSummary(); 
     }
-    // --- END of CHANGES ---
 
     function calculateADDS(data) {
         let score = 0, metCall = false, metReason = '';
@@ -345,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'GREEN': return 'Cat 3: Single check within 24hrs, then routine ward care.';
         }
     }
-
+    
     function generateDMRSummary() {
         const data = gatherFormData();
         const score = document.getElementById('footer-score').textContent;
@@ -358,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let stableLongStay = (p(data.icu_los) > 3 && flags.red.length === 0) ? " (Stable Long-Stay)" : "";
 
+        // --- START of DMR SUMMARY REFACTOR ---
         const summary = `
 ALERT RISK ASSESSMENT
 ---------------------
@@ -372,11 +412,12 @@ PROTECTIVE FLAGS:
 ${flags.green.length ? flags.green.map(f => `- ${f}`).join('\n') : '- None'}
 ---------------------
 A-E ASSESSMENT (ADDS: ${calculateADDS(data).score}):
-A: ${data.airway}
-B: RR ${data.rr}, SpO2 ${data.spo2} on ${data.o2_device} (Flow: ${data.o2_flow}, FiO2: ${data.fio2}, PEEP: ${data.peep}, PS: ${data.ps})
-C: HR ${data.hr}, BP ${data.sbp}/${data.dbp}
-D: Conscious: ${data.consciousness}, Delirium: ${data.delirium === '0' ? 'None' : 'Present'}
-E: Temp ${data.temp}
+A: Airway: ${data.airway}
+B: Breathing: RR ${data.rr}, SpO2 ${data.spo2} on ${data.o2_device} (Flow: ${data.o2_flow}, FiO2: ${data.fio2}, PEEP: ${data.peep}, PS: ${data.ps})
+C: Circulation: HR ${data.hr}, BP ${data.sbp}/${data.dbp}, Fluid Bal (24h): ${data.fluid_balance || 'N/A'} mL
+D: Disability: Conscious: ${data.consciousness}, Delirium: ${data.delirium === '0' ? 'None' : 'Present'}, Pain: ${data.pain_score || 'N/A'}/10
+   - Analgesia: ${data.analgesia_regimen || 'N/A'} ${data.aps_referral ? '| APS REFERRAL' : ''}
+E: Exposure/Everything Else: Temp ${data.temp}°C, UO (24h): ${data.urine_output || 'N/A'} mL, Diet: ${data.diet}, Bowels: ${data.bowels} ${data.bowels === 'Constipated/Absent' ? `(Aperients: ${data.aperients_charted || 'N/A'})` : ''}, Mobility: ${data.mobility}
 ---------------------
 KEY DATA:
 - Age: ${data.age}, Admission: ${document.getElementById('admission_type').options[document.getElementById('admission_type').selectedIndex].text}
@@ -392,23 +433,21 @@ CLINICAL CONTEXT:
 - PMH: ${data.pmh || 'N/A'}
 - GOC: ${data.goc} ${data.goc_details ? `(${data.goc_details})` : ''}
 `.trim();
+        // --- END of DMR SUMMARY REFACTOR ---
 
         document.getElementById('emrSummary').value = summary;
     }
 
-    // --- EVENT LISTENERS ---
-    // --- START of CHANGES ---
+    // --- START of EVENT LISTENER CHANGES ---
     function setupEventListeners() {
         ['startFullReviewBtn', 'startQuickScoreBtn', 'resumeReviewBtn', 'loadDataBtn'].forEach(id => {
             document.getElementById(id).addEventListener('click', (e) => {
                 const isQuick = id === 'startQuickScoreBtn';
                 const isResume = id === 'resumeReviewBtn' || id === 'loadDataBtn';
-
                 if (isResume) {
                     document.getElementById('pasteContainer').style.display = 'block';
                     return;
                 }
-                
                 clearForm();
                 document.getElementById('launchScreenModal').style.display = 'none';
                 document.getElementById('main-content').style.visibility = 'visible';
@@ -443,7 +482,7 @@ CLINICAL CONTEXT:
         document.getElementById('copySummaryButton').addEventListener('click', () => {
             const summaryEl = document.getElementById('emrSummary');
             summaryEl.select();
-            summaryEl.setSelectionRange(0, 99999); // For mobile
+            summaryEl.setSelectionRange(0, 99999);
             document.execCommand('copy');
             alert('DMR Summary Copied to Clipboard!');
         });
@@ -477,11 +516,28 @@ CLINICAL CONTEXT:
                 document.getElementById('goc_details_container').classList.toggle('hidden', !showDetails);
             });
         }
+
+        // New event listeners for dynamic fields
+        document.getElementById('assessment-container').addEventListener('input', (e) => {
+            if (e.target.id === 'pain_score') {
+                const painScore = p(e.target.value);
+                const showInterventions = !isNaN(painScore) && painScore > 0;
+                const showApsReferral = !isNaN(painScore) && painScore >= 7;
+                document.getElementById('pain_interventions_container').classList.toggle('hidden', !showInterventions);
+                document.getElementById('aps_referral_container').classList.toggle('hidden', !showApsReferral);
+            }
+        });
+
+        document.getElementById('assessment-container').addEventListener('change', (e) => {
+            if (e.target.id === 'bowels') {
+                const showAperients = e.target.value === 'Constipated/Absent';
+                document.getElementById('aperients_container').classList.toggle('hidden', !showAperients);
+            }
+        });
     }
-    // --- END of CHANGES ---
+    // --- END of EVENT LISTENER CHANGES ---
 
     // --- DYNAMIC CONTENT ---
-    // --- START of CHANGES ---
     function populateStaticContent() {
         const createBloodInput = (label, id, trend=true) => {
             let glucoseControlHtml = '';
@@ -505,9 +561,13 @@ CLINICAL CONTEXT:
 
         document.getElementById('bloods-container').innerHTML = `<h2 class="form-section-title">Scorable Blood Panel</h2><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">${createBloodInput('Creatinine (µmol/L)', 'creatinine')}${createBloodInput('Lactate (mmol/L)', 'lactate')}${createBloodInput('Bilirubin (µmol/L)', 'bilirubin')}${createBloodInput('Platelets (x10⁹/L)', 'platelets')}${createBloodInput('Hb (g/L)', 'hb')}${createBloodInput('Glucose (mmol/L)', 'glucose')}${createBloodInput('K+ (mmol/L)', 'k')}${createBloodInput('Mg++ (mmol/L)', 'mg')}${createBloodInput('Albumin (g/L)', 'albumin')}${createBloodInput('CRP (mg/L)', 'crp')}</div>`;
        
+        // --- START of ASSESSMENT CONTAINER REFACTOR ---
         document.getElementById('assessment-container').innerHTML = `<h2 class="form-section-title">A-E Assessment (ADDS)</h2>
             <div class="space-y-6">
-                <div><h3 class="assessment-section-title">A: Airway</h3><select id="airway" class="input-field"><option value="Clear">Clear and maintained</option><option value="At Risk">Airway at risk / requires adjunct</option></select></div>
+                <div>
+                    <h3 class="assessment-section-title">A: Airway</h3>
+                    <select id="airway" class="input-field"><option value="Clear">Clear and maintained</option><option value="At Risk">Airway at risk / requires adjunct</option></select>
+                </div>
                 <div>
                     <h3 class="assessment-section-title">B: Breathing</h3>
                     <div class="assessment-grid">
@@ -519,15 +579,51 @@ CLINICAL CONTEXT:
                         <div id="peep_ps_container" class="hidden grid grid-cols-2 gap-2"><label>PEEP:<input type="number" id="peep" class="input-field"></label><label>PS:<input type="number" id="ps" class="input-field"></label></div>
                     </div>
                 </div>
-                <div><h3 class="assessment-section-title">C: Circulation</h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr" class="input-field"></label><label>Systolic BP:<input type="number" id="sbp" class="input-field"></label><label>Diastolic BP:<input type="number" id="dbp" class="input-field"></label></div></div>
-                <div><h3 class="assessment-section-title">D: Disability</h3><div class="assessment-grid"><label>Consciousness:<select id="consciousness" class="input-field"><option value="Alert">Alert</option><option value="Voice">Voice</option><option value="Pain">Pain</option><option value="Unresponsive">Unresponsive</option></select></label><label>Delirium:<select id="delirium" class="input-field"><option value="0">None</option><option value="1">Mild</option><option value="2">Mod-Severe</option></select></label></div></div>
-                <div><h3 class="assessment-section-title">E: Exposure</h3><label>Temperature (°C):<input type="number" step="0.1" id="temp" class="input-field"></label></div>
+                <div>
+                    <h3 class="assessment-section-title">C: Circulation</h3>
+                    <div class="assessment-grid">
+                        <label>Heart Rate:<input type="number" id="hr" class="input-field"></label>
+                        <label>Systolic BP:<input type="number" id="sbp" class="input-field"></label>
+                        <label>Diastolic BP:<input type="number" id="dbp" class="input-field"></label>
+                        <label>Fluid Balance (24h, mL):<input type="number" id="fluid_balance" class="input-field" placeholder="e.g., -500 or 1200"></label>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="assessment-section-title">D: Disability</h3>
+                    <div class="assessment-grid">
+                        <label>Consciousness:<select id="consciousness" class="input-field"><option value="Alert">Alert</option><option value="Voice">Voice</option><option value="Pain">Pain</option><option value="Unresponsive">Unresponsive</option></select></label>
+                        <label>Delirium:<select id="delirium" class="input-field"><option value="0">None</option><option value="1">Mild</option><option value="2">Mod-Severe</option></select></label>
+                        <label>Pain Score (0-10):<input type="number" id="pain_score" class="input-field" min="0" max="10"></label>
+                    </div>
+                    <div id="pain_interventions_container" class="hidden mt-4 space-y-2">
+                        <label>Analgesia Regimen:<textarea id="analgesia_regimen" rows="2" class="input-field"></textarea></label>
+                        <div id="aps_referral_container" class="hidden">
+                            <label class="flex items-center"><input type="checkbox" id="aps_referral" class="input-checkbox">APS Referral</label>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="assessment-section-title">E: Exposure & Everything Else</h3>
+                    <div class="assessment-grid">
+                        <label>Temperature (°C):<input type="number" step="0.1" id="temp" class="input-field"></label>
+                        <label>Urine Output (last 24h, mL):<input type="number" id="urine_output" class="input-field" placeholder="e.g., 800"></label>
+                        <label>Diet:<select id="diet" class="input-field"><option value="Tolerating Full Diet">Tolerating Full Diet</option><option value="Tolerating Light Diet">Tolerating Light Diet</option><option value="Nausea/Vomiting">Nausea / Vomiting</option><option value="NBM">NBM (Nil By Mouth)</option></select></label>
+                        <div>
+                            <label>Bowels:<select id="bowels" class="input-field"><option value="Normal/Active">Normal / Active</option><option value="Diarrhoea/Loose">Diarrhoea / Loose</option><option value="Constipated/Absent">Constipated / Absent</option></select></label>
+                            <div id="aperients_container" class="hidden mt-2">
+                                <label>Aperients Charted:<textarea id="aperients_charted" rows="2" class="input-field"></textarea></label>
+                            </div>
+                        </div>
+                        <label>Mobility:<select id="mobility" class="input-field"><option value="Independent">Independent</option><option value="Supervision/Standby Assist">Supervision / Standby Assist</option><option value="Requires Physical Assistance">Requires Physical Assistance</option><option value="Bedbound/Immobile">Bedbound / Immobile</option></select></label>
+                    </div>
+                </div>
             </div>
             <div class="mt-6 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center relative">
                  <div id="met-alert-container" class="met-alert absolute top-2 right-2"></div>
                 <span class="text-sm font-medium text-gray-500">ADDS SCORE</span>
                 <div id="finalADDSScore" class="font-bold text-5xl my-2">0</div>
             </div>`;
+        // --- END of ASSESSMENT CONTAINER REFACTOR ---
             
         document.getElementById('scoringContainer').innerHTML = `<h2 class="form-section-title">Context, Devices & Frailty</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -538,7 +634,6 @@ CLINICAL CONTEXT:
                 <div class="sm:col-span-2"><label class="flex items-center"><input type="checkbox" id="manual_override" class="input-checkbox"> Manual Override / Clinical Concern</label><textarea id="override_reason" class="input-field mt-2" placeholder="Reason for override..."></textarea></div>
             </div>`;
     }
-    // --- END of CHANGES ---
         
     initializeApp();
 });
