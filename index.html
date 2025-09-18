@@ -17,6 +17,7 @@
             <p class="text-gray-600">A lean, evidence-based risk engine.</p>
             <div class="flex flex-col gap-4 pt-4">
                 <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review</button>
+                <button id="startQuickScoreBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg">⚡ Start Quick Score Only</button>
                 <button id="loadReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Load Review from Key</button>
             </div>
             <div id="pasteContainer" class="hidden mt-4">
@@ -54,10 +55,12 @@
                         </div>
                         <label>Patient ID (Initials + URN):<input type="text" id="patient_id" class="input-field"></label>
                         <label>Stepdown Date:<input type="date" id="stepdown_date" class="input-field"></label>
+                        <label>Weight (kg):<input type="number" id="weight" class="input-field" placeholder="e.g., 75"></label>
                         <label>Age:<input type="number" id="age" class="input-field" placeholder="Years"></label>
                         <label>Admission Type:<select id="admission_type" class="input-field"><option value="0">Elective Surgical</option><option value="1">Emergency Surgical</option><option value="2">Medical/ED</option></select></label>
                         <label>ICU LOS (days):<input type="number" id="icu_los" class="input-field" placeholder="Days"></label>
                         <label class="flex items-center pt-6"><input type="checkbox" id="after_hours" class="input-checkbox"> After-Hours Discharge (+1)</label>
+                  
                     </div>
                 </div>
 
