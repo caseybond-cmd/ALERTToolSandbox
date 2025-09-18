@@ -11,17 +11,13 @@
 <body class="p-4 sm:p-6 md:p-8 pb-32">
 
     <!-- Launch Screen -->
-    <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex flex-col items-center justify-center p-4 z-50 no-print">
+   <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex flex-col items-center justify-center p-4 z-50 no-print">
         <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 text-center max-w-lg w-full space-y-4">
-            <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ICU Readmission Prevention Tool</h2>
+            <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ALERT Nursing Risk Assessment Tool</h2>
             <p class="text-gray-600">A lean, evidence-based risk engine.</p>
             <div class="flex flex-col gap-4 pt-4">
                 <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review</button>
-                <button id="startQuickScoreBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg">⚡ Start Quick Score Only</button>
-                <div>
-                    <button id="resumeReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Continue from Desktop <span class="block text-xs font-normal">(Paste handoff key)</span></button>
-                </div>
-                 <button id="loadDataBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">💾 Load Data from Key</button>
+                <button id="loadReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Load Review from Key</button>
             </div>
             <div id="pasteContainer" class="hidden mt-4">
                 <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your data key here..."></textarea>
