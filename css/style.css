@@ -55,3 +55,9 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; margin-botto
         transform: translateX(-50%);
     }
 }
+/* Style for abnormal input fields */
+.input-abnormal {
+    border-color: #DC2626; /* Red-600 */
+    background-color: #FEF2F2; /* Red-50 */
+    border-width: 2px;
+}
