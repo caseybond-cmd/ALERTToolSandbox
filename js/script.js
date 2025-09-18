@@ -106,12 +106,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (b.trend === 'worsening') flags.red.push(`Worsening ${b.name} trend`);
         });
 
+        // --- START of CHANGES ---
         // A-E Assessment Scoring
         const addsResult = calculateADDS(data);
         score += addsResult.score;
         if (addsResult.metCall) flags.red.push(`MET Call: ${addsResult.metReason}`);
-        if(data.airway === 'At Risk') score += 2;
-        score += p(data.delirium) || 0;
+        if (addsResult.reasons.length > 0) {
+            flags.red.push(...addsResult.reasons);
+        }
+        
+        if(data.airway === 'At Risk') {
+            score += 2;
+            flags.red.push('Airway at Risk');
+        }
+        
+        const deliriumScore = p(data.delirium) || 0;
+        if (deliriumScore > 0) {
+            score += deliriumScore;
+            flags.red.push('Delirium Present');
+        }
+        // --- END of CHANGES ---
 
         // Context & Frailty Scoring
         if(data.complex_device) score += 2;
@@ -141,42 +155,61 @@ document.addEventListener('DOMContentLoaded', () => {
         generateDMRSummary(); 
     }
 
+    // --- START of CHANGES ---
+    // Function is upgraded to return a 'reasons' array along with the score
     function calculateADDS(data) {
         let score = 0, metCall = false, metReason = '';
-        const getScore = (val, ranges) => {
+        let reasons = [];
+
+        const getScore = (val, ranges, paramName) => {
             for (const r of ranges) {
                 if ((r.min === -Infinity || val >= r.min) && (r.max === Infinity || val <= r.max)) {
                     if (r.score === 'E') return { metCall: true, metReason: r.note.replace('=>', `(${val}) =>`) };
+                    if (r.score > 0) {
+                        reasons.push(`${paramName} abnormal (${val})`);
+                    }
                     return { score: r.score };
                 }
             }
             return { score: 0 };
         };
 
-        const checkParam = (value, ranges) => {
+        const checkParam = (value, ranges, paramName) => {
             if (isNaN(value) || metCall) return;
-            const result = getScore(value, ranges);
+            const result = getScore(value, ranges, paramName);
             if(result.metCall) { metCall = true; metReason = result.metReason; } 
             else { score += result.score; }
         };
         
-        checkParam(p(data.rr), [{min: -Infinity, max: 4, score: 'E', note: '<=4 => MET'}, {min: 5, max: 8, score: 3}, {min: 9, max: 10, score: 2}, {min: 11, max: 20, score: 0}, {min: 21, max: 24, score: 1}, {min: 25, max: 30, score: 2}, {min: 31, max: 35, score: 3}, {min: 36, max: Infinity, score: 'E', note: '>=36 => MET'}]);
-        checkParam(p(data.spo2), [{min: -Infinity, max: 84, score: 'E', note: '<=84 => MET'}, {min: 85, max: 88, score: 3}, {min: 89, max: 90, score: 2}, {min: 91, max: 93, score: 1}, {min: 94, max: Infinity, score: 0}]);
-        checkParam(p(data.hr), [{min: -Infinity, max: 30, score: 'E', note: '<=30 => MET'}, {min: 31, max: 40, score: 3}, {min: 41, max: 50, score: 2}, {min: 51, max: 99, score: 0}, {min: 100, max: 109, score: 1}, {min: 110, max: 120, score: 2}, {min: 121, max: 129, score: 1}, {min: 130, max: 139, score: 3}, {min: 140, max: Infinity, score: 'E', note: '>=140 => MET'}]);
-        checkParam(p(data.sbp), [{min: -Infinity, max: 40, score: 'E', note: 'extreme low -> MET'}, {min: 41, max: 50, score: 3}, {min: 51, max: 60, score: 2}, {min: 61, max: 70, score: 1}, {min: 71, max: 80, score: 0}, {min: 81, max: 90, score: 3}, {min: 91, max: 100, score: 2}, {min: 101, max: 110, score: 1}, {min: 111, max: 139, score: 0}, {min: 140, max: 180, score: 1}, {min: 181, max: 200, score: 2}, {min: 201, max: 220, score: 3}, {min: 221, max: Infinity, score: 'E', note: '>=221 => MET'}]);
-        checkParam(p(data.temp), [{min: -Infinity, max: 35, score: 3}, {min: 35.1, max: 36.0, score: 1}, {min: 36.1, max: 37.5, score: 0}, {min: 37.6, max: 38.0, score: 1}, {min: 38.1, max: 39.0, score: 2}, {min: 39.1, max: Infinity, score: 'E', note: '>=39.1 => MET'}]);
+        checkParam(p(data.rr), [{min: -Infinity, max: 4, score: 'E', note: '<=4 => MET'}, {min: 5, max: 8, score: 3}, {min: 9, max: 10, score: 2}, {min: 11, max: 20, score: 0}, {min: 21, max: 24, score: 1}, {min: 25, max: 30, score: 2}, {min: 31, max: 35, score: 3}, {min: 36, max: Infinity, score: 'E', note: '>=36 => MET'}], 'Resp Rate');
+        checkParam(p(data.spo2), [{min: -Infinity, max: 84, score: 'E', note: '<=84 => MET'}, {min: 85, max: 88, score: 3}, {min: 89, max: 90, score: 2}, {min: 91, max: 93, score: 1}, {min: 94, max: Infinity, score: 0}], 'SpO2');
+        checkParam(p(data.hr), [{min: -Infinity, max: 30, score: 'E', note: '<=30 => MET'}, {min: 31, max: 40, score: 3}, {min: 41, max: 50, score: 2}, {min: 51, max: 99, score: 0}, {min: 100, max: 109, score: 1}, {min: 110, max: 120, score: 2}, {min: 121, max: 129, score: 1}, {min: 130, max: 139, score: 3}, {min: 140, max: Infinity, score: 'E', note: '>=140 => MET'}], 'Heart Rate');
+        checkParam(p(data.sbp), [{min: -Infinity, max: 40, score: 'E', note: 'extreme low -> MET'}, {min: 41, max: 50, score: 3}, {min: 51, max: 60, score: 2}, {min: 61, max: 70, score: 1}, {min: 71, max: 80, score: 0}, {min: 81, max: 90, score: 3}, {min: 91, max: 100, score: 2}, {min: 101, max: 110, score: 1}, {min: 111, max: 139, score: 0}, {min: 140, max: 180, score: 1}, {min: 181, max: 200, score: 2}, {min: 201, max: 220, score: 3}, {min: 221, max: Infinity, score: 'E', note: '>=221 => MET'}], 'Systolic BP');
+        checkParam(p(data.temp), [{min: -Infinity, max: 35, score: 3}, {min: 35.1, max: 36.0, score: 1}, {min: 36.1, max: 37.5, score: 0}, {min: 37.6, max: 38.0, score: 1}, {min: 38.1, max: 39.0, score: 2}, {min: 39.1, max: Infinity, score: 'E', note: '>=39.1 => MET'}], 'Temperature');
 
-        if (data.consciousness === 'Unresponsive') { metCall = true; metReason = 'Unresponsive'; }
-        else if (data.consciousness === 'Pain') score += 2;
-        else if (data.consciousness === 'Voice') score += 1;
+        if (data.consciousness === 'Unresponsive') { 
+            metCall = true; 
+            metReason = 'Unresponsive'; 
+        } else if (data.consciousness === 'Pain') {
+            score += 2;
+            reasons.push('Responds to Pain');
+        } else if (data.consciousness === 'Voice') {
+            score += 1;
+            reasons.push('Responds to Voice');
+        }
         
-        if (data.o2_device === 'HFNP') score += 1;
-        checkParam(p(data.o2_flow), [{min: 0, max: 5, score: 0}, {min: 6, max: 7, score: 1}, {min: 8, max: 9, score: 2}, {min: 10, max: Infinity, score: 3}]);
-        checkParam(p(data.fio2), [{min: 28, max: 39, score: 2}, {min: 40, max: Infinity, score: 3}]); // Adjusted FiO2
+        if (data.o2_device === 'HFNP') {
+            score += 1;
+            reasons.push('Using High-Flow O₂');
+        }
+        
+        checkParam(p(data.o2_flow), [{min: 0, max: 5, score: 0}, {min: 6, max: 7, score: 1}, {min: 8, max: 9, score: 2}, {min: 10, max: Infinity, score: 3}], 'O₂ Flow');
+        checkParam(p(data.fio2), [{min: 28, max: 39, score: 2}, {min: 40, max: Infinity, score: 3}], 'FiO2');
         
         if(document.getElementById('finalADDSScore')) document.getElementById('finalADDSScore').textContent = score;
-        return { score, metCall, metReason };
+        return { score, metCall, metReason, reasons };
     }
+    // --- END of CHANGES ---
     
     function displayResults(categoryKey, flags, score, data) {
         const category = CATEGORIES[categoryKey];
@@ -187,8 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const footerGreenFlags = document.getElementById('footer-flags-green');
         const stickyFooter = document.getElementById('sticky-footer');
 
-        // --- START of NEW CODE ---
-        // Logic to detect all critical combinations
         const combinationAlerts = [];
         const isSurgical = ['0', '1'].includes(data.admission_type);
         const isNotAlert = ['Voice', 'Pain', 'Unresponsive'].includes(data.consciousness);
@@ -236,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <ul class="list-disc list-inside text-sm text-gray-700">${combinationAlerts.map(alert => `<li>${alert}</li>`).join('')}</ul>
             </div>
         ` : '';
-        // --- END of NEW CODE ---
 
         footerCategory.textContent = category.text;
         footerScore.textContent = score;
