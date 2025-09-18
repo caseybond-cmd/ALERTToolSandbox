@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- STATE & CONFIG ---
     let currentReview = {};
     const form = document.getElementById('assessmentForm');
-    const p = (val) => parseFloat(val); // MOVED HERE - Now a global helper function
+    const p = (val) => parseFloat(val); // Global helper function
 
     const CATEGORIES = {
         RED: { text: 'CAT 1: RED', class: 'category-red' },
@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let score = 0;
         const flags = { red: [], green: [] };
-        // const p = (val) => parseFloat(val); // REMOVED FROM HERE
 
         // Desktop Data Scoring
         if (p(data.icu_los) > 3) score += 1;
@@ -136,7 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
              flags.green.push('Stable Long-Stay');
         }
 
-        displayResults(categoryKey, flags, score);
+        displayResults(categoryKey, flags, score, data);
+        
         saveState();
         generateDMRSummary(); 
     }
@@ -177,8 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if(document.getElementById('finalADDSScore')) document.getElementById('finalADDSScore').textContent = score;
         return { score, metCall, metReason };
     }
-
-    function displayResults(categoryKey, flags, score) {
+    
+    function displayResults(categoryKey, flags, score, data) {
         const category = CATEGORIES[categoryKey];
         const summaryContainer = document.getElementById('summary-container');
         const footerCategory = document.getElementById('footer-category');
@@ -186,6 +186,57 @@ document.addEventListener('DOMContentLoaded', () => {
         const footerRedFlags = document.getElementById('footer-flags-red');
         const footerGreenFlags = document.getElementById('footer-flags-green');
         const stickyFooter = document.getElementById('sticky-footer');
+
+        // --- START of NEW CODE ---
+        // Logic to detect all critical combinations
+        const combinationAlerts = [];
+        const isSurgical = ['0', '1'].includes(data.admission_type);
+        const isNotAlert = ['Voice', 'Pain', 'Unresponsive'].includes(data.consciousness);
+
+        if (p(data.lactate) > 1.5 && p(data.sbp) < 90) {
+            combinationAlerts.push('<b>Shock Profile:</b> High Lactate with low Blood Pressure is a critical sign of shock.');
+        }
+        if (p(data.creatinine) > 171 && p(data.rr) > 25) {
+            combinationAlerts.push('<b>Cardio-Renal Profile:</b> High Creatinine with a high Respiratory Rate may indicate fluid overload.');
+        }
+        if (p(data.crp) > 100 && p(data.creatinine) > 171) {
+            combinationAlerts.push('<b>Inflammation & Kidney Injury:</b> High CRP with high Creatinine suggests systemic inflammation is impacting kidney function.');
+        }
+        if (p(data.albumin) < 30 && p(data.temp) > 38.0) {
+            combinationAlerts.push('<b>Malnutrition & Infection:</b> Low Albumin with a fever may indicate a poor response to infection.');
+        }
+        if (p(data.hb) < 8 && p(data.hr) > 110) {
+            combinationAlerts.push('<b>Anemia & Tachycardia:</b> Low Haemoglobin with a high Heart Rate suggests cardiovascular strain.');
+        }
+        if (p(data.icu_los) > 3 && p(data.delirium) > 0) {
+            combinationAlerts.push('<b>Deconditioning & Delirium:</b> A long ICU stay combined with new confusion is a strong predictor of poor outcomes.');
+        }
+        if (p(data.spo2) < 91 && isNotAlert) {
+            combinationAlerts.push('<b>Hypoxia & Neurological Impairment:</b> Low oxygen saturation with an altered level of consciousness is a medical emergency.');
+        }
+        if (p(data.bilirubin) > 20 && p(data.creatinine) > 171) {
+            combinationAlerts.push('<b>Multi-Organ Dysfunction:</b> Concurrent high Bilirubin (liver) and Creatinine (kidney) indicates a severe systemic illness.');
+        }
+        if (p(data.platelets) < 100 && isSurgical) {
+            combinationAlerts.push('<b>Post-Operative Bleeding Risk:</b> Low Platelets in a surgical patient is a major risk factor for bleeding.');
+        }
+        if (p(data.glucose) > 180 && p(data.crp) > 100) {
+             combinationAlerts.push('<b>Inflammatory Hyperglycemia:</b> High blood sugar during a major inflammatory response is associated with poor outcomes.');
+        }
+        if (p(data.fio2) > 40 && p(data.rr) > 25) {
+            combinationAlerts.push('<b>Escalating Respiratory Failure:</b> High oxygen requirement with a high respiratory rate suggests therapy is not effective.');
+        }
+        if (p(data.age) > 65 && p(data.frailty_score) >= 5 && isSurgical) {
+            combinationAlerts.push('<b>Vulnerable Surgical Patient:</b> The combination of older age, frailty, and recent surgery presents an extremely high risk for complications.');
+        }
+
+        const alertsHtml = combinationAlerts.length > 0 ? `
+            <div class="summary-plan mt-4 border-l-4 border-red-500">
+                <h4>🚨 Critical Combination Alerts:</h4>
+                <ul class="list-disc list-inside text-sm text-gray-700">${combinationAlerts.map(alert => `<li>${alert}</li>`).join('')}</ul>
+            </div>
+        ` : '';
+        // --- END of NEW CODE ---
 
         footerCategory.textContent = category.text;
         footerScore.textContent = score;
@@ -198,7 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         summaryContainer.innerHTML = `
             <div class="summary-category ${category.class}">${category.text} (Score: ${score})</div>
-            <div class="summary-flags-container">
+            ${alertsHtml}
+            <div class="summary-flags-container mt-4">
                 <div>
                     <h4 class="flag-list-red">Red Flags (${flags.red.length}):</h4>
                     <ul class="list-disc list-inside text-sm text-gray-700">${flags.red.length ? flags.red.map(f => `<li>${f}</li>`).join('') : '<li>None</li>'}</ul>
@@ -208,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <ul class="list-disc list-inside text-sm text-gray-700">${flags.green.length ? flags.green.map(f => `<li>${f}</li>`).join('') : '<li>None</li>'}</ul>
                 </div>
             </div>
-            <div class="summary-plan">
+            <div class="summary-plan mt-4">
                 <h4>Recommended Action Plan:</h4>
                 <p class="text-sm">${plan}</p>
             </div>`;
