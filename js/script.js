@@ -1,310 +1,555 @@
 // --- SCRIPT START ---
 document.addEventListener('DOMContentLoaded', () => {
-    // --- STATE MANAGEMENT ---
+    // --- STATE & CONFIG ---
     let currentReview = {};
-    let deviceCounters = {};
-
-    const RISK_CATEGORIES = {
-        extremely_high: { score: 10, text: 'Extremely High Risk: Urgent medical review & consider re-transfer to higher care.', class: 'category-extremely-high' },
-        high: { score: 6, text: 'High Risk: Formal medical review required.', class: 'category-high' },
-        medium: { score: 3, text: 'Medium Risk: Enhanced nurse-led care.', class: 'category-medium' },
-        low: { score: 0, text: 'Low Risk: Single check next shift.', class: 'category-low' }
-    };
-    
     const form = document.getElementById('assessmentForm');
+    const p = (val) => parseFloat(val); // Global helper function
+
+    const CATEGORIES = {
+        RED: { text: 'CAT 1: RED', class: 'category-red' },
+        AMBER: { text: 'CAT 2: AMBER', class: 'category-amber' },
+        GREEN: { text: 'CAT 3: GREEN', class: 'category-green' }
+    };
 
     // --- INITIALIZATION ---
     function initializeApp() {
         populateStaticContent();
         setupEventListeners();
-        
-        const savedState = localStorage.getItem('alertToolState_v23');
+        const savedState = localStorage.getItem('alertToolState_v26');
         if (savedState) {
             currentReview = JSON.parse(savedState);
             loadReviewData();
             document.getElementById('launchScreenModal').style.display = 'none';
-            setAppViewMode(currentReview.mode || 'full');
+            document.getElementById('main-content').style.visibility = 'visible';
         } else {
             document.getElementById('launchScreenModal').style.display = 'flex';
         }
     }
-    
-    function setAppViewMode(mode) {
-        document.getElementById('main-content').style.visibility = 'visible';
-        currentReview.mode = mode;
-        const isQuickMode = mode === 'quick';
-        document.getElementById('fullReviewContainer').style.display = isQuickMode ? 'none' : 'block';
-        document.getElementById('assessment-container').style.display = isQuickMode ? 'block' : 'block';
-        document.getElementById('scoringContainer').style.display = isQuickMode ? 'block' : 'block';
-        document.getElementById('fullReviewContainerBottom').style.display = isQuickMode ? 'none' : 'block';
-    }
 
-    // --- DATA & STATE HANDLING ---
+    // --- DATA HANDLING ---
     function gatherFormData() {
         const data = {};
         form.querySelectorAll('input, select, textarea').forEach(el => {
-            if (!el.id) return;
-            if (el.type === 'checkbox') data[el.id] = el.checked;
-            else if (el.type === 'radio') { if(el.checked) data[el.name] = el.value; }
-            else data[el.id] = el.value;
-        });
-        
-        data.devices = {};
-        ['central_lines', 'pivcs', 'idcs', 'drains', 'pacing_wires', 'others'].forEach(type => {
-            const container = document.getElementById(`${type}_container`);
-            if(!container) return;
-            data.devices[type] = Array.from(container.querySelectorAll('.device-entry')).map(entry => {
-                const deviceData = {};
-                entry.querySelectorAll('input[data-key], select[data-key]').forEach(input => deviceData[input.dataset.key] = input.value);
-                return deviceData;
-            });
+            if (el.id) data[el.id] = el.type === 'checkbox' ? el.checked : el.value;
         });
         return data;
     }
 
     function saveState() {
         currentReview = gatherFormData();
-        currentReview.finalScore = parseInt(document.getElementById('footer-score').textContent) || 0;
-        localStorage.setItem('alertToolState_v23', JSON.stringify(currentReview));
+        localStorage.setItem('alertToolState_v26', JSON.stringify(currentReview));
     }
-    
+
     function loadReviewData(isHandoff = false) {
-        const data = currentReview;
-        Object.keys(data).forEach(key => {
-            const el = form.querySelector(`#${key}`) || form.querySelector(`[name="${key}"]`);
+        Object.keys(currentReview).forEach(key => {
+            const el = form.querySelector(`#${key}`);
             if (el) {
-                if (el.type === 'checkbox') el.checked = data[key];
-                 else if (el.type === 'radio') {
-                    const radio = form.querySelector(`[name="${el.name}"][value="${data[el.name]}"]`);
-                    if (radio) radio.checked = true;
-                } else el.value = data[key];
+                if (el.type === 'checkbox') el.checked = currentReview[key];
+                else el.value = currentReview[key];
             }
         });
-
-        if (data.devices && !isHandoff) {
-            ['central_lines', 'pivcs', 'idcs', 'drains', 'pacing_wires', 'others'].forEach(type => {
-                if(data.devices[type]) {
-                    const addFunc = window[`add${type.charAt(0).toUpperCase() + type.slice(1).replace(/s$/, '')}`];
-                    data.devices[type].forEach(d => addFunc(d));
-                }
-            });
+        if (isHandoff) {
+            document.getElementById('desktop-entry-container').style.display = 'none';
         }
-        
-        form.querySelectorAll('input, select').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+        updateRiskAssessment();
+
+        // Manually trigger events for dynamic fields
+        form.querySelectorAll('input[type="date"], input[id*="present"], select[id*="present"]').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+        document.getElementById('pain_score')?.dispatchEvent(new Event('input'));
+        document.getElementById('bowels')?.dispatchEvent(new Event('change'));
     }
 
-    function clearForm(clearStorage = true) {
+    function clearForm() {
         form.reset();
-        deviceCounters = {};
-        document.querySelectorAll('.device-entry').forEach(el => el.remove());
-        if (clearStorage) {
-            localStorage.removeItem('alertToolState_v23');
-            currentReview = {};
-        }
-        calculateTotalScore();
+        localStorage.removeItem('alertToolState_v26');
+        currentReview = {};
+        updateRiskAssessment();
+        document.getElementById('output-panel').style.display = 'block';
+        document.getElementById('desktop-entry-container').style.display = 'block';
     }
-    
-    // --- SCORING & INSIGHTS ---
-    function calculateTotalScore() {
-        let score = 0;
-        const data = gatherFormData();
 
-        if (data.age > 65) score += 1;
-        score += parseInt(data.admission_type, 10) || 0;
-        if (data.los_days > 5) score += 1;
-        if (data.severe_comorbidities >= 2) score += 2;
-        if (data.after_hours) score += 1;
+    // --- CORE LOGIC: RISK ASSESSMENT ENGINE ---
+    function updateRiskAssessment() {
+        const data = gatherFormData();
+        if (Object.keys(data).length === 0) return;
         
-        form.querySelectorAll('.score-input:checked').forEach(input => {
-             if (input.type === 'radio' || (input.type === 'checkbox' && !input.id.includes('after_hours'))) {
-                 score += parseInt(input.dataset.score, 10) || 0;
-             }
+        let score = 0;
+        const flags = { red: [], green: [] };
+
+        // Desktop Data Scoring
+        if (p(data.icu_los) > 3) { score += 1; flags.red.push('ICU Stay > 3 days'); }
+        if (data.after_hours) { score += 1; flags.red.push('After-hours discharge'); }
+        if(p(data.age) > 65) { score += 1; flags.red.push('Age > 65 years'); }
+        const admissionScore = p(data.admission_type) || 0;
+        if (admissionScore > 0) {
+            score += admissionScore;
+            const admissionText = form.querySelector('#admission_type option:checked').textContent;
+            flags.red.push(`Admission: ${admissionText}`);
+        }
+        if (p(data.severe_comorbidities) >= 2) { score += 2; flags.red.push(`Severe comorbidities (≥2)`); }
+
+        // Bloods Scoring
+        const bloods = [
+            { id: 'creatinine', val: p(data.creatinine), threshold: 171, score: 1, name: 'Creatinine' },
+            { id: 'lactate', val: p(data.lactate), threshold: 1.5, score: 2, name: 'Lactate' },
+            { id: 'bilirubin', val: p(data.bilirubin), threshold: 20, score: 1, name: 'Bilirubin' },
+            { id: 'platelets', val: p(data.platelets), threshold: 100, isLow: true, score: 1, name: 'Platelets' },
+            { id: 'hb', val: p(data.hb), threshold: 8, isLow: true, score: 2, name: 'Hb' },
+            { id: 'glucose', val: p(data.glucose), threshold: 180, score: 2, name: 'Glucose' },
+            { id: 'k', val: p(data.k), thresholdLow: 3.5, thresholdHigh: 5.5, score: 1, name: 'K+' },
+            { id: 'mg', val: p(data.mg), thresholdLow: 0.7, thresholdHigh: 1.2, score: 1, name: 'Mg++' },
+            { id: 'albumin', val: p(data.albumin), threshold: 30, isLow: true, score: 1, name: 'Albumin' },
+            { id: 'crp', val: p(data.crp), threshold: 100, score: 1, name: 'CRP' }
+        ];
+
+        bloods.forEach(b => {
+            let triggered = false;
+            if (!isNaN(b.val)) {
+                if (b.isLow && b.val < b.threshold) triggered = true;
+                else if (b.thresholdHigh && (b.val < b.thresholdLow || b.val > b.thresholdHigh)) triggered = true;
+                else if (!b.isLow && !b.thresholdHigh && b.val > b.threshold) triggered = true;
+            }
+            b.isTriggered = triggered; 
+            if (triggered) { score += b.score; flags.red.push(`Abnormal ${b.name} (${b.val})`); }
+            if (data[`${b.id}_trend`] === 'worsening') flags.red.push(`Worsening ${b.name} trend`);
         });
         
-        const bloodScore = calculateBloodScore();
-        score += bloodScore.total;
+        bloods.forEach(b => {
+            const el = document.getElementById(b.id);
+            if (el) { el.classList.toggle('input-abnormal', b.isTriggered); }
+        });
         
-        const addsResult = calculateADDS();
+        if (data.glucose_control) { score += 1; flags.red.push('Poorly controlled glucose'); }
+
+        // A-E Assessment & Circulation Scoring
+        const addsResult = calculateADDS(data);
         score += addsResult.score;
-
-        // Update Footer
-        const footerScoreEl = document.getElementById('footer-score');
-        const footerCategoryEl = document.getElementById('footer-category');
-        footerScoreEl.textContent = score;
-        const category = getRiskCategory(score);
-        footerCategoryEl.textContent = category.text.split(':')[0].toUpperCase();
-        document.getElementById('sticky-footer').className = `fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-between z-40 ${category.class}`;
+        if (addsResult.metCall) flags.red.push(`MET Call: ${addsResult.metReason}`);
+        if (addsResult.reasons.length > 0) flags.red.push(...addsResult.reasons);
+        if(data.airway === 'At Risk') { score += 2; flags.red.push('Airway at Risk'); }
+        const deliriumScore = p(data.delirium) || 0;
+        if (deliriumScore > 0) { score += deliriumScore; flags.red.push('Delirium Present'); }
         
-        generateClinicalInsights(data, bloodScore.insights);
+        // New Circulation Parameters
+        if (data.cap_refill === '>2s') { score += 2; flags.red.push('Cap Refill > 2s'); }
+        if (data.peripheries === 'Cool') { score += 1; flags.red.push('Cool peripheries'); }
+        
+        const weight = p(data.weight);
+        const uop_hr = p(data.urine_output_hr);
+        const uopDisplay = document.getElementById('uop_ml_kg_hr_display');
+        if (!isNaN(weight) && weight > 0 && !isNaN(uop_hr)) {
+            const uop_ml_kg_hr = uop_hr / weight;
+            if(uopDisplay) uopDisplay.value = uop_ml_kg_hr.toFixed(2);
+            if (uop_ml_kg_hr < 0.5) { score += 2; flags.red.push(`Oliguria (<0.5mL/kg/hr)`); }
+        } else {
+            if(uopDisplay) uopDisplay.value = '';
+        }
+
+        if(data.fluid_balance_inaccurate) {
+            flags.red.push('Fluid balance inaccurate');
+        } else {
+            if (p(data.fluid_balance) > 1000) { score += 1; flags.red.push(`Fluid Overload: Balance > +1000mL`); }
+        }
+        if (data.fluid_balance_trend && data.fluid_balance_trend !== 'Even') { score += 1; flags.red.push(`Fluid balance ${data.fluid_balance_trend}`);}
+
+        // Bowels, Diet, & Mobility Scoring
+        if (data.bowels === 'Diarrhoea/Loose' || data.bowels === 'Constipated/Absent') { score += 1; flags.red.push(`Bowel Issue: ${data.bowels}`); }
+        if (['Nausea/Vomiting', 'NBM'].includes(data.diet)) { score += 2; flags.red.push(`Poor Diet Tolerance: ${data.diet}`); }
+        if (data.mobility === 'Requires Physical Assistance') { score += 1; flags.red.push('Mobility: Requires Assistance'); }
+        else if (data.mobility === 'Bedbound/Immobile') { score += 2; flags.red.push('Mobility: Bedbound/Immobile'); }
+        
+        const painScore = p(data.pain_score);
+        if (!isNaN(painScore)) {
+            if (painScore >= 7) { score += 2; flags.red.push(`Severe Pain (Score: ${painScore}/10)`); }
+            else if (painScore >= 4) { score += 1; flags.red.push(`Moderate Pain (Score: ${painScore}/10)`); }
+        }
+
+        // Device Scoring
+        if (data.cvad_present) { score += 2; flags.red.push(`CVAD in situ (${data.cvad_type})`); }
+        if (data.idc_present) { score += 1; flags.red.push('IDC in situ'); }
+        if (data.pivc_site_health && data.pivc_site_health !== 'Clean & Healthy') { score += 2; flags.red.push(`PIVC Site Concern: ${data.pivc_site_health}`); }
+        if (data.cvad_site_health && data.cvad_site_health !== 'Clean & Healthy') { score += 2; flags.red.push(`CVAD Site Concern: ${data.cvad_site_health}`); }
+        if (data.ng_tube_present) flags.red.push('NG Tube in situ (Aspiration Risk)');
+        if (data.nj_tube_present) flags.red.push('NJ Tube in situ (Aspiration Risk)');
+        if (p(document.getElementById('pivc_dwell_time')?.textContent) > 3) flags.red.push('PIVC dwell > 3 days (Review need)');
+        if (p(document.getElementById('cvad_dwell_time')?.textContent) > 7) flags.red.push('CVAD dwell > 7 days (Review need)');
+        if (p(data.drain_output_24hr) > 100) { score += 1; flags.red.push('High drain output (>100mL/24h)');}
+        if (data.wounds_present) flags.red.push('Complex wound present');
+
+        // Context & Frailty
+        if(p(data.frailty_score) >= 5) { score += 1; flags.red.push(`Frailty score ≥ 5`); }
+        const staffingScore = p(data.ward_staffing) || 0;
+        score += staffingScore; 
+        if(staffingScore < 0) flags.green.push(`Protective Staffing (${staffingScore})`);
+        if (data.manual_override) { score += 3; flags.red.push(`Manual Override: ${data.override_reason || 'Clinical Concern'}`); }
+        
+        // Final Category Calculation
+        let categoryKey;
+        if (flags.red.length >= 3 || score >= 10) categoryKey = 'RED';
+        else if (flags.red.length >= 1 || score >= 3) categoryKey = 'AMBER';
+        else categoryKey = 'GREEN';
+        if (p(data.icu_los) > 3 && flags.red.length === 0) flags.green.push('Stable Long-Stay');
+
+        displayResults(categoryKey, flags, score, data);
         saveState();
-    }
-    
-    function getRiskCategory(score) {
-        if (score >= RISK_CATEGORIES.extremely_high.score) return RISK_CATEGORIES.extremely_high;
-        if (score >= RISK_CATEGORIES.high.score) return RISK_CATEGORIES.high;
-        if (score >= RISK_CATEGORIES.medium.score) return RISK_CATEGORIES.medium;
-        return RISK_CATEGORIES.low;
+        generateDMRSummary(); 
     }
 
-    function calculateBloodScore() {
-        let total = 0;
-        const insights = {};
-        const p = (id) => parseFloat(document.getElementById(id).value);
-        const updateBadge = (id, score) => { document.getElementById(id).className = `blood-score-badge score-${score}`; document.getElementById(id).textContent = `+${score}`; };
-
-        const calc = (id, abs_rules, trend_rules) => {
-            const current = p(id);
-            const prev = p(`${id}_prev`);
-            let abs_score = 0;
-            let trend_score = 0;
-            if (!isNaN(current)) {
-                for (const rule of abs_rules) { if (rule.test(current)) { abs_score = rule.score; break; } }
+    function calculateADDS(data) {
+        let score = 0, metCall = false, metReason = '', reasons = [];
+        const getScore = (val, ranges, paramName) => {
+            for (const r of ranges) {
+                if ((r.min === -Infinity || val >= r.min) && (r.max === Infinity || val <= r.max)) {
+                    if (r.score === 'E') return { metCall: true, metReason: r.note.replace('=>', `(${val}) =>`) };
+                    if (r.score > 0) reasons.push(`${paramName} abnormal (${val})`);
+                    return { score: r.score };
+                }
             }
-            if (!isNaN(current) && !isNaN(prev) && prev > 0) {
-                 for (const rule of trend_rules) { if (rule.test(current, prev)) { trend_score = rule.score; break; } }
-            }
-            const final_score = Math.max(abs_score, trend_score);
-            insights[id] = { current, prev, score: final_score };
-            updateBadge(`${id}_blood_score`, final_score);
-            total += final_score;
+            return { score: 0 };
         };
-
-        calc('creatinine', [{ test: v => v > 171, score: 1 }], [{ test: (c, p) => (c - p) / p > 0.5, score: 2 }]);
-        const nlr = p('neutrophils') / p('lymphocytes'); if(nlr > 5) total += 1; updateBadge('nlr_blood_score', nlr > 5 ? 1 : 0); insights.nlr = { current: nlr, score: nlr > 5 ? 1:0};
-        calc('albumin', [{ test: v => v < 30, score: 1 }], []);
-        calc('rdw', [{ test: v => v > 15, score: 1 }], [{ test: (c, p) => c - p > 1, score: 2 }]);
-        calc('lactate', [{ test: v => v > 2, score: 2 }], []);
-        calc('bilirubin', [{ test: v => v > 20, score: 1 }], [{ test: (c, p) => c / p >= 2, score: 2 }]);
-        calc('platelets', [{ test: v => v < 50, score: 2 },{ test: v => v < 100, score: 1 }], [{ test: (c, p) => (p - c) / p > 0.4, score: 2 }]);
-        calc('hemoglobin', [{ test: v => v < 7, score: 2 }], []);
-        calc('glucose', [{ test: v => v > 180, score: 2 }], []);
-        
-        document.getElementById('total_blood_score').textContent = total;
-        return { total, insights };
+        const checkParam = (value, ranges, paramName) => {
+            if (isNaN(value) || metCall) return;
+            const result = getScore(value, ranges, paramName);
+            if(result.metCall) { metCall = true; metReason = result.metReason; } 
+            else { score += result.score; }
+        };
+        checkParam(p(data.rr), [{min: -Infinity, max: 4, score: 'E', note: '<=4 => MET'}, {min: 5, max: 8, score: 3}, {min: 9, max: 10, score: 2}, {min: 11, max: 20, score: 0}, {min: 21, max: 24, score: 1}, {min: 25, max: 30, score: 2}, {min: 31, max: 35, score: 3}, {min: 36, max: Infinity, score: 'E', note: '>=36 => MET'}], 'Resp Rate');
+        checkParam(p(data.spo2), [{min: -Infinity, max: 84, score: 'E', note: '<=84 => MET'}, {min: 85, max: 88, score: 3}, {min: 89, max: 90, score: 2}, {min: 91, max: 93, score: 1}, {min: 94, max: Infinity, score: 0}], 'SpO2');
+        checkParam(p(data.hr), [{min: -Infinity, max: 30, score: 'E', note: '<=30 => MET'}, {min: 31, max: 40, score: 3}, {min: 41, max: 50, score: 2}, {min: 51, max: 99, score: 0}, {min: 100, max: 109, score: 1}, {min: 110, max: 120, score: 2}, {min: 121, max: 129, score: 1}, {min: 130, max: 139, score: 3}, {min: 140, max: Infinity, score: 'E', note: '>=140 => MET'}], 'Heart Rate');
+        checkParam(p(data.sbp), [{min: -Infinity, max: 40, score: 'E', note: 'extreme low -> MET'}, {min: 41, max: 50, score: 3}, {min: 51, max: 60, score: 2}, {min: 61, max: 70, score: 1}, {min: 71, max: 80, score: 0}, {min: 81, max: 90, score: 3}, {min: 91, max: 100, score: 2}, {min: 101, max: 110, score: 1}, {min: 111, max: 139, score: 0}, {min: 140, max: 180, score: 1}, {min: 181, max: 200, score: 2}, {min: 201, max: 220, score: 3}, {min: 221, max: Infinity, score: 'E', note: '>=221 => MET'}], 'Systolic BP');
+        checkParam(p(data.temp), [{min: -Infinity, max: 35, score: 3}, {min: 35.1, max: 36.0, score: 1}, {min: 36.1, max: 37.5, score: 0}, {min: 37.6, max: 38.0, score: 1}, {min: 38.1, max: 39.0, score: 2}, {min: 39.1, max: Infinity, score: 'E', note: '>=39.1 => MET'}], 'Temperature');
+        if (data.consciousness === 'Unresponsive') { metCall = true; metReason = 'Unresponsive'; }
+        else if (data.consciousness === 'Pain') { score += 2; reasons.push('Responds to Pain');}
+        else if (data.consciousness === 'Voice') { score += 1; reasons.push('Responds to Voice');}
+        if (data.o2_device === 'HFNP') { score += 1; reasons.push('Using High-Flow O₂');}
+        checkParam(p(data.o2_flow), [{min: 0, max: 5, score: 0}, {min: 6, max: 7, score: 1}, {min: 8, max: 9, score: 2}, {min: 10, max: Infinity, score: 3}], 'O₂ Flow');
+        checkParam(p(data.fio2), [{min: 28, max: 39, score: 2}, {min: 40, max: Infinity, score: 3}], 'FiO2');
+        if(document.getElementById('finalADDSScore')) document.getElementById('finalADDSScore').textContent = score;
+        return { score, metCall, metReason, reasons };
     }
     
-    function calculateADDS() {
-        const p = (id) => parseFloat(document.getElementById(id).value);
-        const getScore = (val, ranges) => { for (const r of ranges) { if (val >= r.min && val <= r.max) return r.score; } return 0; };
-        let total = 0;
-        const rr = p('rr_input'); if (!isNaN(rr)) total += getScore(rr, [{min:0, max:8, score:2}, {min:9, max:11, score:1}, {min:21, max:29, score:2}, {min:30, max:999, score:3}]);
-        const spo2 = p('spo2_input'); if (!isNaN(spo2)) total += getScore(spo2, [{min:0, max:89, score:3}, {min:90, max:93, score:2}, {min:94, max:95, score:1}]);
-        if (p('o2_flow_input') > 0) total += 2;
-        const hr = p('hr_input'); if (!isNaN(hr)) total += getScore(hr, [{min:0, max:39, score:2}, {min:40, max:49, score:1}, {min:100, max:119, score:1}, {min:120, max:999, score:2}]);
-        const sbp = p('sbp_input'); if (!isNaN(sbp)) total += getScore(sbp, [{min:0, max:79, score:3}, {min:80, max:99, score:2}, {min:200, max:999, score:2}]);
-        if (document.getElementById('consciousness_input').value !== 'Alert') total += 3;
-        const temp = p('temp_input'); if (!isNaN(temp)) total += getScore(temp, [{min:0, max:35.0, score:2}, {min:38.1, max:38.9, score:1}, {min:39.0, max:99, score:2}]);
-        
-        const manualScore = p('manualADDSScore');
-        const finalScore = document.getElementById('addsModificationCheckbox').checked && !isNaN(manualScore) ? manualScore : total;
-        
-        document.getElementById('calculatedADDSScore').textContent = total;
-        document.getElementById('finalADDSScore').textContent = finalScore;
-        
-        return { score: finalScore }; // Return the final score to be added to the total
+    function displayResults(categoryKey, flags, score, data) {
+        const category = CATEGORIES[categoryKey];
+        const summaryContainer = document.getElementById('summary-container');
+        const footerCategory = document.getElementById('footer-category');
+        const footerScore = document.getElementById('footer-score');
+        const footerRedFlags = document.getElementById('footer-flags-red');
+        const footerGreenFlags = document.getElementById('footer-flags-green');
+        const stickyFooter = document.getElementById('sticky-footer');
+        const combinationAlerts = [];
+        const isSurgical = ['0', '1'].includes(data.admission_type);
+        const isNotAlert = ['Voice', 'Pain', 'Unresponsive'].includes(data.consciousness);
+        if (p(data.lactate) > 1.5 && p(data.sbp) < 90) combinationAlerts.push('<b>Shock Profile:</b> High Lactate with low Blood Pressure is a critical sign of shock.');
+        if (p(data.creatinine) > 171 && p(data.rr) > 25) combinationAlerts.push('<b>Cardio-Renal Profile:</b> High Creatinine with a high Respiratory Rate may indicate fluid overload.');
+        if (p(data.crp) > 100 && p(data.creatinine) > 171) combinationAlerts.push('<b>Inflammation & Kidney Injury:</b> High CRP with high Creatinine suggests systemic inflammation is impacting kidney function.');
+        if (p(data.albumin) < 30 && p(data.temp) > 38.0) combinationAlerts.push('<b>Malnutrition & Infection:</b> Low Albumin with a fever may indicate a poor response to infection.');
+        if (p(data.hb) < 8 && p(data.hr) > 110) combinationAlerts.push('<b>Anemia & Tachycardia:</b> Low Haemoglobin with a high Heart Rate suggests cardiovascular strain.');
+        if (p(data.icu_los) > 3 && p(data.delirium) > 0) combinationAlerts.push('<b>Deconditioning & Delirium:</b> A long ICU stay combined with new confusion is a strong predictor of poor outcomes.');
+        if (p(data.spo2) < 91 && isNotAlert) combinationAlerts.push('<b>Hypoxia & Neurological Impairment:</b> Low oxygen saturation with an altered level of consciousness is a medical emergency.');
+        if (p(data.bilirubin) > 20 && p(data.creatinine) > 171) combinationAlerts.push('<b>Multi-Organ Dysfunction:</b> Concurrent high Bilirubin (liver) and Creatinine (kidney) indicates a severe systemic illness.');
+        if (p(data.platelets) < 100 && isSurgical) combinationAlerts.push('<b>Post-Operative Bleeding Risk:</b> Low Platelets in a surgical patient is a major risk factor for bleeding.');
+        if (p(data.glucose) > 180 && p(data.crp) > 100) combinationAlerts.push('<b>Inflammatory Hyperglycemia:</b> High blood sugar during a major inflammatory response is associated with poor outcomes.');
+        if (p(data.fio2) > 40 && p(data.rr) > 25) combinationAlerts.push('<b>Escalating Respiratory Failure:</b> High oxygen requirement with a high respiratory rate suggests therapy is not effective.');
+        if (p(data.age) > 65 && p(data.frailty_score) >= 5 && isSurgical) combinationAlerts.push('<b>Vulnerable Surgical Patient:</b> The combination of older age, frailty, and recent surgery presents an extremely high risk for complications.');
+        const alertsHtml = combinationAlerts.length > 0 ? `<div class="summary-plan mt-4 border-l-4 border-red-500"><h4>🚨 Critical Combination Alerts:</h4><ul class="list-disc list-inside text-sm text-gray-700">${combinationAlerts.map(alert => `<li>${alert}</li>`).join('')}</ul></div>` : '';
+        footerCategory.textContent = category.text;
+        footerScore.textContent = score;
+        stickyFooter.className = `fixed bottom-0 left-0 right-0 p-1 shadow-lg transition-colors duration-300 flex items-center justify-between z-40 ${category.class}`;
+        footerRedFlags.innerHTML = `<span>🚩 ${flags.red.length}</span>`;
+        footerGreenFlags.innerHTML = `<span>✅ ${flags.green.length}</span>`;
+        const plan = generateActionPlan(categoryKey, flags.red);
+        summaryContainer.innerHTML = `<div class="summary-category ${category.class}">${category.text} (Score: ${score})</div>${alertsHtml}<div class="summary-flags-container mt-4"><div><h4 class="flag-list-red">Red Flags (${flags.red.length}):</h4><ul class="list-disc list-inside text-sm text-gray-700">${flags.red.length ? flags.red.map(f => `<li>${f}</li>`).join('') : '<li>None</li>'}</ul></div><div><h4 class="flag-list-green">Protective Flags (${flags.green.length}):</h4><ul class="list-disc list-inside text-sm text-gray-700">${flags.green.length ? flags.green.map(f => `<li>${f}</li>`).join('') : '<li>None</li>'}</ul></div></div><div class="summary-plan mt-4"><h4>Recommended Action Plan:</h4><p class="text-sm">${plan}</p></div>`;
     }
 
-    function generateClinicalInsights(data, bloodInsights) {
-        const container = document.getElementById('clinicalInsightsContainer');
-        const insights = [];
-        const createInsight = (text, level) => `<div class="insight-item level-${level}"><svg class="insight-item-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span class="insight-item-text">${text}</span></div>`;
-
-        if (data.age > 65 && data.severe_comorbidities >= 2) insights.push(createInsight('<b>High-Risk Profile:</b> Patient has multiple baseline risk factors.', 'medium'));
-        if (bloodInsights.nlr.score > 0 && bloodInsights.lactate.score > 0) insights.push(createInsight('<b>Systemic Inflammatory Response:</b> High NLR and elevated lactate suggest significant metabolic stress.', 'high'));
-        if (bloodInsights.creatinine.score > 0 || bloodInsights.bilirubin.score > 0 || bloodInsights.platelets.score > 0) insights.push(createInsight('<b>Multi-Organ Dysfunction:</b> Markers for kidney, liver, or hematologic systems are abnormal.', 'high'));
-        if (bloodInsights.hemoglobin.score > 0) insights.push(createInsight('<b>Significant Anemia:</b> Critically low Hemoglobin may impair tissue oxygenation.', 'high'));
-        if (document.getElementById('map_low')?.checked && bloodInsights.lactate.score > 0) insights.push(createInsight('<b>Inadequate Perfusion (Shock):</b> Low MAP with elevated lactate is a critical finding.', 'high'));
-        if (data.fluid_overload) insights.push(createInsight('<b>Fluid Overload:</b> May be straining cardiac and respiratory function.', 'medium'));
-        
-        container.innerHTML = insights.length ? insights.join('') : '<p class="text-gray-500">No specific risk patterns detected yet.</p>';
+    function generateActionPlan(categoryKey, flags) {
+        switch (categoryKey) {
+            case 'RED': let redPlan = 'Cat 1: Daily review for 72hrs, escalate to ICU liaison/medical team immediately. '; if (flags.some(f => f.includes('Creatinine'))) redPlan += 'Repeat Creatinine in 24h. '; if (flags.some(f => f.includes('Lactate'))) redPlan += 'Repeat Lactate in 6h. '; return redPlan;
+            case 'AMBER': return 'Cat 2: Review q48hrs for 72hrs, nurse-led monitoring.';
+            case 'GREEN': return 'Cat 3: Single check within 24hrs, then routine ward care.';
+        }
     }
-
-    // --- DMR SUMMARY ---
+    
+    // --- MAJOR REFACTOR of DMR Summary ---
     function generateDMRSummary() {
-        // Implementation for DMR summary...
-        document.getElementById('emrSummary').value = "DMR Summary Generation...";
+        const data = gatherFormData();
+        const score = document.getElementById('footer-score').textContent;
+        const categoryText = document.getElementById('footer-category').textContent.replace('CAT ', 'Cat ');
+        
+        let uopSummary = 'N/A';
+        const weight = p(data.weight);
+        const uop_hr = p(data.urine_output_hr);
+        if (!isNaN(weight) && weight > 0 && !isNaN(uop_hr)) {
+            const uop_ml_kg_hr = uop_hr / weight;
+            uopSummary = `${uop_hr} mL/hr (${uop_ml_kg_hr.toFixed(2)} mL/kg/hr)`;
+        } else if (!isNaN(uop_hr)) {
+            uopSummary = `${uop_hr} mL/hr`;
+        }
+        
+        const bloodsSummary = [
+            `Cr ${data.creatinine || '--'}`,
+            `Lac ${data.lactate || '--'}`,
+            `Bili ${data.bilirubin || '--'}`,
+            `Plt ${data.platelets || '--'}`,
+            `Hb ${data.hb || '--'}`,
+            `Gluc ${data.glucose || '--'}`,
+            `K ${data.k || '--'}`,
+            `Mg ${data.mg || '--'}`,
+            `Alb ${data.albumin || '--'}`,
+            `CRP ${data.crp || '--'}`
+        ].join(', ');
+
+        let devicesSummary = [];
+        if (data.pivc_present) devicesSummary.push(`PIVC: Inserted ${data.pivc_commencement_date || 'N/A'}. Dwell: ${document.getElementById('pivc_dwell_time')?.textContent || 'N/A'} days. Site: ${data.pivc_site_health}`);
+        if (data.cvad_present) devicesSummary.push(`CVAD (${data.cvad_type}): Inserted ${data.cvad_commencement_date || 'N/A'}. Dwell: ${document.getElementById('cvad_dwell_time')?.textContent || 'N/A'} days. Site: ${data.cvad_site_health}`);
+        if (data.idc_present) devicesSummary.push(`IDC: Inserted ${data.idc_commencement_date || 'N/A'}. Dwell: ${document.getElementById('idc_dwell_time')?.textContent || 'N/A'} days.`);
+        if (data.ng_tube_present) devicesSummary.push('NG Tube');
+        if (data.nj_tube_present) devicesSummary.push('NJ Tube');
+        if (data.drains_present) devicesSummary.push(`Drains: 24h Output: ${data.drain_output_24hr || 'N/A'} mL, Cumulative: ${data.drain_output_cumulative || 'N/A'} mL`);
+        if (data.wounds_present) devicesSummary.push(`Wounds: ${data.wound_description || 'N/A'}`);
+        if(devicesSummary.length === 0) devicesSummary.push('None');
+
+        const reviewTypeText = data.review_type === 'post' ? 'post ICU review' : 'pre-ICU review';
+        const summary = `
+ALERT CNS ${reviewTypeText} on ward ${data.location || ''}
+LOS: ${data.icu_los || 'N/A'} days
+${categoryText} discharge
+
+${data.age || 'N/A'}M/F. Patient ID: ${data.patient_id || 'N/A'}
+
+REASON FOR ICU ADMISSION
+${data.reason_icu || 'N/A'}
+
+ICU SUMMARY
+${data.icu_summary || 'N/A'}
+
+PMH
+${data.pmh || 'N/A'}
+
+Modded ADDS = ${calculateADDS(data).score}
+A: ${data.airway}
+B: RR ${data.rr}, SpO2 ${data.spo2} on ${data.o2_device} (Flow: ${data.o2_flow || 'N/A'}L, FiO2: ${data.fio2 || 'N/A'}%)
+C: HR ${data.hr}, BP ${data.sbp}/${data.dbp}, CRT ${data.cap_refill}, ${data.peripheries} peripheries
+D: ${data.consciousness}, Delirium: ${data.delirium === '0' ? 'None' : 'Present'}, Pain: ${data.pain_score || 'N/A'}/10
+E: Temp ${data.temp}°C, Diet: ${data.diet}, Bowels: ${data.bowels}, Mobility: ${data.mobility}, UO: ${uopSummary}, Fluid Bal: ${data.fluid_balance || 'N/A'}mL ${data.fluid_balance_inaccurate ? '[INACCURATE]' : ''}
+
+DEVICES:
+${devicesSummary.map(d => `- ${d}`).join('\n')}
+
+BLOODS:
+${bloodsSummary}
+
+IMP:
+${data.clinical_impression || ''}
+
+Plan:
+${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
+`.trim().replace(/^\s*\n/gm, ''); // Clean up extra blank lines
+
+        document.getElementById('emrSummary').value = summary;
     }
 
-    // --- EVENT LISTENERS & UI ---
     function setupEventListeners() {
-        document.getElementById('startFullReviewBtn').addEventListener('click', () => { setAppViewMode('full'); clearForm(); document.getElementById('launchScreenModal').style.display = 'none'; });
-        document.getElementById('startQuickScoreBtn').addEventListener('click', () => { setAppViewMode('quick'); clearForm(); document.getElementById('launchScreenModal').style.display = 'none'; });
-        document.getElementById('resumeReviewBtn').addEventListener('click', () => { document.getElementById('pasteContainer').style.display = 'block'; });
+        const toggleReviewBtn = document.getElementById('toggle-full-review-btn');
+        let isQuickView = false;
+        
+        document.getElementById('startFullReviewBtn').addEventListener('click', () => {
+            isQuickView = false;
+            toggleReviewBtn.style.display = 'none';
+            document.querySelectorAll('.full-review-item').forEach(el => el.style.display = '');
+            clearForm();
+            document.getElementById('launchScreenModal').style.display = 'none';
+            document.getElementById('main-content').style.visibility = 'visible';
+        });
+
+        document.getElementById('startQuickScoreBtn').addEventListener('click', () => {
+            isQuickView = true;
+            toggleReviewBtn.style.display = 'block';
+            toggleReviewBtn.textContent = 'Expand to Full Review';
+            document.querySelectorAll('.full-review-item').forEach(el => el.style.display = 'none');
+            clearForm();
+            document.getElementById('launchScreenModal').style.display = 'none';
+            document.getElementById('main-content').style.visibility = 'visible';
+        });
+        
+        toggleReviewBtn.addEventListener('click', () => {
+            isQuickView = !isQuickView;
+            toggleReviewBtn.textContent = isQuickView ? 'Expand to Full Review' : 'Collapse to Quick Score';
+            document.querySelectorAll('.full-review-item').forEach(el => el.style.display = isQuickView ? 'none' : '');
+        });
+
+        document.getElementById('loadReviewBtn').addEventListener('click', () => {
+            document.getElementById('pasteContainer').style.display = 'block';
+        });
+        
         document.getElementById('loadPastedDataBtn').addEventListener('click', () => {
              const pastedText = document.getElementById('pasteDataInput').value;
              if (!pastedText) return;
              try {
                 currentReview = JSON.parse(atob(pastedText));
-                loadReviewData(true); // true for handoff
+                loadReviewData(true);
                 document.getElementById('launchScreenModal').style.display = 'none';
-                setAppViewMode('full');
-             } catch(e) {
-                 alert('Invalid handoff key.');
-             }
+                document.getElementById('main-content').style.visibility = 'visible';
+             } catch(e) { alert('Invalid handoff key.'); }
         });
-        document.getElementById('startOverBtn').addEventListener('click', () => { if (confirm('Are you sure? This will clear all data.')) { clearForm(true); document.getElementById('launchScreenModal').style.display = 'flex'; } });
-        
-        form.addEventListener('input', calculateTotalScore);
-        form.addEventListener('change', calculateTotalScore);
 
-        document.getElementById('generateSummaryButton').addEventListener('click', generateDMRSummary);
-        document.getElementById('copySummaryButton').addEventListener('click', () => { document.getElementById('emrSummary').select(); document.execCommand('copy'); alert('Summary copied!'); });
+        document.getElementById('startOverBtn').addEventListener('click', () => {
+            if (confirm('Are you sure? This will clear all data.')) {
+                clearForm(true);
+                document.getElementById('main-content').style.visibility = 'hidden';
+                document.getElementById('launchScreenModal').style.display = 'flex';
+            }
+        });
+        
+        form.addEventListener('input', updateRiskAssessment);
+        form.addEventListener('change', updateRiskAssessment);
+
+        document.getElementById('copySummaryButton').addEventListener('click', () => {
+            const summaryEl = document.getElementById('emrSummary');
+            summaryEl.select();
+            summaryEl.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            alert('DMR Summary Copied to Clipboard!');
+        });
+        
         document.getElementById('generateHandoffBtn').addEventListener('click', () => {
-            const handoffData = {};
-            const desktopFields = ['patient_initials', 'patient_urn_last4', 'ward', 'room_number', 'age', 'admission_type', 'los_days', 'severe_comorbidities', 'after_hours', 'reason_icu', 'icu_summary', 'creatinine', 'creatinine_prev', 'neutrophils', 'lymphocytes', 'albumin', 'rdw', 'rdw_prev', 'lactate', 'bilirubin', 'bilirubin_prev', 'platelets', 'platelets_prev', 'hemoglobin', 'glucose', 'k_input', 'mg_input'];
-            desktopFields.forEach(id => { handoffData[id] = document.getElementById(id).value; });
+            const handoffData = gatherFormData();
             const key = btoa(JSON.stringify(handoffData));
             navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard!'));
         });
-        
-        ['addCentralLineButton', 'addPivcButton', 'addIdcButton', 'addDrainButton', 'addPacingWireButton', 'addOtherButton'].forEach(id => {
-            document.getElementById(id).addEventListener('click', (e) => {
-                const type = id.replace('add', '').replace('Button','');
-                window[`add${type}`]();
+
+        const o2DeviceEl = document.getElementById('o2_device');
+        if (o2DeviceEl) {
+            o2DeviceEl.addEventListener('change', e => {
+                const device = e.target.value;
+                document.getElementById('o2_flow_container').classList.toggle('hidden', !['NP', 'HFNP', 'NIV'].includes(device));
+                document.getElementById('fio2_container').classList.toggle('hidden', !['HFNP', 'NIV'].includes(device));
+                document.getElementById('peep_ps_container').classList.toggle('hidden', device !== 'NIV');
             });
+        }
+
+        const gocEl = document.getElementById('goc');
+        if (gocEl) {
+            gocEl.addEventListener('change', e => {
+                document.getElementById('goc_details_container').classList.toggle('hidden', !['B', 'C'].includes(e.target.value));
+            });
+        }
+
+        document.getElementById('assessment-container').addEventListener('input', (e) => {
+            if (e.target.id === 'pain_score') {
+                const painScore = p(e.target.value);
+                document.getElementById('pain_interventions_container').classList.toggle('hidden', isNaN(painScore) || painScore <= 0);
+                document.getElementById('aps_referral_container').classList.toggle('hidden', isNaN(painScore) || painScore < 7);
+            }
         });
-        document.addEventListener('click', (e) => { if (e.target.matches('.remove-device-btn')) e.target.closest('.device-entry').remove(); });
-    }
-    
-    // --- DYNAMIC CONTENT ---
-    function populateStaticContent() {
-        // Populates all dynamic HTML sections on load
-        // This includes scorable bloods, non-scored bloods, A-E assessment, scoring options, devices, etc.
-        const createBloodInput = (label, id, unit) => `<div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-32">${label}</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="${id}" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Current"><input type="number" step="0.1" id="${id}_prev" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Previous"></div><span class="text-xs text-gray-500 w-16">${unit}</span><span id="${id}_blood_score" class="blood-score-badge score-0">+0</span></div>`;
-        document.getElementById('scorable-bloods-container').innerHTML = `<h3 class="font-semibold text-gray-700 mb-4">Scorable Blood Panel</h3><div class="space-y-3">${createBloodInput('Creatinine', 'creatinine', 'µmol/L')}<div class="flex items-center gap-x-2 blood-score-item"><label class="block text-sm font-medium w-32">NLR</label><div class="flex-grow grid grid-cols-2 gap-x-2"><input type="number" step="0.1" id="neutrophils" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Neut"><input type="number" step="0.1" id="lymphocytes" class="w-full rounded-md border-2 p-2 text-sm" placeholder="Lymph"></div><span class="text-xs text-gray-500 w-16"></span><span id="nlr_blood_score" class="blood-score-badge score-0">+0</span></div>${createBloodInput('Albumin', 'albumin', 'g/L')}${createBloodInput('RDW', 'rdw', '%')}${createBloodInput('Lactate', 'lactate', 'mmol/L')}${createBloodInput('Bilirubin', 'bilirubin', 'µmol/L')}${createBloodInput('Platelets', 'platelets', 'x10⁹/L')}${createBloodInput('Hemoglobin', 'hemoglobin', 'g/dL')}${createBloodInput('Glucose', 'glucose', 'mg/dL')}</div><div class="mt-4 pt-4 border-t text-right font-bold text-lg">Total Blood Score: <span id="total_blood_score" class="text-teal-600">0</span></div>`;
-        document.getElementById('nonscorable-bloods-container').innerHTML = `<h3 class="font-semibold text-gray-700 mb-2">Key (Non-Scored) Bloods</h3><div class="grid sm:grid-cols-2 gap-x-6 gap-y-4"><div><label>K+</label><input type="number" step="0.1" id="k_input" class="mt-1 w-full rounded-md border-2 p-2"><div class="flex gap-x-2 mt-1"><label class="text-xs flex items-center"><input type="checkbox" id="k_replaced" class="mr-1">Replaced</label><label class="text-xs flex items-center"><input type="checkbox" id="k_planned" class="mr-1">Planned</label></div></div><div><label>Mg++</label><input type="number" step="0.1" id="mg_input" class="mt-1 w-full rounded-md border-2 p-2"><div class="flex gap-x-2 mt-1"><label class="text-xs flex items-center"><input type="checkbox" id="mg_replaced" class="mr-1">Replaced</label><label class="text-xs flex items-center"><input type="checkbox" id="mg_planned" class="mr-1">Planned</label></div></div></div>`;
-        document.getElementById('assessment-container').innerHTML = `
-            <h2 class="text-xl font-bold border-b pb-3 mb-4">A-E Assessment & ADDS</h2>
-            <div class="space-y-6">
-                <div><h3 class="assessment-section-title">A: Airway</h3><select id="airway_input" class="w-full rounded-md border-2 p-2"><option>Clear and maintained</option><option>Airway at risk / requires adjunct</option></select></div>
-                <div><h3 class="assessment-section-title">B: Breathing</h3><div class="assessment-grid"><label>Resp Rate:<input type="number" id="rr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>SpO2 (%):<input type="number" id="spo2_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>Oxygen Flow (L/min):<input type="number" id="o2_flow_input" class="mt-1 w-full rounded-md border-2 p-2"></label></div></div>
-                <div><h3 class="assessment-section-title">C: Circulation</h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><label>Systolic BP:<input type="number" id="sbp_input" class="mt-1 w-full rounded-md border-2 p-2"></label><div class="p-2 bg-amber-100 rounded-md"><label class="flex items-center font-medium h-full"><input type="checkbox" id="map_low" class="mr-2 h-4 w-4">MAP < 70 mmHg</label></div></div></div>
-                <div><h3 class="assessment-section-title">D: Disability</h3><select id="consciousness_input" class="w-full rounded-md border-2 p-2"><option>Alert</option><option>Voice</option><option>Pain</option><option>Unresponsive</option></select></div>
-                <div><h3 class="assessment-section-title">E: Exposure</h3><label>Temperature (°C):<input type="number" step="0.1" id="temp_input" class="mt-1 w-full rounded-md border-2 p-2"></label></div>
-            </div>
-            <div class="mt-6 bg-gray-100 p-4 rounded-lg border"><label class="flex items-center"><input type="checkbox" id="addsModificationCheckbox"> <span class="ml-2 text-sm font-medium">Apply MODS to ADDS</span></label><div id="addsModificationDetails" class="hidden ml-6 mt-4 space-y-4"><div><label for="manualADDSScore" class="block text-sm font-medium">Manual Override ADDS Score:</label><input type="number" id="manualADDSScore" class="mt-1 w-full rounded-md border-2 p-2"></div><div><label for="addsModificationText" class="block text-sm font-medium">Rationale:</label><textarea id="addsModificationText" rows="2" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div></div></div>
-            <div class="mt-6 grid grid-cols-2 gap-4 text-center">
-                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200"><span class="text-sm font-medium text-gray-500">CALCULATED ADDS</span><div id="calculatedADDSScore" class="font-bold text-5xl my-2">0</div></div>
-                <div class="bg-teal-50 p-4 rounded-lg border border-teal-200"><span class="text-sm font-medium text-gray-500">FINAL ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>
-            </div>`;
-        document.getElementById('scoringContainer').innerHTML = `<h2 class="text-xl font-bold border-b pb-3 mb-4">Clinical Risk Factors</h2><div class="space-y-2"><label class="list-score-option"><input type="checkbox" class="score-input" data-score="3" id="met_criteria"><span class="score-label">Patient is in MET Criteria</span><span class="score-value">+3</span></label><label class="list-score-option"><input type="checkbox" class="score-input" data-score="2" id="increasing_o2"><span class="score-label">Increasing O₂ Trend</span><span class="score-value">+2</span></label><div><label class="block font-medium mb-1">Gastrointestinal:</label><select id="gi_assessment" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Normal Diet & Bowels</option><option value="1">Modified Diet / Constipated</option><option value="2">NBM/NG/TPN / Ileus</option></select></div><div><label class="block font-medium mb-1">Delirium:</label><select id="delirium" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">None</option><option value="1">Mild</option><option value="2">Moderate-Severe</option></select></div><div><label class="block font-medium mb-1">Mobility:</label><select id="mobility" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Baseline</option><option value="1">Assisted</option><option value="2">Bed-bound</option></select></div><div><label class="block font-medium mb-1">Frailty (Pre-hospital):</label><select id="frailty" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Not Frail / Mild</option><option value="1">Moderate-Severe</option></select></div><div><label class="block font-medium mb-1">Staffing (Reducer):</label><select id="staffing" class="score-input w-full rounded-md border-2 p-2" data-score-type="select"><option value="0">Standard Ratio</option><option value="-1">Enhanced Care (1:1, 1:2)</option></select></div></div>`;
+        document.getElementById('assessment-container').addEventListener('change', (e) => {
+            if (e.target.id === 'bowels') {
+                document.getElementById('aperients_container').classList.toggle('hidden', e.target.value !== 'Constipated/Absent');
+            }
+        });
+        
         const devicesContainer = document.getElementById('devices-container');
-        devicesContainer.innerHTML = `<div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container" class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">IDCs</h4><div id="idcs_container" class="space-y-2"></div><button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add IDC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Drains</h4><div id="drains_container" class="space-y-2"></div><button type="button" id="addDrainButton" class="no-print mt-2 text-sm bg-teal-100 px-3 py-1 rounded-md">+ Add Drain</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Pacing Wires</h4><div id="pacing_wires_container" class="space-y-2"></div><button type="button" id="addPacingWireButton" class="no-print mt-2 text-sm bg-purple-100 px-3 py-1 rounded-md">+ Add Pacing Wires</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Other</h4><div id="others_container" class="space-y-2"></div><button type="button" id="addOtherButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add Other</button></div>`;
-        document.getElementById('fluid-assessment-container').innerHTML = `<h3 class="font-semibold mb-2">Fluid Status</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><label>24hr Fluid Balance (mL)<input type="number" id="fbc_24hr_input" class="mt-1 w-full rounded-md border-2 p-2"></label><div class="p-2 bg-amber-100 rounded-md flex items-center"><label class="flex items-center font-medium h-full"><input type="checkbox" id="fluid_overload" class="score-input mr-2 h-4 w-4" data-score="2">Significant Fluid Overload (>5L)</label></div></div>`;
-        const wardSelect = document.getElementById('ward');
-        const wards = ['CCU', '3A', '3C', '3D', '4A', '4B', '4C', '4D', '5A', '5B', '5C', '5D', '6A', '6B', '6C', '6D', '7A', '7B', '7C', '7D', 'Other'];
-        wardSelect.innerHTML = wards.map(w => `<option value="${w}">${w}</option>`).join('');
+        const calculateDwellTime = (startDate, displayElId) => {
+            const displayEl = document.getElementById(displayElId);
+            if (!startDate || !displayEl) {
+                if(displayEl) displayEl.textContent = 'N/A';
+                return;
+            };
+            const start = new Date(startDate);
+            const today = new Date();
+            const diffTime = Math.abs(today - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            displayEl.textContent = diffDays;
+        };
+
+        devicesContainer.addEventListener('change', (e) => {
+            const id = e.target.id;
+            if(id.endsWith('_present')) {
+                const detailsId = id.replace('_present', '_details_container');
+                document.getElementById(detailsId).classList.toggle('hidden', !e.target.checked);
+            }
+            if(id.endsWith('_commencement_date')) {
+                const dwellId = id.replace('_commencement_date', '_dwell_time');
+                calculateDwellTime(e.target.value, dwellId);
+            }
+        });
     }
 
-    // --- DEVICE MANAGEMENT ---
-    const addDevice = (type, containerId, html) => { deviceCounters[type] = (deviceCounters[type] || 0) + 1; document.getElementById(containerId).insertAdjacentHTML('beforeend', `<div id="${type}_${deviceCounters[type]}" class="device-entry bg-white p-3 rounded-md border space-y-2">${html}<button type="button" class="remove-device-btn text-xs text-red-600 hover:underline no-print">Remove</button></div>`); };
-    window.addCentralLine = (data = {}) => addDevice('cvad', 'central_lines_container', `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="type" value="${data.type || ''}" placeholder="Type" class="p-1 border rounded-md"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"></div>`);
-    window.addPivc = (data = {}) => addDevice('pivc', 'pivcs_container', `<div class="grid grid-cols-2 gap-2 text-sm"><input type="text" data-key="location" value="${data.location || ''}" placeholder="Location" class="p-1 border rounded-md"><input type="text" data-key="size" value="${data.size || ''}" placeholder="Size" class="p-1 border rounded-md"></div>`);
-    window.addIdc = (data = {}) => addDevice('idc', 'idcs_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="IDC Details" class="p-1 border rounded-md w-full text-sm">`);
-    window.addDrain = (data = {}) => addDevice('drain', 'drains_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Drain Details" class="p-1 border rounded-md w-full text-sm">`);
-    window.addPacingWire = (data = {}) => addDevice('pacing', 'pacing_wires_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Pacing Wire Details" class="p-1 border rounded-md w-full text-sm">`);
-    window.addOther = (data = {}) => addDevice('other', 'others_container', `<input type="text" data-key="details" value="${data.details || ''}" placeholder="Other Device/Wound Details" class="p-1 border rounded-md w-full text-sm">`);
+    // --- DYNAMIC CONTENT ---
+    function populateStaticContent() {
+        const createBloodInput = (label, id) => {
+            let glucoseControlHtml = '';
+            if (id === 'glucose') {
+                glucoseControlHtml = `<label class="text-xs flex items-center mt-1 full-review-item"><input type="checkbox" id="glucose_control" class="input-checkbox !h-4 !w-4">Poorly Controlled</label>`;
+            }
+            return `<div class="blood-score-item"><label class="font-medium text-sm">${label}:<input type="number" step="0.1" id="${id}" class="input-field" placeholder="Current"></label><label class="text-xs full-review-item">Trend: <select id="${id}_trend" class="input-field"><option value="stable">Stable</option><option value="worsening">Worsening</option><option value="improving">Improving</option></select></label>${glucoseControlHtml}</div>`;
+        };
+        document.getElementById('bloods-container').innerHTML = `<h2 class="form-section-title">Scorable Blood Panel</h2><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">${createBloodInput('Creatinine (µmol/L)', 'creatinine')}${createBloodInput('Lactate (mmol/L)', 'lactate')}${createBloodInput('Bilirubin (µmol/L)', 'bilirubin')}${createBloodInput('Platelets (x10⁹/L)', 'platelets')}${createBloodInput('Hb (g/L)', 'hb')}${createBloodInput('Glucose (mmol/L)', 'glucose')}${createBloodInput('K+ (mmol/L)', 'k')}${createBloodInput('Mg++ (mmol/L)', 'mg')}${createBloodInput('Albumin (g/L)', 'albumin')}${createBloodInput('CRP (mg/L)', 'crp')}</div>`;
+       
+        document.getElementById('assessment-container').innerHTML = `<h2 class="form-section-title">A-E Assessment (ADDS)</h2>
+            <div class="space-y-6">
+                <div><h3 class="assessment-section-title">A: Airway</h3><select id="airway" class="input-field"><option value="Clear">Clear and maintained</option><option value="At Risk">Airway at risk / requires adjunct</option></select></div>
+                <div><h3 class="assessment-section-title">B: Breathing</h3><div class="assessment-grid"><label>Resp Rate:<input type="number" id="rr" class="input-field"></label><label>SpO2 (%):<input type="number" id="spo2" class="input-field"></label><label>O₂ Device:<select id="o2_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HFNP">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><div id="o2_flow_container" class="hidden"><label>Flow (L/min):<input type="number" id="o2_flow" class="input-field"></label></div><div id="fio2_container" class="hidden"><label>FiO2 (%):<input type="number" id="fio2" class="input-field"></label></div><div id="peep_ps_container" class="hidden grid grid-cols-2 gap-2"><label>PEEP:<input type="number" id="peep" class="input-field"></label><label>PS:<input type="number" id="ps" class="input-field"></label></div></div></div>
+                <div><h3 class="assessment-section-title">C: Circulation</h3><div class="assessment-grid"><label>Heart Rate:<input type="number" id="hr" class="input-field"></label><label>Systolic BP:<input type="number" id="sbp" class="input-field"></label><label>Diastolic BP:<input type="number" id="dbp" class="input-field"></label><label>Cap Refill:<select id="cap_refill" class="input-field"><option value="<2s">< 2 sec</option><option value=">2s">> 2 sec</option></select></label><label>Peripheries:<select id="peripheries" class="input-field"><option value="Warm">Warm</option><option value="Cool">Cool</option></select></label><div class="sm:col-span-1 md:col-span-2 grid grid-cols-2 gap-2 items-end"><label>Urine Output (last hr, mL):<input type="number" id="urine_output_hr" class="input-field"></label><label>mL/kg/hr:<input type="text" id="uop_ml_kg_hr_display" class="input-field bg-gray-100" readonly></label></div><div class="sm:col-span-2 md:col-span-3 grid grid-cols-2 gap-2"><label>Fluid Balance (24h, mL):<input type="number" id="fluid_balance" class="input-field" placeholder="e.g., -500 or 1200"></label><label class="full-review-item">Trend:<select id="fluid_balance_trend" class="input-field"><option value="Even">Even</option><option value="Trending Positive">Trending Positive</option><option value="Trending Negative">Trending Negative</option></select></label></div><label class="flex items-center sm:col-span-full full-review-item"><input type="checkbox" id="fluid_balance_inaccurate" class="input-checkbox">Fluid Balance Inaccurate</label></div></div>
+                <div><h3 class="assessment-section-title">D: Disability</h3><div class="assessment-grid"><label>Consciousness:<select id="consciousness" class="input-field"><option value="Alert">Alert</option><option value="Voice">Voice</option><option value="Pain">Pain</option><option value="Unresponsive">Unresponsive</option></select></label><label>Delirium:<select id="delirium" class="input-field"><option value="0">None</option><option value="1">Mild</option><option value="2">Mod-Severe</option></select></label><label>Pain Score (0-10):<input type="number" id="pain_score" class="input-field" min="0" max="10"></label></div><div id="pain_interventions_container" class="hidden mt-4 space-y-2 full-review-item"><label>Analgesia Regimen:<textarea id="analgesia_regimen" rows="2" class="input-field"></textarea></label><div id="aps_referral_container" class="hidden"><label class="flex items-center"><input type="checkbox" id="aps_referral" class="input-checkbox">APS Referral</label></div></div></div>
+                <div><h3 class="assessment-section-title">E: Exposure & Everything Else</h3><div class="assessment-grid"><label>Temperature (°C):<input type="number" step="0.1" id="temp" class="input-field"></label><div class="full-review-item"><label>Diet:<select id="diet" class="input-field"><option value="Tolerating Full Diet">Tolerating Full Diet</option><option value="Tolerating Light Diet">Tolerating Light Diet</option><option value="Nausea/Vomiting">Nausea / Vomiting</option><option value="NBM">NBM (Nil By Mouth)</option></select></label></div><div class="full-review-item"><label>Bowels:<select id="bowels" class="input-field"><option value="Normal/Active">Normal / Active</option><option value="Diarrhoea/Loose">Diarrhoea / Loose</option><option value="Constipated/Absent">Constipated / Absent</option></select></label><div id="aperients_container" class="hidden mt-2"><label>Aperients Charted:<textarea id="aperients_charted" rows="2" class="input-field"></textarea></label></div></div><label>Mobility:<select id="mobility" class="input-field"><option value="Independent">Independent</option><option value="Supervision/Standby Assist">Supervision / Standby Assist</option><option value="Requires Physical Assistance">Requires Physical Assistance</option><option value="Bedbound/Immobile">Bedbound / Immobile</option></select></label></div></div>
+            </div>
+            <div class="mt-6 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center relative"><div id="met-alert-container" class="met-alert absolute top-2 right-2"></div><span class="text-sm font-medium text-gray-500">ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>`;
+        
+        document.getElementById('devices-container').innerHTML = `<h2 class="form-section-title">Devices</h2>
+            <div class="space-y-4">
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="pivc_present" class="input-checkbox">PIVC (Peripheral Cannula)</label>
+                    <div id="pivc_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <label class="text-sm">Commencement Date:<input type="date" id="pivc_commencement_date" class="input-field"></label>
+                            <label class="text-sm">Site Health:<select id="pivc_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label>
+                            <div class="text-sm">Dwell Time: <span id="pivc_dwell_time" class="font-bold">N/A</span> days</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="cvad_present" class="input-checkbox">CVAD</label>
+                    <div id="cvad_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                            <label class="text-sm">Type:<select id="cvad_type" class="input-field"><option>CVC</option><option>PICC</option><option>Vascath</option></select></label>
+                            <label class="text-sm">Commencement Date:<input type="date" id="cvad_commencement_date" class="input-field"></label>
+                            <div class="text-sm">Dwell Time: <span id="cvad_dwell_time" class="font-bold">N/A</span> days</div>
+                            <label class="text-sm sm:col-span-2">Site Health:<select id="cvad_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="idc_present" class="input-checkbox">IDC</label>
+                     <div id="idc_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <label class="text-sm">Commencement Date:<input type="date" id="idc_commencement_date" class="input-field"></label>
+                            <div class="text-sm">Dwell Time: <span id="idc_dwell_time" class="font-bold">N/A</span> days</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="ng_tube_present" class="input-checkbox">NG Tube</label></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="nj_tube_present" class="input-checkbox">NJ Tube</label></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="drains_present" class="input-checkbox">Drains</label>
+                    <div id="drains_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <label class="text-sm">24hr Output (mL):<input type="number" id="drain_output_24hr" class="input-field"></label>
+                            <label class="text-sm">Cumulative Output (mL):<input type="number" id="drain_output_cumulative" class="input-field"></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="wounds_present" class="input-checkbox">Wounds</label>
+                    <div id="wounds_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item">
+                        <label class="text-sm">Description:<textarea id="wound_description" rows="2" class="input-field"></textarea></label>
+                    </div>
+                </div>
+            </div>`;
+
+        document.getElementById('scoringContainer').innerHTML = `<h2 class="form-section-title">Context & Frailty</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label class="font-medium text-sm">Ward Placement/Staffing (Reducer):</label><select id="ward_staffing" class="input-field"><option value="0">1:4+ Standard</option><option value="-0.5">1:3</option><option value="-1">1:2</option><option value="-2">1:1</option><option value="-1">Monitored Bed</option></select></div>
+                <div><label class="font-medium text-sm">Frailty Score (Rockwood CFS):</label><input type="number" id="frailty_score" class="input-field" min="1" max="9"></div>
+                <div class="sm:col-span-2 full-review-item"><label class="font-medium text-sm">General Notes (for DMR):</label><textarea id="devices_list" class="input-field" rows="2" placeholder="Note any other relevant context for the DMR summary..."></textarea></div>
+                <div class="sm:col-span-2 full-review-item"><label class="flex items-center"><input type="checkbox" id="manual_override" class="input-checkbox"> Manual Override / Clinical Concern</label><textarea id="override_reason" class="input-field mt-2" placeholder="Reason for override..."></textarea></div>
+            </div>`;
+    }
         
     initializeApp();
 });
-
+// --- SCRIPT END ---
