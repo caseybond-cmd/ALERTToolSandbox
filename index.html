@@ -178,13 +178,18 @@
     </div>
     
     <!-- Sticky Score Footer -->
-    <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-1 shadow-lg transition-colors duration-300 flex items-center justify-between z-40">
-        <div id="footer-flags-green" class="flex items-center text-sm font-bold"></div>
-        <div class="text-center">
-            <span id="footer-category" class="font-bold text-sm block">GREEN</span>
-            <span id="footer-score" class="font-bold text-xl">0</span>
+    <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex flex-col z-40">
+        <div class="flex items-center justify-between w-full">
+            <div id="footer-flags-green" class="flex items-center text-sm font-bold"></div>
+            <div class="text-center">
+                <span id="footer-category" class="font-bold text-sm block">GREEN</span>
+                <span id="footer-score" class="font-bold text-xl">0</span>
+            </div>
+            <div id="footer-flags-red" class="flex items-center text-sm font-bold"></div>
         </div>
-        <div id="footer-flags-red" class="flex items-center text-sm font-bold"></div>
+        <div id="footer-context" class="text-xs text-center mt-1 truncate">
+            <span id="footer-location"></span> | <span id="footer-reason"></span>
+        </div>
     </div>
     
     <script src="js/script.js"></script>
