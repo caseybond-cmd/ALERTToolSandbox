@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRiskAssessment();
 
         // Manually trigger events for dynamic fields
-        form.querySelectorAll('input[type="date"], input[id*="present"], select[id*="present"], #diet').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+        form.querySelectorAll('input[type="date"], input[id*="present"], select[id*="present"], #diet, #cap_refill, #peripheries').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
         document.getElementById('pain_score')?.dispatchEvent(new Event('input'));
         document.getElementById('bowels')?.dispatchEvent(new Event('change'));
         document.getElementById('adds_override_checkbox')?.dispatchEvent(new Event('change'));
@@ -137,6 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
             b.isTriggered = triggered; 
             if (triggered) { score += b.score; flags.red.push(`Abnormal ${b.name} (${b.val})`); }
             if (data[`${b.id}_trend`] === 'worsening') flags.red.push(`Worsening ${b.name} trend`);
+
+            const replacementContainer = document.getElementById(`${b.id}_replacement_container`);
+            if (replacementContainer) {
+                replacementContainer.classList.toggle('hidden', !b.isTriggered);
+            }
         });
         
         bloods.forEach(b => {
@@ -164,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deliriumScore = p(data.delirium) || 0;
         if (deliriumScore > 0) { score += deliriumScore; flags.red.push('Delirium Present'); }
         
-        if (data.cap_refill === '>2s') { score += 2; flags.red.push('Cap Refill > 2s'); }
+        if (data.cap_refill === '>3s') { score += 2; flags.red.push('Cap Refill > 3s'); }
         if (data.peripheries === 'Cool') { score += 1; flags.red.push('Cool peripheries'); }
         
         const weight = p(data.weight);
@@ -185,10 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (data.fluid_balance_trend && data.fluid_balance_trend !== 'Even') { score += 1; flags.red.push(`Fluid balance ${data.fluid_balance_trend}`);}
 
-        if (data.bowels === 'Diarrhoea/Loose' || data.bowels === 'Constipated/Absent') { score += 1; flags.red.push(`Bowel Issue: ${data.bowels}`); }
-        if (['Nausea/Vomiting', 'NBM'].includes(data.diet) || data.diet === 'Other (specify)') { 
+        if (data.bowels.startsWith('Diarrhoea') || data.bowels.startsWith('Constipated')) { score += 1; flags.red.push(`Bowel Issue: ${data.bowels}`); }
+        if (['Nausea/Vomiting', 'NBM', 'Other (specify)'].includes(data.diet)) { 
             score += 2; 
-            flags.red.push(`Poor Diet Tolerance: ${data.diet === 'Other (specify)' ? data.diet_other : data.diet}`); 
+            const dietReason = data.diet === 'Other (specify)' ? data.diet_other : data.diet;
+            flags.red.push(`Poor Diet Tolerance: ${dietReason}`); 
         }
         if (data.mobility === 'Requires Physical Assistance') { score += 1; flags.red.push('Mobility: Requires Assistance'); }
         else if (data.mobility === 'Bedbound/Immobile') { score += 2; flags.red.push('Mobility: Bedbound/Immobile'); }
@@ -219,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const staffingScore = p(data.ward_staffing) || 0;
         score += staffingScore; 
         if(staffingScore < 0) flags.green.push(`Protective Staffing (${staffingScore})`);
-        if (data.manual_override) { score += 3; flags.red.push(`Manual Override: ${data.override_reason || 'Clinical Concern'}`); }
+        if (data.manual_override) { score += 3; flags.red.push(`Manual Category Upgrade: ${data.override_reason || 'Clinical Concern'}`); }
         
         // Final Category Calculation
         let categoryKey;
@@ -261,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.sbp_trend === 'worsening') reasons.push('Worsening BP trend');
         checkParam(p(data.temp), [{min: -Infinity, max: 35, score: 3}, {min: 35.1, max: 36.0, score: 1}, {min: 36.1, max: 37.5, score: 0}, {min: 37.6, max: 38.0, score: 1}, {min: 38.1, max: 39.0, score: 2}, {min: 39.1, max: Infinity, score: 'E', note: '>=39.1 => MET'}], 'Temperature');
         if (data.temp_trend === 'worsening') reasons.push('Worsening Temperature trend');
+        if (data.o2_flow_trend === 'worsening') reasons.push('Worsening O₂ Flow trend');
         if (data.fio2_trend === 'worsening') reasons.push('Worsening FiO2 trend');
         if (data.consciousness === 'Unresponsive') { metCall = true; metReason = 'Unresponsive'; }
         else if (data.consciousness === 'Pain') { score += 2; reasons.push('Responds to Pain');}
@@ -346,6 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return `${b.name} ${val}`;
         }).join(', ');
+        
+        let bloodsNotes = [];
+        if (data.k_replacement) bloodsNotes.push(`- K+ Replacement: ${data.k_replacement}`);
+        if (data.mg_replacement) bloodsNotes.push(`- Mg++ Replacement: ${data.mg_replacement}`);
+        const bloodsNotesSummary = bloodsNotes.length > 0 ? `\n${bloodsNotes.join('\n')}`: '';
 
         let devicesSummary = [];
         if (data.pivc_1_present) devicesSummary.push(`PIVC 1 (${data.pivc_1_gauge}): Inserted ${data.pivc_1_commencement_date || 'N/A'}. Dwell: ${document.getElementById('pivc_1_dwell_time')?.textContent || 'N/A'} days. Site: ${data.pivc_1_site_health}`);
@@ -382,15 +394,15 @@ ${modsText}
 Modded ADDS = ${addsScoreValue}
 A: ${data.airway}
 B: RR ${data.rr}, SpO2 ${data.spo2} on ${data.o2_device} (Flow: ${data.o2_flow || 'N/A'}L, FiO2: ${data.fio2 || 'N/A'}%)
-C: HR ${data.hr}, BP ${data.sbp}/${data.dbp}, CRT ${data.cap_refill}, ${data.peripheries} peripheries, UO: ${uopSummary}, Fluid Bal: ${data.fluid_balance || 'N/A'}mL ${data.fluid_balance_inaccurate ? '[INACCURATE]' : ''}
+C: HR ${data.hr}, BP ${data.sbp}/${data.dbp}, CRT ${data.cap_refill} ${data.crt_details ? `(${data.crt_details})` : ''}, ${data.peripheries} peripheries ${data.peripheries_details ? `(${data.peripheries_details})` : ''}, UO: ${uopSummary}, Fluid Bal: ${data.fluid_balance || 'N/A'}mL ${data.fluid_balance_inaccurate ? '[INACCURATE]' : ''}
 D: ${data.consciousness}, Delirium: ${data.delirium === '0' ? 'None' : 'Present'}, Pain: ${data.pain_score || 'N/A'}/10, Mobility: ${data.mobility}
-E: Temp ${data.temp}°C, Diet: ${data.diet === 'Other (specify)' ? data.diet_other : data.diet}, Bowels: ${data.bowels} (Last Open: ${data.bowels_last_opened || 'N/A'}, BSC: ${data.bristol_stool_chart || 'N/A'})
+E: Temp ${data.temp}°C, Diet: ${data.diet === 'Other (specify)' ? data.diet_other : data.diet}, Bowels: ${data.bowels} (Last Open: ${data.bowels_last_opened || 'N/A'})
 
 DEVICES:
 ${devicesSummary.map(d => `- ${d}`).join('\n')}
 
 BLOODS:
-${bloodsSummary}
+${bloodsSummary}${bloodsNotesSummary}
 
 IMP:
 ${data.clinical_impression || ''}
@@ -503,13 +515,19 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
         });
         assessmentContainer.addEventListener('change', (e) => {
             if (e.target.id === 'bowels') {
-                document.getElementById('aperients_container').classList.toggle('hidden', e.target.value !== 'Constipated/Absent');
+                document.getElementById('aperients_container').classList.toggle('hidden', !e.target.value.startsWith('Constipated'));
             }
              if (e.target.id === 'diet') {
                 document.getElementById('diet_other_container').classList.toggle('hidden', e.target.value !== 'Other (specify)');
             }
             if (e.target.id === 'adds_override_checkbox') {
                  document.getElementById('adds_override_score_container').classList.toggle('hidden', !e.target.checked);
+            }
+            if (e.target.id === 'cap_refill') {
+                document.getElementById('crt_details_container').classList.toggle('hidden', e.target.value !== '>3s');
+            }
+            if (e.target.id === 'peripheries') {
+                document.getElementById('peripheries_details_container').classList.toggle('hidden', e.target.value !== 'Cool');
             }
         });
         
@@ -544,11 +562,14 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
     // --- MAJOR REFACTOR ---
     function populateStaticContent() {
         const createBloodInput = (label, id) => {
-            let glucoseControlHtml = '';
+            let specialHtml = '';
             if (id === 'glucose') {
-                glucoseControlHtml = `<label class="text-xs flex items-center mt-1 full-review-item"><input type="checkbox" id="glucose_control" class="input-checkbox !h-4 !w-4">Poorly Controlled</label>`;
+                specialHtml = `<label class="text-xs flex items-center mt-1 full-review-item"><input type="checkbox" id="glucose_control" class="input-checkbox !h-4 !w-4">Poorly Controlled</label>`;
             }
-            return `<div class="blood-score-item"><label class="font-medium text-sm">${label}:<input type="number" step="0.1" id="${id}" class="input-field" placeholder="Current"></label><div class="trend-radio-group full-review-item" data-trend-id="${id}_trend"><label title="Improving"><input type="radio" name="${id}_trend_radio" value="improving"><span>↑</span></label><label title="Stable"><input type="radio" name="${id}_trend_radio" value="stable" checked><span>→</span></label><label title="Worsening"><input type="radio" name="${id}_trend_radio" value="worsening"><span>↓</span></label></div>${glucoseControlHtml}</div>`;
+            if (id === 'k' || id === 'mg') {
+                specialHtml = `<div id="${id}_replacement_container" class="hidden mt-2 full-review-item"><label class="text-xs">Replacement/Action:<textarea id="${id}_replacement" rows="1" class="input-field"></textarea></label></div>`;
+            }
+            return `<div class="blood-score-item"><label class="font-medium text-sm">${label}:<input type="number" step="0.1" id="${id}" class="input-field" placeholder="Current"></label><div class="trend-radio-group full-review-item" data-trend-id="${id}_trend"><label title="Improving"><input type="radio" name="${id}_trend_radio" value="improving"><span>↑</span></label><label title="Stable"><input type="radio" name="${id}_trend_radio" value="stable" checked><span>→</span></label><label title="Worsening"><input type="radio" name="${id}_trend_radio" value="worsening"><span>↓</span></label></div>${specialHtml}</div>`;
         };
         document.getElementById('bloods-container').innerHTML = `<h2 class="form-section-title">Scorable Blood Panel</h2><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">${createBloodInput('Creatinine (µmol/L)', 'creatinine')}${createBloodInput('Lactate (mmol/L)', 'lactate')}${createBloodInput('Bilirubin (µmol/L)', 'bilirubin')}${createBloodInput('Platelets (x10⁹/L)', 'platelets')}${createBloodInput('Hb (g/L)', 'hb')}${createBloodInput('Glucose (mmol/L)', 'glucose')}${createBloodInput('K+ (mmol/L)', 'k')}${createBloodInput('Mg++ (mmol/L)', 'mg')}${createBloodInput('Albumin (g/L)', 'albumin')}${createBloodInput('CRP (mg/L)', 'crp')}</div>`;
        
@@ -560,7 +581,7 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
                 <div class="assessment-grid" style="align-items: end;">
                     <div><label>Resp Rate:</label><div class="flex items-center gap-2"><input type="number" id="rr" class="input-field">${createTrendButtons('rr')}</div></div>
                     <div><label>SpO2 (%):</label><div class="flex items-center gap-2"><input type="number" id="spo2" class="input-field">${createTrendButtons('spo2')}</div></div>
-                    <div><label>O₂ Device:<select id="o2_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HFNP">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><div id="o2_flow_container" class="hidden"><label class="text-xs">Flow (L/min):<input type="number" id="o2_flow" class="input-field"></label></div><div id="fio2_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">FiO2 (%):<input type="number" id="fio2" class="input-field"></label>${createTrendButtons('fio2')}</div><div id="peep_ps_container" class="hidden grid grid-cols-2 gap-2"><label class="text-xs">PEEP:<input type="number" id="peep" class="input-field"></label><label class="text-xs">PS:<input type="number" id="ps" class="input-field"></label></div></div>
+                    <div><label>O₂ Device:<select id="o2_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HFNP">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><div id="o2_flow_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">Flow (L/min):<input type="number" id="o2_flow" class="input-field"></label>${createTrendButtons('o2_flow')}</div><div id="fio2_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">FiO2 (%):<input type="number" id="fio2" class="input-field"></label>${createTrendButtons('fio2')}</div><div id="peep_ps_container" class="hidden grid grid-cols-2 gap-2"><label class="text-xs">PEEP:<input type="number" id="peep" class="input-field"></label><label class="text-xs">PS:<input type="number" id="ps" class="input-field"></label></div></div>
                     <div><label>Heart Rate:</label><div class="flex items-center gap-2"><input type="number" id="hr" class="input-field">${createTrendButtons('hr')}</div></div>
                     <div><label>Systolic BP:</label><div class="flex items-center gap-2"><input type="number" id="sbp" class="input-field">${createTrendButtons('sbp')}</div></div>
                     <label>Diastolic BP:<input type="number" id="dbp" class="input-field"></label>
@@ -583,9 +604,9 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
             <div class="mt-6 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center relative"><div id="met-alert-container" class="met-alert absolute top-2 right-2"></div><span class="text-sm font-medium text-gray-500">ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>
             <div class="space-y-6 mt-6">
                 <div><h3 class="form-section-title">Airway</h3><select id="airway" class="input-field"><option value="Patent">Patent</option><option value="At Risk">At Risk</option></select></div>
-                <div><h3 class="form-section-title">Circulation & Fluid Status</h3><div class="assessment-grid"><label>Cap Refill:<select id="cap_refill" class="input-field"><option value="<2s">< 2 sec</option><option value=">2s">> 2 sec</option></select></label><label>Peripheries:<select id="peripheries" class="input-field"><option value="Warm">Warm</option><option value="Cool">Cool</option></select></label><div class="sm:col-span-1 md:col-span-2 grid grid-cols-2 gap-2 items-end"><label>Urine Output (last hr, mL):<input type="number" id="urine_output_hr" class="input-field"></label><label>mL/kg/hr:<input type="text" id="uop_ml_kg_hr_display" class="input-field bg-gray-100" readonly></label></div><div class="sm:col-span-2 md:col-span-3 grid grid-cols-2 gap-2"><label>Fluid Balance (24h, mL):<input type="number" id="fluid_balance" class="input-field" placeholder="e.g., -500 or 1200"></label><label class="full-review-item">Trend:<select id="fluid_balance_trend" class="input-field"><option value="Even">Even</option><option value="Trending Positive">Trending Positive</option><option value="Trending Negative">Trending Negative</option></select></label></div><label class="flex items-center sm:col-span-full full-review-item"><input type="checkbox" id="fluid_balance_inaccurate" class="input-checkbox">Fluid Balance Inaccurate</label></div></div>
+                <div><h3 class="form-section-title">Circulation & Fluid Status</h3><div class="assessment-grid"><div><label>Cap Refill:<select id="cap_refill" class="input-field"><option value="<3s">< 3 sec</option><option value=">3s">> 3 sec</option></select></label><div id="crt_details_container" class="hidden mt-2 full-review-item"><label class="text-xs">Details:<textarea id="crt_details" class="input-field" rows="1"></textarea></label></div></div><div><label>Peripheries:<select id="peripheries" class="input-field"><option value="Warm">Warm</option><option value="Cool">Cool</option></select></label><div id="peripheries_details_container" class="hidden mt-2 full-review-item"><label class="text-xs">Details:<textarea id="peripheries_details" class="input-field" rows="1"></textarea></label></div></div><div class="sm:col-span-1 md:col-span-2 grid grid-cols-2 gap-2 items-end"><label>Urine Output (last hr, mL):<input type="number" id="urine_output_hr" class="input-field"></label><label>mL/kg/hr:<input type="text" id="uop_ml_kg_hr_display" class="input-field bg-gray-100" readonly></label></div><div class="sm:col-span-2 md:col-span-3 grid grid-cols-2 gap-2"><label>Fluid Balance (24h, mL):<input type="number" id="fluid_balance" class="input-field" placeholder="e.g., -500 or 1200"></label><div class="full-review-item"><label>Trend:</label>${createTrendButtons('fluid_balance')}</div></div><label class="flex items-center sm:col-span-full full-review-item"><input type="checkbox" id="fluid_balance_inaccurate" class="input-checkbox">Fluid Balance Inaccurate</label></div></div>
                 <div><h3 class="form-section-title">Neurological & Mobility</h3><div class="assessment-grid"><label>Delirium:<select id="delirium" class="input-field"><option value="0">None</option><option value="1">Mild</option><option value="2">Mod-Severe</option></select></label><label>Mobility:<select id="mobility" class="input-field"><option value="Independent">Independent</option><option value="Supervision/Standby Assist">Supervision / Standby Assist</option><option value="Requires Physical Assistance">Requires Physical Assistance</option><option value="Bedbound/Immobile">Bedbound / Immobile</option></select></label></div><div id="pain_interventions_container" class="hidden mt-4 space-y-2 full-review-item"><label>Analgesia Regimen:<textarea id="analgesia_regimen" rows="2" class="input-field"></textarea></label><div id="aps_referral_container" class="hidden"><label class="flex items-center"><input type="checkbox" id="aps_referral" class="input-checkbox">APS Referral</label></div></div></div>
-                <div><h3 class="form-section-title">Nutrition & Elimination</h3><div class="assessment-grid full-review-item"><div><label>Diet:<select id="diet" class="input-field"><option>Tolerating Full Diet</option><option>Tolerating Light Diet</option><option>Nausea / Vomiting</option><option>NBM</option><option>Other (specify)</option></select></label><div id="diet_other_container" class="hidden mt-2"><label>Specify Diet:<textarea id="diet_other" class="input-field" rows="1"></textarea></label></div></div><div><label>Bowels:<select id="bowels" class="input-field"><option value="Normal/Active">Normal / Active</option><option value="Diarrhoea/Loose">Diarrhoea / Loose</option><option value="Constipated/Absent">Constipated / Absent</option></select></label><div id="aperients_container" class="hidden mt-2"><label>Aperients Charted:<textarea id="aperients_charted" rows="2" class="input-field"></textarea></label></div></div><label>Bowels Last Opened:<input type="date" id="bowels_last_opened" class="input-field"></label><label>Bristol Stool Chart (1-7):<input type="number" id="bristol_stool_chart" class="input-field" min="1" max="7"></label></div></div>
+                <div><h3 class="form-section-title">Nutrition & Elimination</h3><div class="assessment-grid full-review-item"><div><label>Diet:<select id="diet" class="input-field"><option>Tolerating Full Diet</option><option>Tolerating Light Diet</option><option>Nausea / Vomiting</option><option>NBM</option><option>Other (specify)</option></select></label><div id="diet_other_container" class="hidden mt-2"><label>Specify Diet:<textarea id="diet_other" class="input-field" rows="1"></textarea></label></div></div><div><label>Bowels:<select id="bowels" class="input-field"><option value="Normal/Active">Normal / Active</option><option value="Formed (BSC 3-5)">Formed (BSC 3-5)</option><option value="Diarrhoea/Loose (BSC 6-7)">Diarrhoea/Loose (BSC 6-7)</option><option value="Constipated/Absent (BSC 1-2)">Constipated/Absent (BSC 1-2)</option></select></label><div id="aperients_container" class="hidden mt-2"><label>Aperients Charted:<textarea id="aperients_charted" rows="2" class="input-field"></textarea></label></div></div><label>Bowels Last Opened:<input type="date" id="bowels_last_opened" class="input-field"></label></div></div>
             </div>`;
         
         document.getElementById('devices-container').innerHTML = `<h2 class="form-section-title">Devices</h2>
@@ -598,7 +619,7 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="nj_tube_present" class="input-checkbox">NJ Tube</label></div>
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="drains_present" class="input-checkbox">Drains</label><div id="drains_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><label class="text-sm">24hr Output (mL):<input type="number" id="drain_output_24hr" class="input-field"></label><label class="text-sm">Cumulative Output (mL):<input type="number" id="drain_output_cumulative" class="input-field"></label></div></div></div>
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="wounds_present" class="input-checkbox">Wounds</label><div id="wounds_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><label class="text-sm">Description:<textarea id="wound_description" rows="2" class="input-field"></textarea></label></div></div>
-                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="other_device_present" class="input-checkbox">Other Device</label><div id="other_device_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><label class="text-sm">Details:<textarea id="other_device_details" rows="2" class="input-field"></textarea></label></div></div>
+                <div class="device-item full-review-item"><label class="flex items-center font-medium"><input type="checkbox" id="other_device_present" class="input-checkbox">Other Device</label><div id="other_device_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2"><label class="text-sm">Details:<textarea id="other_device_details" rows="2" class="input-field"></textarea></label></div></div>
             </div>`;
 
         document.getElementById('scoringContainer').innerHTML = `<h2 class="form-section-title">Context & Frailty</h2>
@@ -606,7 +627,7 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
                 <div><label class="font-medium text-sm">Ward Placement/Staffing (Reducer):</label><select id="ward_staffing" class="input-field"><option value="0">1:4+ Standard</option><option value="-0.5">1:3</option><option value="-1">1:2</option><option value="-2">1:1</option><option value="-1">Monitored Bed</option></select></div>
                 <div><label class="font-medium text-sm">Frailty Score (Rockwood CFS):</label><input type="number" id="frailty_score" class="input-field" min="1" max="9"></div>
                 <div class="sm:col-span-2 full-review-item"><label class="font-medium text-sm">General Notes (for DMR):</label><textarea id="general_notes" class="input-field" rows="2" placeholder="Note any other relevant context for the DMR summary..."></textarea></div>
-                <div class="sm:col-span-2 full-review-item"><label class="flex items-center"><input type="checkbox" id="manual_override" class="input-checkbox"> Manual Override / Clinical Concern</label><textarea id="override_reason" class="input-field mt-2" placeholder="Reason for override..."></textarea></div>
+                <div class="sm:col-span-2 full-review-item"><label class="flex items-center"><input type="checkbox" id="manual_override" class="input-checkbox"> Manual Category Upgrade - Clinical Concern</label><textarea id="override_reason" class="input-field mt-2" placeholder="Reason for upgrade..."></textarea></div>
             </div>`;
     }
         
