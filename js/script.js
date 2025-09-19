@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deliriumScore = p(data.delirium) || 0;
         if (deliriumScore > 0) { score += deliriumScore; flags.red.push('Delirium Present'); }
         
+        // New Circulation Parameters
         if (data.cap_refill === '>2s') { score += 2; flags.red.push('Cap Refill > 2s'); }
         if (data.peripheries === 'Cool') { score += 1; flags.red.push('Cool peripheries'); }
         
@@ -151,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (data.fluid_balance_trend && data.fluid_balance_trend !== 'Even') { score += 1; flags.red.push(`Fluid balance ${data.fluid_balance_trend}`);}
 
+        // Bowels, Diet, & Mobility Scoring
         if (data.bowels === 'Diarrhoea/Loose' || data.bowels === 'Constipated/Absent') { score += 1; flags.red.push(`Bowel Issue: ${data.bowels}`); }
         if (['Nausea/Vomiting', 'NBM'].includes(data.diet)) { score += 2; flags.red.push(`Poor Diet Tolerance: ${data.diet}`); }
         if (data.mobility === 'Requires Physical Assistance') { score += 1; flags.red.push('Mobility: Requires Assistance'); }
@@ -267,13 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // --- MAJOR REFACTOR of DMR Summary ---
     function generateDMRSummary() {
         const data = gatherFormData();
         const score = document.getElementById('footer-score').textContent;
-        const categoryText = document.getElementById('footer-category').textContent;
-        const flags = { red: Array.from(document.querySelectorAll('#summary-container .flag-list-red li')).map(li => li.textContent), green: Array.from(document.querySelectorAll('#summary-container .flag-list-green li')).map(li => li.textContent) };
-        const plan = generateActionPlan(categoryText.split(':')[0].replace('CAT ', ''), flags.red);
-        let stableLongStay = (p(data.icu_los) > 3 && flags.red.length === 0) ? " (Stable Long-Stay)" : "";
+        const categoryText = document.getElementById('footer-category').textContent.replace('CAT ', 'Cat ');
+        
         let uopSummary = 'N/A';
         const weight = p(data.weight);
         const uop_hr = p(data.urine_output_hr);
@@ -284,7 +285,19 @@ document.addEventListener('DOMContentLoaded', () => {
             uopSummary = `${uop_hr} mL/hr`;
         }
         
-        // --- START of DMR SUMMARY REFACTOR ---
+        const bloodsSummary = [
+            `Cr ${data.creatinine || '--'}`,
+            `Lac ${data.lactate || '--'}`,
+            `Bili ${data.bilirubin || '--'}`,
+            `Plt ${data.platelets || '--'}`,
+            `Hb ${data.hb || '--'}`,
+            `Gluc ${data.glucose || '--'}`,
+            `K ${data.k || '--'}`,
+            `Mg ${data.mg || '--'}`,
+            `Alb ${data.albumin || '--'}`,
+            `CRP ${data.crp || '--'}`
+        ].join(', ');
+
         let devicesSummary = [];
         if (data.pivc_present) devicesSummary.push(`PIVC: Inserted ${data.pivc_commencement_date || 'N/A'}. Dwell: ${document.getElementById('pivc_dwell_time')?.textContent || 'N/A'} days. Site: ${data.pivc_site_health}`);
         if (data.cvad_present) devicesSummary.push(`CVAD (${data.cvad_type}): Inserted ${data.cvad_commencement_date || 'N/A'}. Dwell: ${document.getElementById('cvad_dwell_time')?.textContent || 'N/A'} days. Site: ${data.cvad_site_health}`);
@@ -295,43 +308,43 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.wounds_present) devicesSummary.push(`Wounds: ${data.wound_description || 'N/A'}`);
         if(devicesSummary.length === 0) devicesSummary.push('None');
 
+        const reviewTypeText = data.review_type === 'post' ? 'post ICU review' : 'pre-ICU review';
         const summary = `
-ALERT RISK ASSESSMENT
----------------------
-PATIENT: ${data.patient_id || 'N/A'} | Ward: ${data.location || 'N/A'}-${data.room_number || 'N/A'} | LOS: ${data.icu_los || 'N/A'} days${stableLongStay}
-CATEGORY: ${categoryText} (Score: ${score})
-ACTION PLAN: ${plan}
----------------------
-RED FLAGS IDENTIFIED:
-${flags.red.length ? flags.red.map(f => `- ${f}`).join('\n') : '- None'}
----------------------
-PROTECTIVE FLAGS:
-${flags.green.length ? flags.green.map(f => `- ${f}`).join('\n') : '- None'}
----------------------
-A-E ASSESSMENT (ADDS: ${calculateADDS(data).score}):
-A: Airway: ${data.airway}
-B: Breathing: RR ${data.rr}, SpO2 ${data.spo2} on ${data.o2_device} (Flow: ${data.o2_flow}, FiO2: ${data.fio2}, PEEP: ${data.peep}, PS: ${data.ps})
-C: Circulation: HR ${data.hr}, BP ${data.sbp}/${data.dbp}, Cap Refill: ${data.cap_refill}, Peripheries: ${data.peripheries}, UO: ${uopSummary}, Fluid Bal (24h): ${data.fluid_balance || 'N/A'} mL (Trend: ${data.fluid_balance_trend}) ${data.fluid_balance_inaccurate ? '[INACCURATE]' : ''}
-D: Disability: Conscious: ${data.consciousness}, Delirium: ${data.delirium === '0' ? 'None' : 'Present'}, Pain: ${data.pain_score || 'N/A'}/10
-   - Analgesia: ${data.analgesia_regimen || 'N/A'} ${data.aps_referral ? '| APS REFERRAL' : ''}
-E: Exposure/Everything Else: Temp ${data.temp}°C, Diet: ${data.diet}, Bowels: ${data.bowels} ${data.bowels === 'Constipated/Absent' ? `(Aperients: ${data.aperients_charted || 'N/A'})` : ''}, Mobility: ${data.mobility}
----------------------
+ALERT CNS ${reviewTypeText} on ward ${data.location || ''}
+LOS: ${data.icu_los || 'N/A'} days
+${categoryText} discharge
+
+${data.age || 'N/A'}M/F. Patient ID: ${data.patient_id || 'N/A'}
+
+REASON FOR ICU ADMISSION
+${data.reason_icu || 'N/A'}
+
+ICU SUMMARY
+${data.icu_summary || 'N/A'}
+
+PMH
+${data.pmh || 'N/A'}
+
+Modded ADDS = ${calculateADDS(data).score}
+A: ${data.airway}
+B: RR ${data.rr}, SpO2 ${data.spo2} on ${data.o2_device} (Flow: ${data.o2_flow || 'N/A'}L, FiO2: ${data.fio2 || 'N/A'}%)
+C: HR ${data.hr}, BP ${data.sbp}/${data.dbp}, CRT ${data.cap_refill}, ${data.peripheries} peripheries
+D: ${data.consciousness}, Delirium: ${data.delirium === '0' ? 'None' : 'Present'}, Pain: ${data.pain_score || 'N/A'}/10
+E: Temp ${data.temp}°C, Diet: ${data.diet}, Bowels: ${data.bowels}, Mobility: ${data.mobility}, UO: ${uopSummary}, Fluid Bal: ${data.fluid_balance || 'N/A'}mL ${data.fluid_balance_inaccurate ? '[INACCURATE]' : ''}
+
 DEVICES:
 ${devicesSummary.map(d => `- ${d}`).join('\n')}
----------------------
-KEY DATA:
-- Age: ${data.age}, Weight: ${data.weight || 'N/A'} kg, Admission: ${document.getElementById('admission_type').options[document.getElementById('admission_type').selectedIndex].text}
-- Comorbidities: ${data.severe_comorbidities || 'N/A'}
-- Bloods: Cr ${data.creatinine}(${data.creatinine_trend}), Lac ${data.lactate}(${data.lactate_trend}), Bili ${data.bilirubin}(${data.bilirubin_trend}), Plt ${data.platelets}(${data.platelet_trend}), Hb ${data.hb}(${data.hb_trend}), Gluc ${data.glucose}(${data.glucose_trend}), K ${data.k}(${data.k_trend}), Mg ${data.mg}(${data.mg_trend}), Alb ${data.albumin}(${data.albumin_trend}), CRP ${data.crp}(${data.crp_trend})
-- Frailty: ${data.frailty_score || "N/A"}
-- Override: ${data.manual_override ? data.override_reason : 'No'}
----------------------
-CLINICAL CONTEXT:
-- Reason for ICU: ${data.reason_icu || 'N/A'}
-- ICU Summary: ${data.icu_summary || 'N/A'}
-- PMH: ${data.pmh || 'N/A'}
-- GOC: ${data.goc} ${data.goc_details ? `(${data.goc_details})` : ''}
-`.trim();
+
+BLOODS:
+${bloodsSummary}
+
+IMP:
+${data.clinical_impression || ''}
+
+Plan:
+${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
+`.trim().replace(/^\s*\n/gm, ''); // Clean up extra blank lines
+
         document.getElementById('emrSummary').value = summary;
     }
 
@@ -434,7 +447,6 @@ CLINICAL CONTEXT:
             }
         });
         
-        // --- START of DEVICE LISTENERS ---
         const devicesContainer = document.getElementById('devices-container');
         const calculateDwellTime = (startDate, displayElId) => {
             const displayEl = document.getElementById(displayElId);
@@ -460,7 +472,6 @@ CLINICAL CONTEXT:
                 calculateDwellTime(e.target.value, dwellId);
             }
         });
-        // --- END of DEVICE LISTENERS ---
     }
 
     // --- DYNAMIC CONTENT ---
@@ -484,7 +495,6 @@ CLINICAL CONTEXT:
             </div>
             <div class="mt-6 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center relative"><div id="met-alert-container" class="met-alert absolute top-2 right-2"></div><span class="text-sm font-medium text-gray-500">ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>`;
         
-        // --- START of DEVICE SECTION HTML ---
         document.getElementById('devices-container').innerHTML = `<h2 class="form-section-title">Devices</h2>
             <div class="space-y-4">
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="pivc_present" class="input-checkbox">PIVC (Peripheral Cannula)</label>
