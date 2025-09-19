@@ -130,8 +130,20 @@
                     <div><label for="additionalNotes" class="block font-medium">Additional Notes:</label><textarea id="additionalNotes" rows="6" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div>
                 </div>
             </div>
+<div id="summary-container" class="space-y-4">
+    <p class="text-gray-500">Summary will appear here as you enter data...</p>
+</div>
 
-            <!-- Final Score and DMR -->
+<div class="mt-6 space-y-4 full-review-item">
+    <div>
+        <label for="clinical_impression" class="block font-semibold text-gray-700">Impression (IMP):</label>
+        <textarea id="clinical_impression" rows="3" class="input-field" placeholder="e.g., On HFNP with raised inflammatory markers..."></textarea>
+    </div>
+    <div>
+        <label for="clinical_plan" class="block font-semibold text-gray-700">Plan:</label>
+        <textarea id="clinical_plan" rows="4" class="input-field" placeholder="e.g., Chase bloods, Monitor FiO2 trend..."></textarea>
+    </div>
+</div>            <!-- Final Score and DMR -->
             <div class="bg-white rounded-xl shadow-lg mt-6 p-6">
                 <h2 class="text-xl font-bold border-b pb-3 mb-4">DMR Summary Generator</h2>
                 <div class="flex space-x-4 mb-4 no-print">
