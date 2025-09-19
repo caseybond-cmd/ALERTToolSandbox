@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-        // Special handling for radio button groups
         document.querySelectorAll('.trend-radio-group').forEach(group => {
             const checkedRadio = group.querySelector('input[type="radio"]:checked');
             if (checkedRadio) {
@@ -64,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     el.value = currentReview[key];
                 }
             } else if (key.endsWith('_trend')) {
-                // Handle radio buttons
                 const trendRadios = form.querySelectorAll(`input[name="${key}_radio"]`);
                 trendRadios.forEach(radio => {
                     if (radio.value === currentReview[key]) {
@@ -79,10 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateRiskAssessment();
 
-        // Manually trigger events for dynamic fields
         form.querySelectorAll('input[type="date"], input[id*="present"], select[id*="present"]').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
         document.getElementById('pain_score')?.dispatchEvent(new Event('input'));
         document.getElementById('bowels')?.dispatchEvent(new Event('change'));
+        document.getElementById('adds_override_checkbox')?.dispatchEvent(new Event('change'));
     }
 
     function clearForm() {
@@ -95,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- CORE LOGIC: RISK ASSESSMENT ENGINE ---
+    // --- MINOR REFACTOR of updateRiskAssessment ---
     function updateRiskAssessment() {
         const data = gatherFormData();
         if (Object.keys(data).length === 0) return;
@@ -153,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const overrideScore = p(data.adds_override_score);
             score += overrideScore;
             flags.red.push(`ADDS Score Manually Overridden to: ${overrideScore}`);
-            // Update the display directly
             const finalADDSScoreEl = document.getElementById('finalADDSScore');
             if (finalADDSScoreEl) finalADDSScoreEl.textContent = overrideScore;
         } else {
@@ -262,7 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
         checkParam(p(data.fio2), [{min: 28, max: 39, score: 2}, {min: 40, max: Infinity, score: 3}], 'FiO2');
         
         const finalADDSScoreEl = document.getElementById('finalADDSScore');
-        if(finalADDSScoreEl) finalADDSScoreEl.textContent = score;
+        if(finalADDSScoreEl && !data.adds_override_checkbox) {
+            finalADDSScoreEl.textContent = score;
+        }
 
         return { score, metCall, metReason, reasons };
     }
@@ -308,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // --- MAJOR REFACTOR of DMR Summary ---
     function generateDMRSummary() {
         const data = gatherFormData();
         const score = document.getElementById('footer-score').textContent;
@@ -372,9 +373,9 @@ ${modsText}
 Modded ADDS = ${addsScoreValue}
 A: ${data.airway}
 B: RR ${data.rr}, SpO2 ${data.spo2} on ${data.o2_device} (Flow: ${data.o2_flow || 'N/A'}L, FiO2: ${data.fio2 || 'N/A'}%)
-C: HR ${data.hr}, BP ${data.sbp}/${data.dbp}, CRT ${data.cap_refill}, ${data.peripheries} peripheries
+C: HR ${data.hr}, BP ${data.sbp}/${data.dbp}, CRT ${data.cap_refill}, ${data.peripheries} peripheries, UO: ${uopSummary}, Fluid Bal: ${data.fluid_balance || 'N/A'}mL ${data.fluid_balance_inaccurate ? '[INACCURATE]' : ''}
 D: ${data.consciousness}, Delirium: ${data.delirium === '0' ? 'None' : 'Present'}, Pain: ${data.pain_score || 'N/A'}/10
-E: Temp ${data.temp}°C, Diet: ${data.diet}, Bowels: ${data.bowels}, Mobility: ${data.mobility}, UO: ${uopSummary}, Fluid Bal: ${data.fluid_balance || 'N/A'}mL ${data.fluid_balance_inaccurate ? '[INACCURATE]' : ''}
+E: Temp ${data.temp}°C, Diet: ${data.diet}, Bowels: ${data.bowels}, Mobility: ${data.mobility}
 
 DEVICES:
 ${devicesSummary.map(d => `- ${d}`).join('\n')}
@@ -455,9 +456,10 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
             alert('DMR Summary Copied to Clipboard!');
         });
         
+        // --- START of DATA KEY CHANGE ---
         document.getElementById('generateHandoffBtn').addEventListener('click', () => {
              const data = gatherFormData();
-            const desktopFields = ['review_type', 'location', 'room_number', 'patient_id', 'stepdown_date', 'after_hours', 'icu_los', 'age', 'admission_type', 'goc', 'goc_details', 'reason_icu', 'icu_summary', 'pmh', 'severe_comorbidities', 'weight'];
+            const desktopFields = ['review_type', 'location', 'room_number', 'patient_id', 'stepdown_date', 'weight', 'age', 'admission_type', 'icu_los', 'after_hours', 'goc', 'goc_details', 'reason_icu', 'icu_summary', 'pmh', 'severe_comorbidities'];
             const handoffData = {};
             desktopFields.forEach(id => {
                 if (data.hasOwnProperty(id)) {
@@ -467,6 +469,7 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
             const key = btoa(JSON.stringify(handoffData));
             navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard!'));
         });
+        // --- END of DATA KEY CHANGE ---
 
         const o2DeviceEl = document.getElementById('o2_device');
         if (o2DeviceEl) {
@@ -577,8 +580,8 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
         
         document.getElementById('devices-container').innerHTML = `<h2 class="form-section-title">Devices</h2>
             <div class="space-y-4">
-                <div class="device-item"><label class="flex items-center font-medium text-gray-800">PIVC 1:</label><div class="mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-4 gap-4"><label class="text-sm">Commencement Date:<input type="date" id="pivc_1_commencement_date" class="input-field"></label><label class="text-sm">Gauge:<select id="pivc_1_gauge" class="input-field"><option>24G</option><option>22G</option><option>20G</option><option>18G</option><option>16G</option></select></label><label class="text-sm">Site Health:<select id="pivc_1_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label><div class="text-sm self-end">Dwell Time: <span id="pivc_1_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
-                <div class="device-item"><label class="flex items-center font-medium text-gray-800">PIVC 2:</label><div class="mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-4 gap-4"><label class="text-sm">Commencement Date:<input type="date" id="pivc_2_commencement_date" class="input-field"></label><label class="text-sm">Gauge:<select id="pivc_2_gauge" class="input-field"><option>24G</option><option>22G</option><option>20G</option><option>18G</option><option>16G</option></select></label><label class="text-sm">Site Health:<select id="pivc_2_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label><div class="text-sm self-end">Dwell Time: <span id="pivc_2_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
+                <div class="device-item"><label class="flex items-center font-medium text-gray-800">PIVC 1:</label><div class="mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center"><label class="text-sm">Commencement Date:<input type="date" id="pivc_1_commencement_date" class="input-field"></label><label class="text-sm">Gauge:<select id="pivc_1_gauge" class="input-field"><option>24G</option><option>22G</option><option>20G</option><option>18G</option><option>16G</option></select></label><label class="text-sm">Site Health:<select id="pivc_1_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label><div class="text-sm">Dwell Time: <span id="pivc_1_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
+                <div class="device-item"><label class="flex items-center font-medium text-gray-800">PIVC 2:</label><div class="mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center"><label class="text-sm">Commencement Date:<input type="date" id="pivc_2_commencement_date" class="input-field"></label><label class="text-sm">Gauge:<select id="pivc_2_gauge" class="input-field"><option>24G</option><option>22G</option><option>20G</option><option>18G</option><option>16G</option></select></label><label class="text-sm">Site Health:<select id="pivc_2_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label><div class="text-sm">Dwell Time: <span id="pivc_2_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="cvad_present" class="input-checkbox">CVAD</label><div id="cvad_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center"><label class="text-sm">Type:<select id="cvad_type" class="input-field"><option>CVC</option><option>PICC</option><option>Vascath</option></select></label><label class="text-sm">Commencement Date:<input type="date" id="cvad_commencement_date" class="input-field"></label><div class="text-sm">Dwell Time: <span id="cvad_dwell_time" class="font-bold">N/A</span> days</div><label class="text-sm sm:col-span-2">Site Health:<select id="cvad_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label></div></div></div>
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="idc_present" class="input-checkbox">IDC</label><div id="idc_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-3 gap-4"><label class="text-sm">Commencement Date:<input type="date" id="idc_commencement_date" class="input-field"></label><div class="text-sm">Dwell Time: <span id="idc_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="ng_tube_present" class="input-checkbox">NG Tube</label></div>
