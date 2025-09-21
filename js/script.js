@@ -19,10 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedState) {
             currentReview = JSON.parse(savedState);
             loadReviewData();
-            document.getElementById('launchScreenModal').style.display = 'none';
-            document.getElementById('main-content').style.visibility = 'visible';
         } else {
-            document.getElementById('launchScreenModal').style.display = 'flex';
+            // If no saved state, start with a blank form.
+            updateRiskAssessment();
         }
     }
 
@@ -80,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CORE LOGIC: RISK ASSESSMENT ENGINE ---
     function updateRiskAssessment() {
         const data = gatherFormData();
-        if (Object.keys(data).length === 0) return;
+        // Removed check for empty data to allow initial calculation on blank form
         
         let score = 0;
         const flags = { red: [], green: [] };
@@ -157,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(uopDisplay) uopDisplay.value = '';
         }
         
-        if (data.bowels.startsWith('Diarrhoea') || data.bowels.startsWith('Constipated')) { score += 1; flags.red.push(`Bowel Issue: ${data.bowels}`); }
+        if (data.bowels && (data.bowels.startsWith('Diarrhoea') || data.bowels.startsWith('Constipated'))) { score += 1; flags.red.push(`Bowel Issue: ${data.bowels}`); }
         if (['Nausea/Vomiting', 'NBM', 'Other (specify)'].includes(data.diet)) { 
             score += 1; 
             const dietReason = data.diet === 'Other (specify)' ? data.diet_other : data.diet;
@@ -388,33 +387,15 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
         const toggleReviewBtn = document.getElementById('toggle-full-review-btn');
         let isQuickView = false;
         
-        document.getElementById('startFullReviewBtn').addEventListener('click', () => {
-            isQuickView = false;
-            toggleReviewBtn.style.display = 'none';
-            document.querySelectorAll('.full-review-item').forEach(el => el.style.display = '');
-            clearForm();
-            document.getElementById('launchScreenModal').style.display = 'none';
-            document.getElementById('main-content').style.visibility = 'visible';
-        });
-
-        document.getElementById('startQuickScoreBtn').addEventListener('click', () => {
-            isQuickView = true;
-            toggleReviewBtn.style.display = 'block';
-            toggleReviewBtn.textContent = 'Expand to Full Review';
-            document.querySelectorAll('.full-review-item').forEach(el => el.style.display = 'none');
-            clearForm();
-            document.getElementById('launchScreenModal').style.display = 'none';
-            document.getElementById('main-content').style.visibility = 'visible';
-        });
-        
         toggleReviewBtn.addEventListener('click', () => {
             isQuickView = !isQuickView;
             toggleReviewBtn.textContent = isQuickView ? 'Expand to Full Review' : 'Collapse to Quick Score';
             document.querySelectorAll('.full-review-item').forEach(el => el.style.display = isQuickView ? 'none' : '');
         });
 
-        document.getElementById('loadReviewBtn').addEventListener('click', () => {
-            document.getElementById('pasteContainer').style.display = 'block';
+        document.getElementById('useHandoffKeyBtn').addEventListener('click', () => {
+            const pasteContainer = document.getElementById('pasteContainer');
+            pasteContainer.style.display = pasteContainer.style.display === 'block' ? 'none' : 'block';
         });
         
         document.getElementById('loadPastedDataBtn').addEventListener('click', () => {
@@ -423,16 +404,14 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
              try {
                 currentReview = JSON.parse(atob(pastedText));
                 loadReviewData(true);
-                document.getElementById('launchScreenModal').style.display = 'none';
-                document.getElementById('main-content').style.visibility = 'visible';
+                document.getElementById('pasteContainer').style.display = 'none';
+                document.getElementById('pasteDataInput').value = '';
              } catch(e) { alert('Invalid handoff key.'); }
         });
 
         document.getElementById('startOverBtn').addEventListener('click', () => {
             if (confirm('Are you sure? This will clear all data.')) {
-                clearForm(true);
-                document.getElementById('main-content').style.visibility = 'hidden';
-                document.getElementById('launchScreenModal').style.display = 'flex';
+                clearForm();
             }
         });
         
@@ -475,7 +454,7 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
             });
         }
         
-        const assessmentContainer = document.getElementById('assessment-container');
+        const assessmentContainer = document.getElementById('assessment-section');
         assessmentContainer.addEventListener('change', (e) => {
             const handlers = {
                 'bowels': () => document.getElementById('aperients_container').classList.toggle('hidden', !e.target.value.startsWith('Constipated')),
@@ -495,7 +474,7 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
             }
         });
         
-        const devicesContainer = document.getElementById('devices-container');
+        const devicesContainer = document.getElementById('devices-section');
         const calculateDwellTime = (startDate, displayElId) => {
             const displayEl = document.getElementById(displayElId);
             if (!startDate || !displayEl) {
