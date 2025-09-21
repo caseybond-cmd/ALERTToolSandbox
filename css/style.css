@@ -11,18 +11,22 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; margin-botto
 .form-section-title { font-size: 1.25rem; font-weight: 600; color: #111827; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
 .input-field { width: 100%; border-radius: 0.375rem; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem; background-color: #fff; margin-top: 0.25rem;}
 .input-checkbox { height: 1.25rem; width: 1.25rem; margin-right: 0.5rem; }
+.input-abnormal { border-color: #DC2626; background-color: #FEF2F2; border-width: 2px; }
 
-/* Context Details Styling */
-.context-details summary { cursor: pointer; font-weight: 500; color: #1d4ed8; }
-.context-details[open] summary { margin-bottom: 1rem; }
+/* Accordion Styles */
+.form-section { border: 1px solid #e5e7eb; border-radius: 0.75rem; overflow: hidden; background-color: #fff; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+.form-section summary { cursor: pointer; padding: 1rem 1.5rem; font-size: 1.25rem; font-weight: 600; color: #111827; user-select: none; }
+.form-section summary::-webkit-details-marker { display: none; }
+.form-section summary::before { content: '▶'; margin-right: 0.75rem; font-size: 0.8rem; transition: transform 0.2s; display: inline-block; }
+.form-section[open] > summary::before { transform: rotate(90deg); }
+.form-section-content { padding: 0 1.5rem 1.5rem; }
+
 
 /* A-E Assessment Styles */
 .assessment-section-title { font-size: 1.125rem; font-weight: 600; color: #166534; border-bottom: 2px solid #A7F3D0; padding-bottom: 0.25rem; margin-bottom: 1rem; }
-.assessment-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; }
+.assessment-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1.5rem; }
 @media (min-width: 640px) { .assessment-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .assessment-grid { grid-template-columns: repeat(3, 1fr); } }
-
-.met-alert { color: #b91c1c; font-weight: bold; text-align: right; font-size: 0.875rem; }
 
 /* Output Panel Styling */
 .summary-category { font-size: 1.5rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 0.5rem; text-align: center; }
@@ -34,99 +38,19 @@ body { font-family: 'Inter', sans-serif; background-color: #F0F9F9; margin-botto
 .flag-list-green { color: #065f46; }
 
 /* Sticky Footer */
-#sticky-footer {
-    transition: background-color 0.3s ease-in-out;
-    padding: 0.25rem 0.5rem; /* Make footer smaller on mobile */
-}
-#footer-flags-red, #footer-flags-green {
-    align-items: center;
-}
-#footer-flags-red span, #footer-flags-green span {
-    margin: 0 0.25rem;
-}
+#sticky-footer { transition: background-color 0.3s ease-in-out; }
+#footer-flags-red, #footer-flags-green { align-items: center; }
+#footer-flags-red span, #footer-flags-green span { margin: 0 0.25rem; }
+#footer-context { opacity: 0.8; }
+.category-red #footer-context, .category-green #footer-context { color: white; }
+.category-amber #footer-context { color: #4A5568; }
 
 @media (min-width: 768px) {
-    #sticky-footer {
-        padding: 0.5rem 1rem;
-        max-width: 500px;
-        border-radius: 0.5rem;
-        /* UPDATED STYLES FOR RIGHT ALIGNMENT */
-        left: auto;
-        right: 2rem; /* 32px from the right edge */
-        bottom: 1rem; /* 16px from the bottom */
-        transform: translateX(0);
-        margin: 0;
-    }
-}
-/* Style for abnormal input fields */
-.input-abnormal {
-    border-color: #DC2626; /* Red-600 */
-    background-color: #FEF2F2; /* Red-50 */
-    border-width: 2px;
-}
-/* Styles for custom radio button trends */
-.trend-radio-group {
-    display: flex;
-    gap: 0.25rem;
-    margin-top: 0.25rem;
+    #sticky-footer { max-width: 500px; border-radius: 0.5rem; left: auto; right: 2rem; bottom: 1rem; transform: translateX(0); margin: 0; }
 }
 
-.trend-radio-group label {
-    cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 1.25rem;
-    line-height: 1;
-    transition: background-color 0.2s;
-}
-
-.trend-radio-group input[type="radio"] {
-    display: none;
-}
-
-.trend-radio-group input[type="radio"]:checked + span {
-    background-color: #d1fae5; /* Green-100 */
-    border-color: #10b981; /* Green-500 */
-    color: #065f46; /* Green-800 */
-}
-
-/* Styles for custom radio button trends */
-.trend-radio-group {
-    display: flex;
-    gap: 0.25rem;
-    margin-top: 0.25rem;
-}
-
-.trend-radio-group label {
-    cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 1.25rem;
-    line-height: 1;
-    transition: background-color 0.2s;
-}
-
-.trend-radio-group input[type="radio"] {
-    display: none;
-}
-
-.trend-radio-group input[type="radio"]:checked + span {
-    background-color: #d1fae5; /* Green-100 */
-    border-color: #10b981; /* Green-500 */
-    color: #065f46; /* Green-800 */
-}
-
-/* Styles for footer context */
-#footer-context {
-    opacity: 0.8;
-}
-
-/* Ensure footer text is readable on all backgrounds */
-.category-red #footer-context, .category-green #footer-context {
-    color: white;
-}
-.category-amber #footer-context {
-    color: #4A5568; /* Gray-700 */
-}
+/* Trend Buttons */
+.trend-radio-group { display: flex; gap: 0.25rem; margin-top: 0.25rem; }
+.trend-radio-group label { cursor: pointer; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 1.25rem; line-height: 1; transition: background-color 0.2s; }
+.trend-radio-group input[type="radio"] { display: none; }
+.trend-radio-group input[type="radio"]:checked + span { background-color: #d1fae5; border-color: #10b981; color: #065f46; }
