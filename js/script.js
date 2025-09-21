@@ -155,11 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if(uopDisplay) uopDisplay.value = '';
         }
         
-        if (data.bowels && (data.bowels.startsWith('Diarrhoea') || data.bowels.startsWith('Constipated'))) { score += 1; flags.red.push(`Bowel Issue: ${data.bowels}`); }
-        if (['Nausea/Vomiting', 'NBM', 'Other (specify)'].includes(data.diet)) { 
+        if (data.bowels && (data.bowels.startsWith('Diarrhoea') || data.bowels.startsWith('BNO'))) { score += 1; flags.red.push(`Bowel Issue: ${data.bowels}`); }
+        if (['Nausea/Vomiting', 'NBM', 'Other (specify)', 'Clear fluids', 'Nourishing fluids'].includes(data.diet)) { 
             score += 1; 
             const dietReason = data.diet === 'Other (specify)' ? data.diet_other : data.diet;
-            flags.red.push(`Poor Diet Tolerance: ${dietReason}`); 
+            flags.red.push(`Dietary Alert: ${dietReason}`); 
         }
         if (data.mobility === 'Requires Physical Assistance') { score += 1; flags.red.push('Mobility: Requires Assistance'); }
         else if (data.mobility === 'Bedbound/Immobile') { score += 2; flags.red.push('Mobility: Bedbound/Immobile'); }
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const painScore = p(data.pain_score);
         if (!isNaN(painScore)) {
             if (painScore >= 7) { score += 2; flags.red.push(`Severe Pain (Score: ${painScore}/10)`); }
-            else if (painScore >= 4) { score += 1; flags.red.push(`Moderate Pain (Score: ${painScore}/10)`); }
+            else if (painScore >= 1) { score += 1; flags.red.push(`Pain Present (Score: ${painScore}/10)`); }
         }
 
         // Device Scoring
@@ -453,15 +453,29 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
             });
         }
         
-        // --- FIX: Corrected selector from 'assessment-container' to 'assessment-section' ---
         const assessmentContainer = document.getElementById('assessment-section');
         assessmentContainer.addEventListener('change', (e) => {
             const handlers = {
-                'bowels': () => document.getElementById('aperients_container').classList.toggle('hidden', !e.target.value.startsWith('Constipated')),
-                'diet': () => document.getElementById('diet_other_container').classList.toggle('hidden', e.target.value !== 'Other (specify)'),
-                'adds_override_checkbox': () => document.getElementById('adds_override_score_container').classList.toggle('hidden', !e.target.checked),
-                'cap_refill': () => document.getElementById('crt_details_container').classList.toggle('hidden', e.target.value !== '>3s'),
-                'manual_downgrade': () => document.getElementById('downgrade_details_container').classList.toggle('hidden', !e.target.checked)
+                'bowels': () => {
+                    const container = document.getElementById('aperients_container');
+                    if(container) container.classList.toggle('hidden', !e.target.value.startsWith('Constipated'));
+                },
+                'diet': () => {
+                    const container = document.getElementById('diet_other_container');
+                    if(container) container.classList.toggle('hidden', e.target.value !== 'Other (specify)');
+                },
+                'adds_override_checkbox': () => {
+                    const container = document.getElementById('adds_override_score_container');
+                    if(container) container.classList.toggle('hidden', !e.target.checked);
+                },
+                'cap_refill': () => {
+                    const container = document.getElementById('crt_details_container');
+                    if(container) container.classList.toggle('hidden', e.target.value !== '>3s');
+                },
+                'manual_downgrade': () => {
+                    const container = document.getElementById('downgrade_details_container');
+                    if(container) container.classList.toggle('hidden', !e.target.checked);
+                }
             };
             if(handlers[e.target.id]) handlers[e.target.id]();
         });
@@ -517,28 +531,45 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
         
         document.querySelector('#patient-details-section').innerHTML = `<details class="form-section desktop-only" open><summary>Patient & Review Details</summary><div class="form-section-content"><div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm"><label>Review Type:<select id="review_type" class="input-field"><option value="post">Post-ICU stepdown review</option><option value="pre">Pre-ICU stepdown review</option></select></label><div class="grid grid-cols-2 gap-4"><label>Location (Ward):<select id="location" class="input-field"><option value="" disabled selected>Select a Ward</option><optgroup label="Towers"><option>3A</option><option>3B</option><option>3C</option><option>3D</option><option>4A</option><option>4B</option><option>4C</option><option>4D</option><option>5A</option><option>5B</option><option>5C</option><option>5D</option><option>6A</option><option>6B</option><option>6C</option><option>6D</option><option>7A</option><option>7B</option><option>7C</option><option>7D</option><option>CCU</option></optgroup><optgroup label="Medihotel"><option>Medihotel 5</option><option>Medihotel 6</option><option>Medihotel 7</option><option>Medihotel 8</option></optgroup><optgroup label="SRS"><option>SRS 1A</option><option>SRS 2A</option><option>SRS A</option><option>SRS B</option></optgroup><optgroup label="Mental Health"><option>Mental Health Adult</option><option>Mental Health Youth</option></optgroup></select></label><label>Room No.:<input type="text" id="room_number" class="input-field"></label></div><label class="full-review-item">Patient ID (Initials + URN):<input type="text" id="patient_id" class="input-field"></label><label class="full-review-item">Stepdown Date:<input type="date" id="stepdown_date" class="input-field"></label><label>Weight (kg):<input type="number" id="weight" class="input-field" placeholder="e.g., 75"></label><label>Age:<input type="number" id="age" class="input-field" placeholder="Years"></label><label>Admission Type:<select id="admission_type" class="input-field"><option value="0">Elective Surgical</option><option value="1">Emergency Surgical</option><option value="2">Medical/ED</option></select></label><label>ICU LOS (days):<input type="number" id="icu_los" class="input-field" placeholder="Days"></label><label class="flex items-center pt-6 full-review-item"><input type="checkbox" id="after_hours" class="input-checkbox"> After-Hours Discharge</label></div></div></details>`;
         document.querySelector('#bloods-section').innerHTML = `<details class="form-section" open><summary>Scorable Blood Panel</summary><div class="form-section-content"><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">${createBloodInput('Creatinine (µmol/L)', 'creatinine')}${createBloodInput('Lactate (mmol/L)', 'lactate')}${createBloodInput('Hb (g/L)', 'hb')}${createBloodInput('Platelets (x10⁹/L)', 'platelets')}${createBloodInput('Albumin (g/L)', 'albumin')}${createBloodInput('CRP (mg/L)', 'crp')}${createBloodInput('Glucose', 'glucose')}${createBloodInput('K+ (mmol/L)', 'k')}${createBloodInput('Mg++ (mmol/L)', 'mg')}</div></div></details>`;
-        document.getElementById('assessment-section').innerHTML = `<details class="form-section" open><summary>A-E Assessment</summary><div class="form-section-content">
-            <div><h3 class="assessment-section-title">Core Vitals (ADDS Entry)</h3>
-                <div class="assessment-grid" style="align-items: end;">
-                    <div><label>Resp Rate:</label><div class="flex items-center gap-2"><input type="number" id="rr" class="input-field">${createTrendButtons('rr')}</div></div>
-                    <div><label>SpO2 (%):</label><div class="flex items-center gap-2"><input type="number" id="spo2" class="input-field">${createTrendButtons('spo2')}</div></div>
-                    <div><label>O₂ Device:<select id="o2_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HFNP">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><div id="o2_flow_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">Flow (L/min):<input type="number" id="o2_flow" class="input-field"></label>${createTrendButtons('o2_flow')}</div><div id="fio2_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">FiO2 (%):<input type="number" id="fio2" class="input-field"></label>${createTrendButtons('fio2')}</div><div id="peep_ps_container" class="hidden grid grid-cols-2 gap-2"><label class="text-xs">PEEP:<input type="number" id="peep" class="input-field"></label><label class="text-xs">PS:<input type="number" id="ps" class="input-field"></label></div></div>
-                    <div><label>Heart Rate:</label><div class="flex items-center gap-2"><input type="number" id="hr" class="input-field">${createTrendButtons('hr')}</div></div>
-                    <div><label>Systolic BP:</label><div class="flex items-center gap-2"><input type="number" id="sbp" class="input-field">${createTrendButtons('sbp')}</div></div>
-                    <label>Diastolic BP:<input type="number" id="dbp" class="input-field"></label>
-                    <div><label>Temperature (°C):</label><div class="flex items-center gap-2"><input type="number" step="0.1" id="temp" class="input-field">${createTrendButtons('temp')}</div></div>
-                    <label>Consciousness:<select id="consciousness" class="input-field"><option value="Alert">Alert</option><option value="Voice">Voice</option><option value="Pain">Pain</option><option value="Unresponsive">Unresponsive</option></select></label>
+        
+        // --- UPDATED ASSESSMENT SECTION: PAIN REGIMEN MOVED ---
+        document.getElementById('assessment-section').innerHTML = `<details class="form-section" open><summary>A-E Assessment & Context</summary><div class="form-section-content">
+            <h3 class="assessment-section-title">Core Vitals (ADDS Entry)</h3>
+            <div class="assessment-grid" style="align-items: end;">
+                <div><label>Resp Rate:</label><div class="flex items-center gap-2"><input type="number" id="rr" class="input-field">${createTrendButtons('rr')}</div></div>
+                <div><label>SpO2 (%):</label><div class="flex items-center gap-2"><input type="number" id="spo2" class="input-field">${createTrendButtons('spo2')}</div></div>
+                <div><label>O₂ Device:<select id="o2_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HFNP">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><div id="o2_flow_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">Flow (L/min):<input type="number" id="o2_flow" class="input-field"></label>${createTrendButtons('o2_flow')}</div><div id="fio2_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">FiO2 (%):<input type="number" id="fio2" class="input-field"></label>${createTrendButtons('fio2')}</div><div id="peep_ps_container" class="hidden grid grid-cols-2 gap-2"><label class="text-xs">PEEP:<input type="number" id="peep" class="input-field"></label><label class="text-xs">PS:<input type="number" id="ps" class="input-field"></label></div></div>
+                <div><label>Heart Rate:</label><div class="flex items-center gap-2"><input type="number" id="hr" class="input-field">${createTrendButtons('hr')}</div></div>
+                <div><label>Systolic BP:</label><div class="flex items-center gap-2"><input type="number" id="sbp" class="input-field">${createTrendButtons('sbp')}</div></div>
+                <label>Diastolic BP:<input type="number" id="dbp" class="input-field"></label>
+                <div><label>Temperature (°C):</label><div class="flex items-center gap-2"><input type="number" step="0.1" id="temp" class="input-field">${createTrendButtons('temp')}</div></div>
+                <label>Consciousness:<select id="consciousness" class="input-field"><option value="Alert">Alert</option><option value="Voice">Voice</option><option value="Pain">Pain</option><option value="Unresponsive">Unresponsive</option></select></label>
+                <div class="lg:col-span-1">
                     <label>Pain Score (0-10):<input type="number" id="pain_score" class="input-field" min="0" max="10"></label>
+                    <div id="pain_interventions_container" class="hidden mt-2 space-y-2 full-review-item">
+                        <label>Analgesia Regimen:<textarea id="analgesia_regimen" rows="2" class="input-field"></textarea></label>
+                        <div id="aps_referral_container" class="hidden"><label class="flex items-center"><input type="checkbox" id="aps_referral" class="input-checkbox">APS Referral</label></div>
+                    </div>
                 </div>
             </div>
             <div class="mt-4 p-4 border rounded-lg full-review-item"><label class="font-medium text-sm">Vital Sign Modifications (MODS):</label><textarea id="mods_details" class="input-field" rows="2" placeholder="e.g., Target HR < 110, SBP > 90..."></textarea><div class="flex items-center mt-2"><input type="checkbox" id="adds_override_checkbox" class="input-checkbox"><label for="adds_override_checkbox" class="text-sm">Manually Override ADDS Score</label></div><div id="adds_override_score_container" class="hidden mt-2"><label class="text-sm">Override ADDS Score:<input type="number" id="adds_override_score" class="input-field w-24"></label></div></div>
             <div class="mt-6 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center relative"><div id="met-alert-container" class="met-alert absolute top-2 right-2"></div><span class="text-sm font-medium text-gray-500">ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>
-            <div class="space-y-6 mt-6">
-                <div><h3 class="form-section-title">Airway</h3><select id="airway" class="input-field"><option>Patent (Natural Airway)</option><option>At Risk</option><option>Tracheostomy</option><option>Laryngectomy</option></select></div>
-                <div><h3 class="form-section-title">Circulation & Fluid Status</h3><div class="assessment-grid"><div><label>Cap Refill:<select id="cap_refill" class="input-field"><option value="<3s">< 3 sec</option><option value=">3s">> 3 sec</option></select></label><div id="crt_details_container" class="hidden mt-2 full-review-item"><label class="text-xs">Details:<textarea id="crt_details" class="input-field" rows="1"></textarea></label></div></div><div class="sm:col-span-1 md:col-span-2 grid grid-cols-2 gap-2 items-end"><label>Urine Output (last hr, mL):<input type="number" id="urine_output_hr" class="input-field"></label><label>mL/kg/hr:<input type="text" id="uop_ml_kg_hr_display" class="input-field bg-gray-100" readonly></label></div></div></div>
-                <div><h3 class="form-section-title">Neurological, Mobility & Elimination</h3><div class="assessment-grid"><label>Delirium:<select id="delirium" class="input-field"><option value="0">None</option><option value="1">Mild</option><option value="2">Mod-Severe</option></select></label><label>Mobility:<select id="mobility" class="input-field"><option>Independent</option><option>Supervision/Standby Assist</option><option>Requires Physical Assistance</option><option>Bedbound/Immobile</option></select></label><div class="full-review-item"><label>Bowels:<select id="bowels" class="input-field"><option>Normal/Active</option><option>Formed (BSC 3-5)</option><option>Diarrhoea/Loose (BSC 6-7)</option><option>Constipated/Absent (BSC 1-2)</option></select></label><div id="aperients_container" class="hidden mt-2"><label>Aperients Charted:<textarea id="aperients_charted" rows="2" class="input-field"></textarea></label></div></div><label class="full-review-item">Bowels Last Opened:<input type="date" id="bowels_last_opened" class="input-field"></label></div><div id="pain_interventions_container" class="hidden mt-4 space-y-2 full-review-item"><label>Analgesia Regimen:<textarea id="analgesia_regimen" rows="2" class="input-field"></textarea></label><div id="aps_referral_container" class="hidden"><label class="flex items-center"><input type="checkbox" id="aps_referral" class="input-checkbox">APS Referral</label></div></div></div>
-                <div><h3 class="form-section-title">Nutrition</h3><div class="assessment-grid full-review-item"><div><label>Diet:<select id="diet" class="input-field"><option>Tolerating Full Diet</option><option>Tolerating Light Diet</option><option>Nausea / Vomiting</option><option>NBM</option><option>Other (specify)</option></select></label><div id="diet_other_container" class="hidden mt-2"><label>Specify Diet:<textarea id="diet_other" class="input-field" rows="1"></textarea></label></div></div></div></div>
-            </div></div></details>`;
+            
+            <div class="mt-6">
+                <h3 class="assessment-section-title">Assessment Details</h3>
+                <div class="assessment-grid">
+                    <label>Airway:<select id="airway" class="input-field"><option>Patent</option><option>At Risk</option><option>Tracheostomy</option><option>Laryngectomy</option></select></label>
+                    <div><label>Cap Refill:<select id="cap_refill" class="input-field"><option value="<3s">< 3 sec</option><option value=">3s">> 3 sec</option></select></label><div id="crt_details_container" class="hidden mt-2 full-review-item"><label class="text-xs">Details:<textarea id="crt_details" class="input-field" rows="1"></textarea></label></div></div>
+                    <div class="grid grid-cols-2 gap-2 items-end"><label>Urine Output (last hr, mL):<input type="number" id="urine_output_hr" class="input-field"></label><label>mL/kg/hr:<input type="text" id="uop_ml_kg_hr_display" class="input-field bg-gray-100" readonly></label></div>
+                    <label>Delirium:<select id="delirium" class="input-field"><option value="0">None</option><option value="1">Mild</option><option value="2">Mod-Severe</option></select></label>
+                    <label>Mobility:<select id="mobility" class="input-field"><option>Independent</option><option>Supervision/Standby Assist</option><option>Requires Physical Assistance</option><option>Bedbound/Immobile</option></select></label>
+                    <label>Frailty Score (CFS):<input type="number" id="frailty_score" class="input-field" min="1" max="9"></label>
+                    <div class="full-review-item"><label>Bowels:<select id="bowels" class="input-field"><option>Normal</option><option>Formed</option><option>Diarrhoea</option><option>BNO</option></select></label></div>
+                    <label class="full-review-item">Bowels Last Opened:<input type="date" id="bowels_last_opened" class="input-field"></label>
+                    <div class="full-review-item"><label>Diet:<select id="diet" class="input-field"><option>Tolerating Full Diet</option><option>Tolerating Light Diet</option><option>Clear fluids</option><option>Nourishing fluids</option><option>Nausea / Vomiting</option><option>NBM</option><option>Other (specify)</option></select></label><div id="diet_other_container" class="hidden mt-2"><label>Specify Diet:<textarea id="diet_other" class="input-field" rows="1"></textarea></label></div></div>
+                </div>
+            </div>
+        </div></details>`;
         
         document.getElementById('devices-section').innerHTML = `<details class="form-section"><summary>Devices</summary><div class="form-section-content"><div class="space-y-4">
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="pivc_1_present" class="input-checkbox">PIVC 1</label><div id="pivc_1_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center"><label class="text-sm">Commencement Date:<input type="date" id="pivc_1_commencement_date" class="input-field"></label><label class="text-sm">Gauge:<select id="pivc_1_gauge" class="input-field"><option>24G</option><option>22G</option><option>20G</option><option>18G</option><option>16G</option></select></label><label class="text-sm">Site Health:<select id="pivc_1_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label><div class="text-sm">Dwell Time: <span id="pivc_1_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
@@ -551,10 +582,9 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
                 <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="wounds_present" class="input-checkbox">Wounds</label><div id="wounds_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><label class="text-sm">Description:<textarea id="wound_description" rows="2" class="input-field"></textarea></label></div></div>
                 <div class="device-item full-review-item"><label class="flex items-center font-medium"><input type="checkbox" id="other_device_present" class="input-checkbox">Other Device</label><div id="other_device_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2"><label class="text-sm">Details:<textarea id="other_device_details" rows="2" class="input-field"></textarea></label></div></div>
             </div></div></details>`;
-
-        document.getElementById('context-section').innerHTML = `<details class="form-section"><summary>Context & Frailty</summary><div class="form-section-content"><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
+        document.getElementById('context-section').innerHTML = `<details class="form-section"><summary>Context & Overrides</summary><div class="form-section-content"><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label class="font-medium text-sm">Ward Placement/Staffing (Reducer):</label><select id="ward_staffing" class="input-field"><option value="0">1:4+ Standard</option><option value="-0.5">1:3</option><option value="-1">1:2</option><option value="-2">1:1</option><option value="-1">Monitored Bed</option></select></div>
-                <div><label class="font-medium text-sm">Frailty Score (Rockwood CFS):</label><input type="number" id="frailty_score" class="input-field" min="1" max="9"></div>
                 <div class="sm:col-span-2 full-review-item"><label class="font-medium text-sm">General Notes (for DMR):</label><textarea id="general_notes" class="input-field" rows="2" placeholder="Note any other relevant context for the DMR summary..."></textarea></div>
                 <div class="sm:col-span-2 full-review-item">
                     <label class="flex items-center"><input type="checkbox" id="manual_override" class="input-checkbox"> Manual Category Upgrade - Clinical Concern</label>
