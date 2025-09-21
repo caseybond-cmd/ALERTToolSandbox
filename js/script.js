@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRiskAssessment();
 
         // Manually trigger events for dynamic fields
-        form.querySelectorAll('input[type="date"], input[id*="present"], select[id*="present"], #diet, #cap_refill, #peripheries').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+        form.querySelectorAll('input[type="date"], input[id*="present"], select[id*="present"], #diet, #cap_refill').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
         document.getElementById('pain_score')?.dispatchEvent(new Event('input'));
         document.getElementById('bowels')?.dispatchEvent(new Event('change'));
         document.getElementById('adds_override_checkbox')?.dispatchEvent(new Event('change'));
@@ -79,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CORE LOGIC: RISK ASSESSMENT ENGINE ---
     function updateRiskAssessment() {
         const data = gatherFormData();
-        // Removed check for empty data to allow initial calculation on blank form
         
         let score = 0;
         const flags = { red: [], green: [] };
@@ -454,6 +453,7 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
             });
         }
         
+        // --- FIX: Corrected selector from 'assessment-container' to 'assessment-section' ---
         const assessmentContainer = document.getElementById('assessment-section');
         assessmentContainer.addEventListener('change', (e) => {
             const handlers = {
@@ -502,7 +502,6 @@ ${data.clinical_plan || generateActionPlan(categoryText.split(':')[0], [])}
     }
 
     // --- DYNAMIC CONTENT ---
-    // --- MAJOR REFACTOR ---
     function populateStaticContent() {
         const createBloodInput = (label, id) => {
             let specialHtml = '';
