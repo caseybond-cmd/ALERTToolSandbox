@@ -10,31 +10,21 @@
 </head>
 <body class="p-4 sm:p-6 md:p-8 pb-32">
 
-    <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex flex-col items-center justify-center p-4 z-50 no-print">
-        <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 text-center max-w-lg w-full space-y-4">
-            <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ALERT Nursing Risk Assessment Tool</h2>
-            <p class="text-gray-600">A lean, evidence-based risk engine.</p>
-            <div class="flex flex-col gap-4 pt-4">
-                <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review</button>
-                <button id="startQuickScoreBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg">⚡ Start Quick Score</button>
-                <button id="loadReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Load Review from Key</button>
+    <div id="main-content" class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print flex flex-col gap-4">
+            <div class="flex justify-between items-center w-full">
+                <div id="handoff-hub" class="flex items-center gap-2">
+                     <button id="getHandoffKeyBtn" type="button" class="bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold py-2 px-3 rounded-lg text-sm">↑ Get Handoff Key</button>
+                     <button id="useHandoffKeyBtn" type="button" class="bg-indigo-100 text-indigo-800 hover:bg-indigo-200 font-semibold py-2 px-3 rounded-lg text-sm">↓ Use Handoff Key</button>
+                </div>
+                <div class="flex items-center gap-2 ml-auto">
+                     <button id="toggle-full-review-btn" type="button" class="hidden bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold py-2 px-3 rounded-lg text-sm">Expand to Full Review</button>
+                     <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
+                </div>
             </div>
-            <div id="pasteContainer" class="hidden mt-4">
+            <div id="pasteContainer" class="hidden w-full">
                 <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your single-patient data key here..."></textarea>
                 <button id="loadPastedDataBtn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Load Data</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="main-content" class="max-w-7xl mx-auto" style="visibility: hidden;">
-        <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print flex justify-between items-center gap-4">
-            <div id="handoff-hub" class="flex items-center gap-2">
-                 <button id="getHandoffKeyBtn" type="button" class="bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold py-2 px-3 rounded-lg text-sm">↑ Get Handoff Key</button>
-            </div>
-            <div class="flex items-center gap-2 ml-auto">
-                 <button id="toggle-full-review-btn" type="button" class="hidden bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold py-2 px-3 rounded-lg text-sm">Expand to Full Review</button>
-                 <button id="printBlankBtn" type="button" class="bg-gray-100 text-gray-800 hover:bg-gray-200 font-semibold py-2 px-3 rounded-lg text-sm">Print Blank</button>
-                 <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
             </div>
         </div>
 
