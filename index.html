@@ -32,10 +32,10 @@
     <div id="main-content-wrapper" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <form id="assessmentForm" class="lg:col-span-2 space-y-6" onsubmit="return false;">
         <div id="patient-details-section"></div>
+        <div id="context-section"></div>
         <div id="bloods-section"></div>
         <div id="assessment-section"></div>
         <div id="devices-section"></div>
-        <div id="context-section"></div>
       </form>
 
       <div id="summary-column" class="lg:col-span-1">
@@ -44,17 +44,6 @@
             <h2 class="form-section-title">Assessment Summary</h2>
             <div id="summary-container" class="space-y-4">
               <p class="text-gray-500">Summary will appear here as you enter data...</p>
-            </div>
-
-            <div class="mt-6 space-y-4 full-review-item">
-              <div>
-                <label for="clinical_impression" class="block font-semibold text-gray-700">Impression (IMP):</label>
-                <textarea id="clinical_impression" rows="3" class="input-field" placeholder="e.g., On HFNP with raised inflammatory markers..."></textarea>
-              </div>
-              <div>
-                <label for="clinical_plan" class="block font-semibold text-gray-700">Plan:</label>
-                <textarea id="clinical_plan" rows="4" class="input-field" placeholder="e.g., Chase bloods, Monitor FiO2 trend..."></textarea>
-              </div>
             </div>
           </div>
 
