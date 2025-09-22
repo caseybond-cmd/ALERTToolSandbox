@@ -129,34 +129,113 @@ document.addEventListener('DOMContentLoaded', () => {
     updateRiskAssessment();
   }
 
+  // --- EDITED: New ADDS Calculation Logic ---
   function calculateADDS(data) {
-    let score = 0, metCall = false, metReason = '';
+    let score = 0;
+    let metCall = false;
+    let metReason = '';
+
     const checkParam = (value, ranges) => {
-      if (isNaN(value) || metCall) return;
-      for (const r of ranges) {
-        if ((r.min === -Infinity || value >= r.min) && (r.max === Infinity || value <= r.max)) {
-          if (r.score === 'E') { metCall = true; metReason = r.note; }
-          else score += r.score;
-          return;
+        if (isNaN(value) || metCall) return;
+        for (const r of ranges) {
+            if ((r.min === -Infinity || value >= r.min) && (r.max === Infinity || value <= r.max)) {
+                if (r.score === 'E') {
+                    metCall = true;
+                    metReason = r.note;
+                } else {
+                    score += r.score;
+                }
+                return; // Exit after finding the correct range
+            }
         }
-      }
     };
+
+    // Respiratory Rate
+    checkParam(p(data.rr), [
+        {min: -Infinity, max: 4, score: 'E', note: '<=4 => MET'},
+        {min: 5, max: 8, score: 3}, {min: 9, max: 10, score: 2},
+        {min: 11, max: 20, score: 0}, {min: 21, max: 24, score: 1},
+        {min: 25, max: 30, score: 2}, {min: 31, max: 35, score: 3},
+        {min: 36, max: Infinity, score: 'E', note: '>=36 => MET'}
+    ]);
+
+    // SpO2
+    checkParam(p(data.spo2), [
+        {min: -Infinity, max: 84, score: 'E', note: '<=84 => MET'},
+        {min: 85, max: 88, score: 3}, {min: 89, max: 90, score: 2},
+        {min: 91, max: 93, score: 1}, {min: 94, max: Infinity, score: 0}
+    ]);
+
+    // Oxygen Scoring (Multi-part)
+    // 1. O2 Flow Rate
+    checkParam(p(data.o2_flow), [
+        {min: 0, max: 5, score: 0}, {min: 6, max: 7, score: 1},
+        {min: 8, max: 9, score: 2}, {min: 10, max: Infinity, score: 3}
+    ]);
+    // 2. O2 Device (HFNP)
+    if (data.o2_device === 'HFNP') {
+        score += 1;
+    }
+    // 3. FiO2
+    checkParam(p(data.fio2), [
+        {min: 28, max: 39, score: 2}, // Assumes 28-39% range for score of 2
+        {min: 40, max: Infinity, score: 3}
+    ]);
+
+    // Heart Rate
+    checkParam(p(data.hr), [
+        {min: -Infinity, max: 30, score: 'E', note: '<=30 => MET'},
+        {min: 31, max: 40, score: 3}, {min: 41, max: 50, score: 2},
+        {min: 51, max: 99, score: 0}, {min: 100, max: 109, score: 1},
+        {min: 110, max: 120, score: 2}, {min: 121, max: 129, score: 1},
+        {min: 130, max: 139, score: 3},
+        {min: 140, max: Infinity, score: 'E', note: '>=140 => MET'}
+    ]);
+
+    // Systolic BP
+    checkParam(p(data.sbp), [
+        {min: -Infinity, max: 40, score: 'E', note: 'extreme low -> MET'},
+        {min: 41, max: 50, score: 3}, {min: 51, max: 60, score: 2},
+        {min: 61, max: 70, score: 1}, {min: 71, max: 80, score: 0},
+        {min: 81, max: 90, score: 3}, {min: 91, max: 100, score: 2},
+        {min: 101, max: 110, score: 1}, {min: 111, max: 139, score: 0},
+        {min: 140, max: 180, score: 1}, {min: 181, max: 200, score: 2},
+        {min: 201, max: 220, score: 3},
+        {min: 221, max: Infinity, score: 'E', note: '>=221 => MET'}
+    ]);
+
+    // Temperature
+    checkParam(p(data.temp), [
+        {min: -Infinity, max: 35, score: 3}, {min: 35.1, max: 36.0, score: 1},
+        {min: 36.1, max: 37.5, score: 0}, {min: 37.6, max: 38.0, score: 1},
+        {min: 38.1, max: 39.0, score: 2},
+        {min: 39.1, max: Infinity, score: 'E', note: '>=39.1 => MET'}
+    ]);
     
-    checkParam(p(data.rr), [{min:-Infinity,max:4,score:'E',note:'<=4 => MET'},{min:5,max:8,score:3},{min:9,max:10,score:2},{min:11,max:20,score:0},{min:21,max:24,score:1},{min:25,max:30,score:2},{min:31,max:35,score:3},{min:36,max:Infinity,score:'E',note:'>=36 => MET'}]);
-    checkParam(p(data.spo2), [{min:-Infinity,max:84,score:'E',note:'<=84 => MET'},{min:85,max:88,score:3},{min:89,max:90,score:2},{min:91,max:93,score:1},{min:94,max:Infinity,score:0}]);
-    checkParam(p(data.hr), [{min:-Infinity,max:30,score:'E',note:'<=30 => MET'},{min:31,max:40,score:3},{min:41,max:50,score:2},{min:51,max:99,score:0},{min:100,max:109,score:1},{min:110,max:120,score:2},{min:121,max:129,score:1},{min:130,max:139,score:3},{min:140,max:Infinity,score:'E',note:'>=140 => MET'}]);
-    checkParam(p(data.sbp), [{min:-Infinity,max:40,score:'E',note:'extreme low -> MET'},{min:41,max:50,score:3},{min:51,max:60,score:2},{min:61,max:70,score:1},{min:71,max:80,score:0},{min:81,max:90,score:3},{min:91,max:100,score:2},{min:101,max:110,score:1},{min:111,max:139,score:0},{min:140,max:180,score:1},{min:181,max:200,score:2},{min:201,max:220,score:3},{min:221,max:Infinity,score:'E',note:'>=221 => MET'}]);
-    checkParam(p(data.temp), [{min:-Infinity,max:35,score:3},{min:35.1,max:36.0,score:1},{min:36.1,max:37.5,score:0},{min:37.6,max:38.0,score:1},{min:38.1,max:39.0,score:2},{min:39.1,max:Infinity,score:'E',note:'>=39.1 => MET'}]);
-    if (data.consciousness === 'Unresponsive') { metCall = true; metReason = 'Unresponsive'; }
-    else if (data.consciousness === 'Pain') score += 2;
-    else if (data.consciousness === 'Voice') score += 1;
-    if (data.o2_device === 'HFNP') score += 1;
-    checkParam(p(data.o2_flow), [{min:0,max:5,score:0},{min:6,max:7,score:1},{min:8,max:9,score:2},{min:10,max:Infinity,score:3}]);
-    checkParam(p(data.fio2), [{min:0,max:27,score:0},{min:28,max:39,score:2},{min:40,max:Infinity,score:3}]);
+    // Consciousness
+    if (!metCall) {
+        switch (data.consciousness) {
+            case 'Unresponsive':
+                metCall = true;
+                metReason = 'Unresponsive';
+                break;
+            case 'Pain':
+                score += 2;
+                break;
+            case 'Voice':
+                score += 1;
+                break;
+            case 'Alert':
+            default:
+                score += 0;
+                break;
+        }
+    }
 
     document.getElementById('finalADDSScore').textContent = metCall ? 'MET' : score;
-    return { score, metCall };
+    return { score, metCall, metReason };
   }
+
 
   function evaluateFlags(data) {
     const adds = calculateADDS(data);
