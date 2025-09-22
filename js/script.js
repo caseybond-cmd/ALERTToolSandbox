@@ -129,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateRiskAssessment();
   }
 
-  // --- EDITED: New ADDS Calculation Logic ---
   function calculateADDS(data) {
     let score = 0;
     let metCall = false;
@@ -145,97 +144,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     score += r.score;
                 }
-                return; // Exit after finding the correct range
+                return;
             }
         }
     };
 
-    // Respiratory Rate
-    checkParam(p(data.rr), [
-        {min: -Infinity, max: 4, score: 'E', note: '<=4 => MET'},
-        {min: 5, max: 8, score: 3}, {min: 9, max: 10, score: 2},
-        {min: 11, max: 20, score: 0}, {min: 21, max: 24, score: 1},
-        {min: 25, max: 30, score: 2}, {min: 31, max: 35, score: 3},
-        {min: 36, max: Infinity, score: 'E', note: '>=36 => MET'}
-    ]);
-
-    // SpO2
-    checkParam(p(data.spo2), [
-        {min: -Infinity, max: 84, score: 'E', note: '<=84 => MET'},
-        {min: 85, max: 88, score: 3}, {min: 89, max: 90, score: 2},
-        {min: 91, max: 93, score: 1}, {min: 94, max: Infinity, score: 0}
-    ]);
-
-    // Oxygen Scoring (Multi-part)
-    // 1. O2 Flow Rate
-    checkParam(p(data.o2_flow), [
-        {min: 0, max: 5, score: 0}, {min: 6, max: 7, score: 1},
-        {min: 8, max: 9, score: 2}, {min: 10, max: Infinity, score: 3}
-    ]);
-    // 2. O2 Device (HFNP)
-    if (data.o2_device === 'HFNP') {
-        score += 1;
-    }
-    // 3. FiO2
-    checkParam(p(data.fio2), [
-        {min: 28, max: 39, score: 2}, // Assumes 28-39% range for score of 2
-        {min: 40, max: Infinity, score: 3}
-    ]);
-
-    // Heart Rate
-    checkParam(p(data.hr), [
-        {min: -Infinity, max: 30, score: 'E', note: '<=30 => MET'},
-        {min: 31, max: 40, score: 3}, {min: 41, max: 50, score: 2},
-        {min: 51, max: 99, score: 0}, {min: 100, max: 109, score: 1},
-        {min: 110, max: 120, score: 2}, {min: 121, max: 129, score: 1},
-        {min: 130, max: 139, score: 3},
-        {min: 140, max: Infinity, score: 'E', note: '>=140 => MET'}
-    ]);
-
-    // Systolic BP
-    checkParam(p(data.sbp), [
-        {min: -Infinity, max: 40, score: 'E', note: 'extreme low -> MET'},
-        {min: 41, max: 50, score: 3}, {min: 51, max: 60, score: 2},
-        {min: 61, max: 70, score: 1}, {min: 71, max: 80, score: 0},
-        {min: 81, max: 90, score: 3}, {min: 91, max: 100, score: 2},
-        {min: 101, max: 110, score: 1}, {min: 111, max: 139, score: 0},
-        {min: 140, max: 180, score: 1}, {min: 181, max: 200, score: 2},
-        {min: 201, max: 220, score: 3},
-        {min: 221, max: Infinity, score: 'E', note: '>=221 => MET'}
-    ]);
-
-    // Temperature
-    checkParam(p(data.temp), [
-        {min: -Infinity, max: 35, score: 3}, {min: 35.1, max: 36.0, score: 1},
-        {min: 36.1, max: 37.5, score: 0}, {min: 37.6, max: 38.0, score: 1},
-        {min: 38.1, max: 39.0, score: 2},
-        {min: 39.1, max: Infinity, score: 'E', note: '>=39.1 => MET'}
-    ]);
-    
-    // Consciousness
+    checkParam(p(data.rr), [{min: -Infinity, max: 4, score: 'E', note: '<=4 => MET'},{min: 5, max: 8, score: 3}, {min: 9, max: 10, score: 2},{min: 11, max: 20, score: 0}, {min: 21, max: 24, score: 1},{min: 25, max: 30, score: 2}, {min: 31, max: 35, score: 3},{min: 36, max: Infinity, score: 'E', note: '>=36 => MET'}]);
+    checkParam(p(data.spo2), [{min: -Infinity, max: 84, score: 'E', note: '<=84 => MET'},{min: 85, max: 88, score: 3}, {min: 89, max: 90, score: 2},{min: 91, max: 93, score: 1}, {min: 94, max: Infinity, score: 0}]);
+    checkParam(p(data.o2_flow), [{min: 0, max: 5, score: 0}, {min: 6, max: 7, score: 1},{min: 8, max: 9, score: 2}, {min: 10, max: Infinity, score: 3}]);
+    if (data.o2_device === 'HFNP') { score += 1; }
+    checkParam(p(data.fio2), [{min: 28, max: 39, score: 2}, {min: 40, max: Infinity, score: 3}]);
+    checkParam(p(data.hr), [{min: -Infinity, max: 30, score: 'E', note: '<=30 => MET'},{min: 31, max: 40, score: 3}, {min: 41, max: 50, score: 2},{min: 51, max: 99, score: 0}, {min: 100, max: 109, score: 1},{min: 110, max: 120, score: 2}, {min: 121, max: 129, score: 1},{min: 130, max: 139, score: 3},{min: 140, max: Infinity, score: 'E', note: '>=140 => MET'}]);
+    checkParam(p(data.sbp), [{min: -Infinity, max: 40, score: 'E', note: 'extreme low -> MET'},{min: 41, max: 50, score: 3}, {min: 51, max: 60, score: 2},{min: 61, max: 70, score: 1}, {min: 71, max: 80, score: 0},{min: 81, max: 90, score: 3}, {min: 91, max: 100, score: 2},{min: 101, max: 110, score: 1}, {min: 111, max: 139, score: 0},{min: 140, max: 180, score: 1}, {min: 181, max: 200, score: 2},{min: 201, max: 220, score: 3},{min: 221, max: Infinity, score: 'E', note: '>=221 => MET'}]);
+    checkParam(p(data.temp), [{min: -Infinity, max: 35, score: 3}, {min: 35.1, max: 36.0, score: 1},{min: 36.1, max: 37.5, score: 0}, {min: 37.6, max: 38.0, score: 1},{min: 38.1, max: 39.0, score: 2},{min: 39.1, max: Infinity, score: 'E', note: '>=39.1 => MET'}]);
     if (!metCall) {
         switch (data.consciousness) {
-            case 'Unresponsive':
-                metCall = true;
-                metReason = 'Unresponsive';
-                break;
-            case 'Pain':
-                score += 2;
-                break;
-            case 'Voice':
-                score += 1;
-                break;
-            case 'Alert':
-            default:
-                score += 0;
-                break;
+            case 'Unresponsive': metCall = true; metReason = 'Unresponsive'; break;
+            case 'Pain': score += 2; break;
+            case 'Voice': score += 1; break;
         }
     }
 
     document.getElementById('finalADDSScore').textContent = metCall ? 'MET' : score;
     return { score, metCall, metReason };
   }
-
 
   function evaluateFlags(data) {
     const adds = calculateADDS(data);
@@ -274,7 +206,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (data.enteral_tube_present) devices.push(`Enteral Tube: ${data.enteral_tube_type} ${data.enteral_tube_type === 'Other' ? '('+data.enteral_tube_other+')' : ''}`);
     if (data.epicardial_wires_present) devices.push('Epicardial Pacing Wires');
     if (data.wounds_present) devices.push('Wounds Present');
-    
+    if (data.other_device_present) devices.push(`Other Device: ${data.other_device_details || ''}`);
+
     let a_e_summary = `ADDS: ${result.adds.metCall ? 'MET' : result.adds.score}\n`;
     a_e_summary += `A: Airway: ${data.airway || ''}\n`;
     a_e_summary += `B: RR ${data.rr || ''}, SpO2 ${data.spo2 || ''} on ${data.o2_device || ''} ${data.fio2 ? '(FiO2 ' + data.fio2 + '%)' : ''}\n`;
@@ -390,13 +323,17 @@ ${data.clinical_plan || ''}
         <div><label class="font-medium text-sm">Lactate:<input type="number" id="lactate" class="input-field"></label>${createTrendButtons('lactate')}</div>
         <div><label class="font-medium text-sm">Hb:<input type="number" id="hb" class="input-field"></label>${createTrendButtons('hb')}</div>
         <div><label class="font-medium text-sm">Platelets:<input type="number" id="platelets" class="input-field"></label>${createTrendButtons('platelets')}</div>
+        <div><label class="font-medium text-sm">Albumin:<input type="number" id="albumin" class="input-field"></label>${createTrendButtons('albumin')}</div>
+        <div><label class="font-medium text-sm">CRP:<input type="number" id="crp" class="input-field"></label>${createTrendButtons('crp')}</div>
         <div><label class="font-medium text-sm">Glucose:<input type="number" id="glucose" class="input-field"></label>${createTrendButtons('glucose')}</div>
         <div><label class="font-medium text-sm">K+:<input type="number" id="k" class="input-field"></label>${createTrendButtons('k')}</div>
+        <div><label class="font-medium text-sm">Mg++:<input type="number" id="mg" class="input-field"></label>${createTrendButtons('mg')}</div>
     </div></details>`;
         
     document.getElementById('assessment-section').innerHTML = `<details class="form-section" open><summary>A-E Assessment</summary><div class="form-section-content">
         <div class="mt-6 mb-4 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center"><span class="text-sm font-medium text-gray-500">ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>
         <div class="assessment-grid" style="align-items: end;">
+            <div><label>Airway:<select id="airway" class="input-field"><option>Patent</option><option>At Risk</option><option>Tracheostomy</option></select></label></div>
             <div><label>Resp Rate:</label><div class="flex items-center gap-2"><input type="number" id="rr" class="input-field">${createTrendButtons('rr')}</div></div>
             <div><label>SpO2 (%):</label><div class="flex items-center gap-2"><input type="number" id="spo2" class="input-field">${createTrendButtons('spo2')}</div></div>
             <div><label>O₂ Device:<select id="o2_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HFNP">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><div id="o2_flow_container" class="hidden"><label class="text-xs">Flow (L/min):<input type="number" id="o2_flow" class="input-field"></label></div><div id="fio2_container" class="hidden"><label class="text-xs">FiO2 (%):<input type="number" id="fio2" class="input-field"></label></div></div>
@@ -409,6 +346,9 @@ ${data.clinical_plan || ''}
             <label>Urine Output (last hr, mL):<input type="number" id="urine_output_hr" class="input-field"></label>
             <label>Delirium:<select id="delirium" class="input-field"><option value="0">None</option><option value="1">Mild</option><option value="2">Mod-Severe</option></select></label>
             <label>Pain Score (0-10):<input type="number" id="pain_score" class="input-field" min="0" max="10"></label>
+            <label>Mobility:<select id="mobility" class="input-field"><option>Independent</option><option>Supervision</option><option>Requires Assistance</option><option>Bedbound</option></select></label>
+            <label>Frailty (CFS):<input type="number" id="frailty_score" class="input-field" min="1" max="9"></label>
+            <label>Bowels:<select id="bowels" class="input-field"><option>Normal</option><option>BNO</option><option>Diarrhoea</option></select></label>
             <label>Diet:<select id="diet" class="input-field"><option>Tolerating Full Diet</option><option>NBM</option><option>Other</option></select></label>
         </div>
         <div class="mt-4 p-4 border rounded-lg"><label class="font-medium text-sm flex items-center"><input type="checkbox" id="mods_enabled" class="input-checkbox">Vital Sign Modifications (MODS) in place</label>
@@ -426,6 +366,7 @@ ${data.clinical_plan || ''}
         <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="epicardial_wires_present" class="input-checkbox">Epicardial Pacing Wires</label></div>
         <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="wounds_present" class="input-checkbox">Wounds</label></div>
         <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="enteral_tube_present" class="input-checkbox">Enteral Tube</label></div>
+        <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="other_device_present" class="input-checkbox">Other Device</label><div id="other_device_details_container" class="hidden"><textarea id="other_device_details" class="input-field" rows="1"></textarea></div></div>
         <hr/>
         <div class="device-item"><div class="flex justify-between items-center"><h4 class="font-medium">PIVCs</h4><button type="button" id="add-pivc-btn" class="bg-blue-100 text-blue-800 text-sm font-semibold py-1 px-3 rounded-lg">Add PIVC</button></div><div id="pivc-container"></div></div>
         <hr/>
@@ -442,6 +383,8 @@ ${data.clinical_plan || ''}
             document.getElementById('fio2_container').classList.toggle('hidden', !['HFNP', 'NIV'].includes(device));
         } else if (e.target.id === 'mods_enabled') {
             document.getElementById('mods_details_container').classList.toggle('hidden', !e.target.checked);
+        } else if (e.target.id === 'other_device_present') {
+            document.getElementById('other_device_details_container').classList.toggle('hidden', !e.target.checked);
         }
     });
  }
