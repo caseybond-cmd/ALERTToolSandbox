@@ -1,4 +1,3 @@
-
 // --- SCRIPT START ---
 document.addEventListener('DOMContentLoaded', () => {
   // --- STATE & CONFIG ---
@@ -137,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else { score += result.score; }
     };
 
+    // --- EDIT: Verified all ADDS parameters below match the provided table ---
     checkParam(p(data.rr), [{min:-Infinity,max:4,score:'E',note:'<=4 => MET'},{min:5,max:8,score:3},{min:9,max:10,score:2},{min:11,max:20,score:0},{min:21,max:24,score:1},{min:25,max:30,score:2},{min:31,max:35,score:3},{min:36,max:Infinity,score:'E',note:'>=36 => MET'}], 'Resp Rate');
     if (data.rr_trend === 'worsening') reasons.push('Worsening Resp Rate trend');
 
@@ -156,7 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (data.consciousness === 'Pain') { score += 2; reasons.push('Responds to Pain'); }
     else if (data.consciousness === 'Voice') { score += 1; reasons.push('Responds to Voice'); }
 
-    if (data.o2_device === 'HFNP') reasons.push('Using High-Flow O₂');
+    // --- EDIT: Correctly implemented score of 1 for any HFNP device use ---
+    if (data.o2_device === 'HFNP') { score += 1; reasons.push('Using High-Flow O₂'); }
     checkParam(p(data.o2_flow), [{min:0,max:5,score:0},{min:6,max:7,score:1},{min:8,max:9,score:2},{min:10,max:Infinity,score:3}], 'O₂ Flow');
     checkParam(p(data.fio2), [{min:0,max:27,score:0},{min:28,max:39,score:2},{min:40,max:Infinity,score:3}], 'FiO2');
     if (data.o2_flow_trend === 'worsening') reasons.push('Worsening O₂ Flow trend');
