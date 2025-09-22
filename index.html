@@ -31,47 +31,11 @@
 
     <div id="main-content-wrapper" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <form id="assessmentForm" class="lg:col-span-2 space-y-6" onsubmit="return false;">
-
-        <!-- === ICU Fields at Top === -->
-        <div id="icu-patient-fields">
-          <div class="form-row">
-            <label for="icuReason">ICU Admission Reason</label>
-            <textarea id="icuReason" rows="2" class="input-field" placeholder="Primary reason for ICU admission"></textarea>
-          </div>
-
-          <div class="form-row">
-            <label for="icuSummary">ICU Summary</label>
-            <textarea id="icuSummary" rows="3" class="input-field" placeholder="Brief ICU course / complications"></textarea>
-          </div>
-
-          <div class="form-row">
-            <label for="pmh">Past Medical History</label>
-            <textarea id="pmh" rows="2" class="input-field" placeholder="e.g., COPD, CKD, CHF"></textarea>
-          </div>
-        </div>
-
-        <!-- Existing Sections -->
         <div id="patient-details-section"></div>
         <div id="bloods-section"></div>
-
-        <!-- Assessment Section -->
-        <div id="assessment-section">
-          <!-- Example Pain Score -->
-          <div class="form-row">
-            <label for="painScore">Pain Score</label>
-            <input type="number" id="painScore" min="0" max="10" class="input-field" />
-          </div>
-
-          <!-- Analgesia field directly under Pain Score -->
-          <div class="form-row">
-            <label for="analgesiaRegimen">Analgesia Regimen</label>
-            <input id="analgesiaRegimen" class="input-field" placeholder="e.g., Oxycodone PRN / Morphine IV" />
-          </div>
-        </div>
-
+        <div id="assessment-section"></div>
         <div id="devices-section"></div>
         <div id="context-section"></div>
-
       </form>
 
       <div id="summary-column" class="lg:col-span-1">
