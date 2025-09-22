@@ -1,77 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>ALERT Nursing Risk Assessment Tool</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <title>ICU Readmission Risk Tool</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="p-4 sm:p-6 md:p-8 pb-32">
-
-  <div id="main-content" class="max-w-7xl mx-auto">
-    <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print flex flex-col gap-4">
-      <div class="flex justify-between items-center w-full">
-        <div id="handoff-hub" class="flex items-center gap-2">
-          <button id="getHandoffKeyBtn" type="button" class="bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold py-2 px-3 rounded-lg text-sm">↑ Get Handoff Key</button>
-          <button id="useHandoffKeyBtn" type="button" class="bg-indigo-100 text-indigo-800 hover:bg-indigo-200 font-semibold py-2 px-3 rounded-lg text-sm">↓ Use Handoff Key</button>
-        </div>
-        <div class="flex items-center gap-2 ml-auto">
-          <button id="toggle-full-review-btn" type="button" class="hidden bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold py-2 px-3 rounded-lg text-sm">Expand to Full Review</button>
-          <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
+<body>
+  <h1 class="form-section-title">ICU Readmission Risk Tool</h1>
+  <form id="assessmentForm" class="form-section">
+    <!-- Vitals Section -->
+    <h3 class="assessment-section-title">Core Vitals</h3>
+    <div class="assessment-grid">
+      <div>
+        <label>Resp Rate (breaths/min):</label>
+        <input type="number" id="rr" class="input-field">
+        <div class="trend-radio-group" data-trend-id="rr_trend">
+          <input type="radio" name="rr_trend" value="improving" id="rr_improving"><label for="rr_improving">↑</label>
+          <input type="radio" name="rr_trend" value="stable" id="rr_stable" checked><label for="rr_stable">→</label>
+          <input type="radio" name="rr_trend" value="worsening" id="rr_worsening"><label for="rr_worsening">↓</label>
         </div>
       </div>
-
-      <div id="pasteContainer" class="hidden w-full">
-        <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your single-patient data key here..."></textarea>
-        <button id="loadPastedDataBtn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Load Data</button>
+      <div>
+        <label>SpO2 (%):</label>
+        <input type="number" id="spo2" class="input-field">
+        <div class="trend-radio-group" data-trend-id="spo2_trend">
+          <input type="radio" name="spo2_trend" value="improving" id="spo2_improving"><label for="spo2_improving">↑</label>
+          <input type="radio" name="spo2_trend" value="stable" id="spo2_stable" checked><label for="spo2_stable">→</label>
+          <input type="radio" name="spo2_trend" value="worsening" id="spo2_worsening"><label for="spo2_worsening">↓</label>
+        </div>
       </div>
-    </div>
-
-    <div id="main-content-wrapper" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <form id="assessmentForm" class="lg:col-span-2 space-y-6" onsubmit="return false;">
-        <div id="patient-details-section"></div>
-        <div id="context-section"></div>
-        <div id="bloods-section"></div>
-        <div id="assessment-section"></div>
-        <div id="devices-section"></div>
-      </form>
-
-      <div id="summary-column" class="lg:col-span-1">
-        <div class="sticky top-8 space-y-6">
-          <div id="output-panel" class="bg-gray-50 rounded-xl shadow-lg p-6">
-            <h2 class="form-section-title">Assessment Summary</h2>
-            <div id="summary-container" class="space-y-4">
-              <p class="text-gray-500">Summary will appear here as you enter data...</p>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-xl shadow-lg p-6">
-            <h2 class="form-section-title">DMR Summary Generator</h2>
-            <textarea id="emrSummary" rows="25" class="w-full p-2 border rounded-md bg-gray-50 font-mono text-xs" placeholder="Your summary will update in real-time..."></textarea>
-            <button type="button" id="copySummaryButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg w-full mt-4">Copy Summary to Clipboard</button>
+      <div>
+        <label>O2 Device:</label>
+        <select id="o2_device" class="input-field">
+          <option value="RA">Room Air</option>
+          <option value="NP">Nasal Prongs</option>
+          <option value="HFNP">High-Flow</option>
+          <option value="NIV">NIV/CPAP</option>
+        </select>
+        <div id="fio2_container" class="hidden">
+          <label>FiO2 (%):</label>
+          <input type="number" id="fio2" class="input-field">
+          <div class="trend-radio-group" data-trend-id="fio2_trend">
+            <input type="radio" name="fio2_trend" value="improving" id="fio2_improving"><label for="fio2_improving">↑</label>
+            <input type="radio" name="fio2_trend" value="stable" id="fio2_stable" checked><label for="fio2_stable">→</label>
+            <input type="radio" name="fio2_trend" value="worsening" id="fio2_worsening"><label for="fio2_worsening">↓</label>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex flex-col z-40">
-    <div class="flex items-center justify-between w-full">
-      <div id="footer-flags-green" class="flex items-center text-sm font-bold"></div>
-      <div class="text-center">
-        <span id="footer-category" class="font-bold text-sm block">GREEN</span>
-        <span id="footer-critical-count" class="font-bold text-xl">0</span>
-        <span id="footer-important-count" class="text-xs block">Important: 0</span>
+      <div>
+        <label>Heart Rate (bpm):</label>
+        <input type="number" id="hr" class="input-field">
+        <div class="trend-radio-group" data-trend-id="hr_trend">
+          <input type="radio" name="hr_trend" value="improving" id="hr_improving"><label for="hr_improving">↑</label>
+          <input type="radio" name="hr_trend" value="stable" id="hr_stable" checked><label for="hr_stable">→</label>
+          <input type="radio" name="hr_trend" value="worsening" id="hr_worsening"><label for="hr_worsening">↓</label>
+        </div>
       </div>
-      <div id="footer-flags-red" class="flex items-center text-sm font-bold"></div>
+      <div>
+        <label>Systolic BP (mmHg):</label>
+        <input type="number" id="sbp" class="input-field">
+        <div class="trend-radio-group" data-trend-id="sbp_trend">
+          <input type="radio" name="sbp_trend" value="improving" id="sbp_improving"><label for="sbp_improving">↑</label>
+          <input type="radio" name="sbp_trend" value="stable" id="sbp_stable" checked><label for="sbp_stable">→</label>
+          <input type="radio" name="sbp_trend" value="worsening" id="sbp_worsening"><label for="sbp_worsening">↓</label>
+        </div>
+      </div>
+      <label>Consciousness:
+        <select id="consciousness" class="input-field">
+          <option value="Alert">Alert</option>
+          <option value="Voice">Voice</option>
+          <option value="Pain">Pain</option>
+          <option value="Unresponsive">Unresponsive</option>
+        </select>
+      </label>
     </div>
-    <div id="footer-context" class="text-xs text-center mt-1 truncate">
-      <span id="footer-location"></span> | <span id="footer-reason"></span>
-    </div>
-  </div>
 
-  <script src="js/script.js"></script>
+    <!-- Labs Section -->
+    <h3 class="assessment-section-title">Labs</h3>
+    <div class="assessment-grid">
+      <div>
+        <label>Lactate (mmol/L):</label>
+        <input type="number" id="lactate" step="0.1" class="input-field">
+        <div class="trend-radio-group" data-trend-id="lactate_trend">
+          <input type="radio" name="lactate_trend" value="improving" id="lactate_improving"><label for="lactate_improving">↑</label>
+          <input type="radio" name="lactate_trend" value="stable" id="lactate_stable" checked><label for="lactate_stable">→</label>
+          <input type="radio" name="lactate_trend" value="worsening" id="lactate_worsening"><label for="lactate_worsening">↓</label>
+        </div>
+      </div>
+      <label>Creatinine (µmol/L): <input type="number" id="creatinine" class="input-field"></label>
+      <label>Baseline Creatinine: <input type="number" id="creatinine_baseline" class="input-field"></label>
+      <label>Urine Output (mL/hr): <input type="number" id="urine_output_hr" class="input-field"></label>
+      <label>Weight (kg): <input type="number" id="weight" class="input-field"></label>
+    </div>
+
+    <!-- Clinical Flags Section -->
+    <h3 class="assessment-section-title">Clinical Flags</h3>
+    <div class="assessment-grid">
+      <label><input type="checkbox" id="vasopressor_recent" class="input-checkbox"> Vasopressor in last 24h</label>
+      <label>Airway:
+        <select id="airway" class="input-field">
+          <option value="Patent">Patent</option>
+          <option value="At Risk">At Risk</option>
+          <option value="Tracheostomy">Tracheostomy</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="delirium" class="input-checkbox"> Delirium (Mod-Severe)</label>
+      <label><input type="checkbox" id="after_hours" class="input-checkbox"> After-Hours Discharge</label>
+      <label><input type="checkbox" id="recent_extubation" class="input-checkbox"> Recent Extubation (24-48h)</label>
+    </div>
+
+    <!-- Context Section -->
+    <h3 class="assessment-section-title">Context</h3>
+    <div class="assessment-grid">
+      <label>Reason for ICU Admission: <textarea id="reason_icu" rows="2" class="input-field"></textarea></label>
+      <label>ICU Summary: <textarea id="icu_summary" rows="2" class="input-field"></textarea></label>
+      <label>Past Medical History (PMH): <textarea id="pmh" rows="2" class="input-field"></textarea></label>
+    </div>
+
+    <!-- Override -->
+    <h3 class="assessment-section-title">Override</h3>
+    <label><input type="checkbox" id="manual_override" class="input-checkbox"> Manual Override (Clinical Concern)</label>
+    <div id="override_container" class="hidden">
+      <label>New Category:
+        <select id="override_category" class="input-field">
+          <option value="RED">RED (Cat 1)</option>
+          <option value="AMBER">AMBER (Cat 2)</option>
+          <option value="GREEN">GREEN (Cat 3)</option>
+        </select>
+      </label>
+      <label>Reason: <textarea id="override_reason" rows="2" class="input-field"></textarea></label>
+    </div>
+
+    <button type="submit" class="btn">Assess Risk</button>
+  </form>
+
+  <div id="summary-container" class="form-section"></div>
+
+  <script>
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      // Show/hide FiO2 based on O2 device
+      const o2Device = document.getElementById('o2_device');
+      o2Device.addEventListener('change', () => {
+        document.getElementById('fio2_container').classList.toggle('hidden', o2Device.value === 'RA');
+      });
+
+      // Show/hide override reason
+      const overrideCheckbox = document.getElementById('manual_override');
+      overrideCheckbox.addEventListener('change', () => {
+        document.getElementById('override_container').classList.toggle('hidden', !overrideCheckbox.checked);
+      });
+
+      // Form submission
+      document.getElementById('assessmentForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        // Parse number safely
+        const p = (val) => parseFloat(val) || NaN;
+
+        // Gather form data
+        const data = {
+          rr: p(document.getElementById('rr').value),
+          rr_trend: document.querySelector('input[name="rr_trend"]:checked')?.value,
+          spo2: p(document.getElementById('spo2').value),
+          spo2_trend: document.querySelector('input[name="spo2_trend"]:checked')?.value,
+          o2_device: document.getElementById('o2_device').value,
+          fio2: p(document.getElementById('fio2').value),
+          fio2_trend: document.querySelector('input[name="fio2_trend"]:checked')?.value,
+          hr: p(document.getElementById('hr').value),
+          hr_trend: document.querySelector('input[name="hr_trend"]:checked')?.value,
+          sbp: p(document.getElementById('sbp').value),
+          sbp_trend: document.querySelector('input[name="sbp_trend"]:checked')?.value,
+          consciousness: document.getElementById('consciousness').value,
+          lactate: p(document.getElementById('lactate').value),
+          lactate_trend: document.querySelector('input[name="lactate_trend"]:checked')?.value,
+          creatinine: p(document.getElementById('creatinine').value),
+          creatinine_baseline: p(document.getElementById('creatinine_baseline').value),
+          urine_output_hr: p(document.getElementById('urine_output_hr').value),
+          weight: p(document.getElementById('weight').value),
+          vasopressor_recent: document.getElementById('vasopressor_recent').checked,
+          airway: document.getElementById('airway').value,
+          delirium: document.getElementById('delirium').checked,
+          after_hours: document.getElementById('after_hours').checked,
+          recent_extubation: document.getElementById('recent_extubation').checked,
+          reason_icu: document.getElementById('reason_icu').value,
+          icu_summary: document.getElementById('icu_summary').value,
+          pmh: document.getElementById('pmh').value,
+          manual_override: document.getElementById('manual_override').checked,
+          override_category: document.getElementById('override_category').value,
+          override_reason: document.getElementById('override_reason').value
+        };
+
+        // Critical flags
+        const critical = [];
+        if (data.vasopressor_recent) critical.push('Vasopressor in last 24h');
+        if (!isNaN(data.fio2) && data.fio2 >= 40 || ['HFNP', 'NIV'].includes(data.o2_device)) critical.push('FiO2 >= 40% or HFNP/NIV');
+        if (!isNaN(data.lactate) && data.lactate >= 4 || (data.lactate_trend === 'worsening' && data.lactate >= 2)) critical.push('Lactate >= 4 or rising');
+        if (data.consciousness === 'Unresponsive') critical.push('Unresponsive');
+        if (['At Risk', 'Tracheostomy'].includes(data.airway)) critical.push('Airway risk');
+
+        // Simplified ADDS MET trigger
+        let addsMet = false;
+        if (data.rr <= 4 || data.rr >= 36 || data.spo2 <= 84 || data.hr <= 30 || data.hr >= 140 || data.sbp <= 40 || data.sbp >= 221 || data.consciousness === 'Unresponsive') {
+          addsMet = true;
+          critical.push('ADDS MET trigger');
+        }
+
+        // Important flags
+        const important = [];
+        if (data.creatinine_trend === 'worsening' || (!isNaN(data.creatinine) && !isNaN(data.creatinine_baseline) && 
+            (data.creatinine - data.creatinine_baseline >= 26 || data.creatinine >= 1.5 * data.creatinine_baseline))) 
+          important.push('Renal dysfunction');
+        if (!isNaN(data.sbp) && data.sbp < 90 || !isNaN(data.hr) && data.hr > 140) important.push('Hemodynamic instability');
+        if (data.delirium) important.push('Delirium');
+        if (!isNaN(data.urine_output_hr) && !isNaN(data.weight) && data.weight > 0 && 
+            (data.urine_output_hr / data.weight) < 0.5 && data.urine_output_trend === 'worsening') 
+          important.push('Oliguria');
+        if (data.recent_extubation) important.push('Recent extubation');
+
+        // Category logic
+        let categoryKey = 'GREEN', categoryText = 'CAT 3: GREEN', categoryClass = 'category-green', followUp = '24h check-in';
+        const hasWorsening = Object.values(data).some(v => v === 'worsening');
+        if (data.manual_override) {
+          categoryKey = data.override_category;
+          categoryText = `CAT ${categoryKey === 'RED' ? 1 : categoryKey === 'AMBER' ? 2 : 3}: ${categoryKey}`;
+          categoryClass = `category-${categoryKey.toLowerCase()}`;
+          followUp = categoryKey === 'RED' ? '72h intensive monitoring' : categoryKey === 'AMBER' ? '48h follow-up' : '24h check-in';
+        } else if (critical.length > 0 || (data.after_hours && important.length > 0) || important.length >= 2 || (hasWorsening && important.length === 1)) {
+          categoryKey = 'RED';
+          categoryText = 'CAT 1: RED';
+          categoryClass = 'category-red';
+          followUp = '72h intensive monitoring';
+        } else if (important.length === 1) {
+          categoryKey = 'AMBER';
+          categoryText = 'CAT 2: AMBER';
+          categoryClass = 'category-amber';
+          followUp = '48h follow-up';
+        }
+
+        // Display results
+        const summaryContainer = document.getElementById('summary-container');
+        const criticalHtml = critical.length ? `<ul class="list-disc list-inside text-sm text-gray-700">${critical.map(f => `<li>${f}</li>`).join('')}</ul>` : '<div class="text-sm text-gray-500">None</div>';
+        const importantHtml = important.length ? `<ul class="list-disc list-inside text-sm text-gray-700">${important.map(f => `<li>${f}</li>`).join('')}</ul>` : '<div class="text-sm text-gray-500">None</div>';
+        const overrideHtml = data.manual_override ? `<div class="mt-2 text-sm text-yellow-700"><strong>Override:</strong> ${data.override_reason || 'No reason provided'}</div>` : '';
+        const afterHoursHtml = data.after_hours ? '<div class="mt-2 text-sm text-yellow-700">After-hours discharge modifier applied</div>' : '';
+
+        summaryContainer.innerHTML = `
+          <div class="summary-category ${categoryClass}">${categoryText}</div>
+          <div class="mt-2 text-sm font-semibold">Recommended Follow-Up: ${followUp}</div>
+          ${overrideHtml}
+          ${afterHoursHtml}
+          <div class="summary-flags-container mt-4">
+            <div><h4 class="flag-list-red">Critical Flags (${critical.length}):</h4>${criticalHtml}</div>
+            <div><h4 class="flag-list-green">Important Flags (${important.length}):</h4>${importantHtml}</div>
+          </div>
+          <div class="mt-4 text-sm">
+            <p><strong>ICU Admission Reason:</strong> ${data.reason_icu || 'N/A'}</p>
+            <p><strong>ICU Summary:</strong> ${data.icu_summary || 'N/A'}</p>
+            <p><strong>PMH:</strong> ${data.pmh || 'N/A'}</p>
+          </div>
+        `;
+      });
+    });
+  </script>
 </body>
 </html>
