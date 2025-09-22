@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>ALERT Nursing Risk Assessment Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -10,76 +10,79 @@
 </head>
 <body class="p-4 sm:p-6 md:p-8 pb-32">
 
-    <div id="main-content" class="max-w-7xl mx-auto">
-        <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print flex flex-col gap-4">
-            <div class="flex justify-between items-center w-full">
-                <div id="handoff-hub" class="flex items-center gap-2">
-                     <button id="getHandoffKeyBtn" type="button" class="bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold py-2 px-3 rounded-lg text-sm">↑ Get Handoff Key</button>
-                     <button id="useHandoffKeyBtn" type="button" class="bg-indigo-100 text-indigo-800 hover:bg-indigo-200 font-semibold py-2 px-3 rounded-lg text-sm">↓ Use Handoff Key</button>
-                </div>
-                <div class="flex items-center gap-2 ml-auto">
-                     <button id="toggle-full-review-btn" type="button" class="hidden bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold py-2 px-3 rounded-lg text-sm">Expand to Full Review</button>
-                     <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
-                </div>
-            </div>
-            <div id="pasteContainer" class="hidden w-full">
-                <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your single-patient data key here..."></textarea>
-                <button id="loadPastedDataBtn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Load Data</button>
-            </div>
+  <div id="main-content" class="max-w-7xl mx-auto">
+    <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print flex flex-col gap-4">
+      <div class="flex justify-between items-center w-full">
+        <div id="handoff-hub" class="flex items-center gap-2">
+          <button id="getHandoffKeyBtn" type="button" class="bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold py-2 px-3 rounded-lg text-sm">↑ Get Handoff Key</button>
+          <button id="useHandoffKeyBtn" type="button" class="bg-indigo-100 text-indigo-800 hover:bg-indigo-200 font-semibold py-2 px-3 rounded-lg text-sm">↓ Use Handoff Key</button>
         </div>
-
-        <div id="main-content-wrapper" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <form id="assessmentForm" class="lg:col-span-2 space-y-6" onsubmit="return false;">
-                <div id="patient-details-section"></div>
-                <div id="bloods-section"></div>
-                <div id="assessment-section"></div>
-                <div id="devices-section"></div>
-                <div id="context-section"></div>
-            </form>
-
-            <div id="summary-column" class="lg:col-span-1">
-                <div class="sticky top-8 space-y-6">
-                    <div id="output-panel" class="bg-gray-50 rounded-xl shadow-lg p-6">
-                        <h2 class="form-section-title">Assessment Summary</h2>
-                        <div id="summary-container" class="space-y-4">
-                            <p class="text-gray-500">Summary will appear here as you enter data...</p>
-                        </div>
-                        <div class="mt-6 space-y-4 full-review-item">
-                            <div>
-                                <label for="clinical_impression" class="block font-semibold text-gray-700">Impression (IMP):</label>
-                                <textarea id="clinical_impression" rows="3" class="input-field" placeholder="e.g., On HFNP with raised inflammatory markers..."></textarea>
-                            </div>
-                            <div>
-                                <label for="clinical_plan" class="block font-semibold text-gray-700">Plan:</label>
-                                <textarea id="clinical_plan" rows="4" class="input-field" placeholder="e.g., Chase bloods, Monitor FiO2 trend..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <h2 class="form-section-title">DMR Summary Generator</h2>
-                        <textarea id="emrSummary" rows="25" class="w-full p-2 border rounded-md bg-gray-50 font-mono text-xs" placeholder="Your summary will update in real-time..."></textarea>
-                        <button type="button" id="copySummaryButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg w-full mt-4">Copy Summary to Clipboard</button>
-                    </div>
-                </div>
-            </div>
+        <div class="flex items-center gap-2 ml-auto">
+          <button id="toggle-full-review-btn" type="button" class="hidden bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold py-2 px-3 rounded-lg text-sm">Expand to Full Review</button>
+          <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
         </div>
+      </div>
+
+      <div id="pasteContainer" class="hidden w-full">
+        <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your single-patient data key here..."></textarea>
+        <button id="loadPastedDataBtn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Load Data</button>
+      </div>
     </div>
-    
-    <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex flex-col z-40">
-        <div class="flex items-center justify-between w-full">
-            <div id="footer-flags-green" class="flex items-center text-sm font-bold"></div>
-            <div class="text-center">
-                <span id="footer-category" class="font-bold text-sm block">GREEN</span>
-                <span id="footer-score" class="font-bold text-xl">0</span>
-            </div>
-            <div id="footer-flags-red" class="flex items-center text-sm font-bold"></div>
-        </div>
-        <div id="footer-context" class="text-xs text-center mt-1 truncate">
-            <span id="footer-location"></span> | <span id="footer-reason"></span>
-        </div>
-    </div>
-    
-    <script src="js/script.js"></script>
 
+    <div id="main-content-wrapper" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <form id="assessmentForm" class="lg:col-span-2 space-y-6" onsubmit="return false;">
+        <div id="patient-details-section"></div>
+        <div id="bloods-section"></div>
+        <div id="assessment-section"></div>
+        <div id="devices-section"></div>
+        <div id="context-section"></div>
+      </form>
+
+      <div id="summary-column" class="lg:col-span-1">
+        <div class="sticky top-8 space-y-6">
+          <div id="output-panel" class="bg-gray-50 rounded-xl shadow-lg p-6">
+            <h2 class="form-section-title">Assessment Summary</h2>
+            <div id="summary-container" class="space-y-4">
+              <p class="text-gray-500">Summary will appear here as you enter data...</p>
+            </div>
+
+            <div class="mt-6 space-y-4 full-review-item">
+              <div>
+                <label for="clinical_impression" class="block font-semibold text-gray-700">Impression (IMP):</label>
+                <textarea id="clinical_impression" rows="3" class="input-field" placeholder="e.g., On HFNP with raised inflammatory markers..."></textarea>
+              </div>
+              <div>
+                <label for="clinical_plan" class="block font-semibold text-gray-700">Plan:</label>
+                <textarea id="clinical_plan" rows="4" class="input-field" placeholder="e.g., Chase bloods, Monitor FiO2 trend..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="form-section-title">DMR Summary Generator</h2>
+            <textarea id="emrSummary" rows="25" class="w-full p-2 border rounded-md bg-gray-50 font-mono text-xs" placeholder="Your summary will update in real-time..."></textarea>
+            <button type="button" id="copySummaryButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg w-full mt-4">Copy Summary to Clipboard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex flex-col z-40">
+    <div class="flex items-center justify-between w-full">
+      <div id="footer-flags-green" class="flex items-center text-sm font-bold"></div>
+      <div class="text-center">
+        <span id="footer-category" class="font-bold text-sm block">GREEN</span>
+        <span id="footer-critical-count" class="font-bold text-xl">0</span>
+        <span id="footer-important-count" class="text-xs block">Important: 0</span>
+      </div>
+      <div id="footer-flags-red" class="flex items-center text-sm font-bold"></div>
+    </div>
+    <div id="footer-context" class="text-xs text-center mt-1 truncate">
+      <span id="footer-location"></span> | <span id="footer-reason"></span>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
 </body>
 </html>
