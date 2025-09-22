@@ -8,167 +8,78 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="p-4 sm:p-6 md:p-8 pb-24">
+<body class="p-4 sm:p-6 md:p-8 pb-32">
 
-    <!-- Launch Screen -->
-    <div id="launchScreenModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex flex-col items-center justify-center p-4 z-50 no-print">
-        <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 text-center max-w-lg w-full space-y-4">
-            <h2 class="text-2xl md:text-3xl font-bold text-teal-700">ALERT Nursing Risk Assessment Tool</h2>
-            <p class="text-gray-600">Please choose how you'd like to begin.</p>
-            <div class="flex flex-col gap-4 pt-4">
-                <button id="startFullReviewBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-lg">➕ Start New Full Review <span class="block text-xs font-normal">(on Desktop or Mobile)</span></button>
-                <button id="startQuickScoreBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg">⚡ Start Quick Score Only</button>
-                <div>
-                    <button id="resumeReviewBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg w-full">📲 Continue from Desktop <span class="block text-xs font-normal">(on Mobile)</span></button>
+    <div id="main-content" class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print flex flex-col gap-4">
+            <div class="flex justify-between items-center w-full">
+                <div id="handoff-hub" class="flex items-center gap-2">
+                     <button id="getHandoffKeyBtn" type="button" class="bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold py-2 px-3 rounded-lg text-sm">↑ Get Handoff Key</button>
+                     <button id="useHandoffKeyBtn" type="button" class="bg-indigo-100 text-indigo-800 hover:bg-indigo-200 font-semibold py-2 px-3 rounded-lg text-sm">↓ Use Handoff Key</button>
+                </div>
+                <div class="flex items-center gap-2 ml-auto">
+                     <button id="toggle-full-review-btn" type="button" class="hidden bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold py-2 px-3 rounded-lg text-sm">Expand to Full Review</button>
+                     <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
                 </div>
             </div>
-            <div id="pasteContainer" class="hidden mt-4">
-                <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your data key here..."></textarea>
+            <div id="pasteContainer" class="hidden w-full">
+                <textarea id="pasteDataInput" class="w-full h-24 p-2 border rounded-md" placeholder="Paste your single-patient data key here..."></textarea>
                 <button id="loadPastedDataBtn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Load Data</button>
             </div>
         </div>
-    </div>
 
-    <!-- Main Application Content -->
-    <div id="main-content" class="max-w-4xl mx-auto" style="visibility: hidden;">
-        <div class="bg-white rounded-xl shadow-lg mb-6 p-4 no-print">
-            <div id="top-button-bar" class="flex justify-end items-center gap-2">
-                 <button id="printBlankBtn" type="button" class="bg-gray-100 text-gray-800 hover:bg-gray-200 font-semibold py-2 px-3 rounded-lg text-sm">Print Blank Form</button>
-                 <button id="startOverBtn" type="button" class="bg-red-100 text-red-800 hover:bg-red-200 font-semibold py-2 px-3 rounded-lg text-sm">Start Over</button>
-            </div>
-        </div>
+        <div id="main-content-wrapper" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <form id="assessmentForm" class="lg:col-span-2 space-y-6" onsubmit="return false;">
+                <div id="patient-details-section"></div>
+                <div id="bloods-section"></div>
+                <div id="assessment-section"></div>
+                <div id="devices-section"></div>
+                <div id="context-section"></div>
+            </form>
 
-        <form id="assessmentForm" onsubmit="return false;">
-            <div class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
-                <div class="header-gradient p-6 flex items-center justify-center text-white">
-                    <h1 class="text-2xl sm:text-3xl font-bold">ALERT Nursing Risk Assessment Tool</h1>
-                </div>
-            </div>
-
-            <div id="fullReviewContainer">
-                <!-- Patient Details -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-section">
-                    <div class="bg-gray-50 p-4 rounded-lg border">
-                        <h3 class="text-lg font-semibold mb-4">Patient & Review Details</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                            <div class="md:col-span-2"><label for="reviewType" class="block font-medium">Type of Review:</label><select id="reviewType" class="mt-1 w-full rounded-md border-2 p-2"><option value="post">Post-ICU stepdown review</option><option value="pre">Pre-ICU stepdown review</option></select></div>
-                            <div class="md:col-span-2">
-                                <label class="block font-medium">Location:</label>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
-                                    <select id="ward" class="sm:col-span-2 w-full rounded-md border-2 p-2"></select>
-                                    <input type="number" id="roomNumber" placeholder="Room No." class="w-full rounded-md border-2 p-2">
-                                </div>
-                                <div id="wardOtherContainer" class="hidden mt-2">
-                                    <input type="text" id="wardOther" placeholder="Enter other ward name" class="w-full rounded-md border-2 p-2 text-sm">
-                                </div>
+            <div id="summary-column" class="lg:col-span-1">
+                <div class="sticky top-8 space-y-6">
+                    <div id="output-panel" class="bg-gray-50 rounded-xl shadow-lg p-6">
+                        <h2 class="form-section-title">Assessment Summary</h2>
+                        <div id="summary-container" class="space-y-4">
+                            <p class="text-gray-500">Summary will appear here as you enter data...</p>
+                        </div>
+                        <div class="mt-6 space-y-4 full-review-item">
+                            <div>
+                                <label for="clinical_impression" class="block font-semibold text-gray-700">Impression (IMP):</label>
+                                <textarea id="clinical_impression" rows="3" class="input-field" placeholder="e.g., On HFNP with raised inflammatory markers..."></textarea>
                             </div>
-                            <div><label for="patientInitials" class="block font-medium">Patient Initials:</label><input type="text" id="patientInitials" class="mt-1 w-full rounded-md border-2 p-2"></div>
-                             <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                                <div><label for="icuStepdownDate" class="block font-medium">ICU Stepdown Date:</label><input type="date" id="icuStepdownDate" class="mt-1 w-full rounded-md border-2 p-2"></div>
-                                <div><label for="icuStepdownTime" class="block font-medium">ICU Stepdown Time-band:</label><select id="icuStepdownTime" class="mt-1 w-full rounded-md border-2 p-2"><option value="Morning (0600-1159)" data-ooh="false">Morning (0600-1159)</option><option value="Afternoon (1200-1759)" data-ooh="false">Afternoon (1200-1759)</option><option value="Evening (1800-2359)" data-ooh="true">Evening (1800-2359)</option><option value="Night (0000-0559)" data-ooh="true">Night (0000-0559)</option></select></div>
+                            <div>
+                                <label for="clinical_plan" class="block font-semibold text-gray-700">Plan:</label>
+                                <textarea id="clinical_plan" rows="4" class="input-field" placeholder="e.g., Chase bloods, Monitor FiO2 trend..."></textarea>
                             </div>
-                            <div class="md:col-span-2"><label for="losDays" class="block font-medium">ICU LOS (days):</label><input type="number" id="losDays" min="0" class="mt-1 w-full rounded-md border-2 p-2"></div>
                         </div>
                     </div>
-                </div>
-                <!-- Clinical Background -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-hide">
-                    <div class="bg-gray-50 p-4 rounded-lg border"><h3 class="text-lg font-semibold mb-4">Clinical Background</h3><div class="space-y-4"><div><label for="goc" class="block text-sm font-medium">Goals of Care:</label><select id="goc" class="mt-1 w-full rounded-md border-2 p-2"><option value="Not Documented">Not Documented</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select><div id="gocSpecificsContainer" class="hidden mt-2"><label for="gocSpecifics" class="block text-sm font-medium">Specifics:</label><input type="text" id="gocSpecifics" class="mt-1 w-full rounded-md border-2 p-2"></div></div><div id="allergies-section"><label class="block text-sm font-medium">Allergies:</label><div class="mt-2 space-y-2"><div class="flex items-center"><input type="checkbox" id="nkdaCheckbox" class="h-4 w-4 rounded"><label for="nkdaCheckbox" class="ml-2">No Known Drug Allergies</label></div><div id="allergies_container" class="space-y-2"></div><button type="button" id="addAllergyButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add Allergy</button></div></div><div><label class="block text-sm font-medium">Infection Control Precautions:</label><div class="mt-2 flex flex-wrap gap-x-4 gap-y-2"><label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Contact"> <span class="ml-2">Contact</span></label><label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Droplet"> <span class="ml-2">Droplet</span></label><label class="flex items-center"><input type="checkbox" name="precautions" class="precaution-cb" value="Airborne"> <span class="ml-2">Airborne</span></label></div><div id="infectionControlDetails" class="hidden mt-2"><label for="infectionControlReason" class="block text-sm font-medium">Reason:</label><input type="text" id="infectionControlReason" class="mt-1 w-full rounded-md border-2 p-2"></div></div></div></div>
-                    <div> <h3 class="text-lg font-semibold">Reason for ICU Admission:</h3> <textarea id="admissionReason" rows="3" class="mt-1 w-full rounded-md border-2 p-2"></textarea> </div>
-                    <div> <h3 class="text-lg font-semibold">ICU Summary / Timeline:</h3> <textarea id="icuSummary" rows="10" class="mt-1 w-full rounded-md border-2 p-2"></textarea> </div>
-                    <div> <h3 class="text-lg font-semibold">Past Medical History (PMH):</h3> <textarea id="pmh" rows="5" class="mt-1 w-full rounded-md border-2 p-2"></textarea> </div>
-                </div>
-
-                <!-- Scorable Bloods -->
-                <div id="scorable-bloods-container" class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
-                    <!-- Content injected by JS -->
-                </div>
-                
-                <!-- Key (Non-Scored) Bloods -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
-                    <div id="bloods-container" class="bg-gray-50 p-4 rounded-lg border">
-                        <!-- Content injected by JS -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="form-section-title">DMR Summary Generator</h2>
+                        <textarea id="emrSummary" rows="25" class="w-full p-2 border rounded-md bg-gray-50 font-mono text-xs" placeholder="Your summary will update in real-time..."></textarea>
+                        <button type="button" id="copySummaryButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg w-full mt-4">Copy Summary to Clipboard</button>
                     </div>
                 </div>
-
-                <!-- ABG Calculator -->
-                <div id="abg-calculator-container" class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
-                    <!-- Content injected by JS -->
-                </div>
-                <!-- Handoff Button -->
-                <div id="handoff-container" class="print-hide" style="display: none;">
-                     <div class="bg-white rounded-xl shadow-lg mb-6 p-6 text-center">
-                        <h3 class="text-lg font-semibold text-gray-800">Desktop Preparation Complete</h3>
-                        <p class="text-sm text-gray-600 mt-2 mb-4">You have entered the pre-review data. To continue on mobile, copy the data key below and paste it into the tool on your phone.</p>
-                        <button id="generateHandoffBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg">📲 Copy Data Key to Mobile</button>
-                    </div>
-                </div>
-                <!-- ADDS Calculator -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
-                    <div id="adds-container" class="bg-gray-50 p-4 rounded-lg border"></div>
-                </div>
             </div>
-
-            <!-- Risk Scoring Assessment -->
-            <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-section">
-                <div id="scoringContainer">
-                    <!-- Scoring options will be injected here by JS -->
-                </div> 
-            </div>
-
-            <div id="fullReviewContainerBottom">
-                 <!-- Devices -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 print-hide">
-                    <details class="bg-gray-50 p-4 rounded-lg border" open><summary class="font-semibold cursor-pointer">Device, Drain & Wound Assessment</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">CVADs</h4><div id="central_lines_container" class="space-y-2"></div><button type="button" id="addCentralLineButton" class="no-print mt-2 text-sm bg-rose-100 px-3 py-1 rounded-md">+ Add CVAD</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">PIVCs</h4><div id="pivcs_container"  class="space-y-2"></div><button type="button" id="addPivcButton" class="no-print mt-2 text-sm bg-blue-100 px-3 py-1 rounded-md">+ Add PIVC</button></div><details class="pt-4 border-t"><summary class="text-sm font-medium">Show Additional</summary><div class="space-y-6 pt-4"><div><h4 class="font-medium">IDC</h4><div id="idcs_container" class="space-y-2"></div><button type="button" id="addIdcButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add IDC</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Epicardial Pacing Wires</h4><div id="pacing_wires_container" class="space-y-2"></div><button type="button" id="addPacingWireButton" class="no-print mt-2 text-sm bg-purple-100 px-3 py-1 rounded-md">+ Add Pacing Wires</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Drains</h4><div id="drains_container" class="space-y-2"></div><button type="button" id="addDrainButton" class="no-print mt-2 text-sm bg-teal-100 px-3 py-1 rounded-md">+ Add Drain</button></div><div class="mt-4 pt-4 border-t"><h4 class="font-medium">Other Devices & Wounds</h4><div id="others_container" class="space-y-2"></div><button type="button" id="addOtherButton" class="no-print mt-2 text-sm bg-gray-100 px-3 py-1 rounded-md">+ Add Other</button></div></div></details></div></details>
-                </div>
-                 <!-- Final Assessment Items -->
-                <div class="bg-white rounded-xl shadow-lg mb-6 p-6 space-y-6 print-hide">
-                    <h2 class="text-xl font-bold border-b pb-3">Final Assessment & Plan</h2>
-                    <div id="fluid-assessment-container" class="bg-gray-50 p-4 rounded-lg border"></div>
-                    <div><h3 class="text-lg font-semibold mb-2">PICS</h3><div class="p-4 rounded-lg bg-purple-50"><div class="space-y-2"><select id="pics_status" name="pics_status" class="w-full rounded-md border-2 p-2"><option value="Negative">Negative</option><option value="Positive">Positive</option><option value="Unable to assess">Unable to assess</option></select><div id="pics_details_container" class="hidden pt-2"><label for="pics_notes" class="block text-sm font-medium">Plan:</label><textarea id="pics_notes" rows="2" class="mt-1 w-full rounded-md border-2 p-2" placeholder="Plan..."></textarea></div></div></div></div>
-                    <div><label class="flex items-center font-medium"><input type="checkbox" id="homeTeamPlanCheckbox" class="mr-2 h-4 w-4">Home Team Plan in Place</label><div id="homeTeamPlanDetails" class="hidden mt-2"><textarea id="homeTeamPlanText" rows="3" class="mt-1 w-full rounded-md border-2 p-2" placeholder="Enter plan details..."></textarea></div></div>
-                    <div><label for="additionalNotes" class="block font-medium">Additional Notes:</label><textarea id="additionalNotes" rows="6" class="mt-1 w-full rounded-md border-2 p-2"></textarea></div>
-                </div>
-            </div>
-<div id="summary-container" class="space-y-4">
-    <p class="text-gray-500">Summary will appear here as you enter data...</p>
-</div>
-
-<div class="mt-6 space-y-4 full-review-item">
-    <div>
-        <label for="clinical_impression" class="block font-semibold text-gray-700">Impression (IMP):</label>
-        <textarea id="clinical_impression" rows="3" class="input-field" placeholder="e.g., On HFNP with raised inflammatory markers..."></textarea>
-    </div>
-    <div>
-        <label for="clinical_plan" class="block font-semibold text-gray-700">Plan:</label>
-        <textarea id="clinical_plan" rows="4" class="input-field" placeholder="e.g., Chase bloods, Monitor FiO2 trend..."></textarea>
-    </div>
-</div>            <!-- Final Score and DMR -->
-            <div class="bg-white rounded-xl shadow-lg mt-6 p-6">
-                <h2 class="text-xl font-bold border-b pb-3 mb-4">DMR Summary Generator</h2>
-                <div class="flex space-x-4 mb-4 no-print">
-                    <button type="button" id="generateSummaryButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg w-1/2">Generate</button>
-                    <button type="button" id="copySummaryButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg w-1/2">Copy</button>
-                </div>
-                <textarea id="emrSummary" rows="25" class="w-full p-2 border rounded-md bg-gray-50 font-mono text-xs" placeholder="Your summary will appear here..."></textarea>
-                <div class="mt-6 text-center no-print"><button type="button" id="resetButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Reset Form</button></div>
-            </div>
-        </form>
+        </div>
     </div>
     
-    <!-- Sticky Score Footer -->
-    <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex items-center justify-between z-40">
-        <span id="footer-category" class="font-bold text-sm px-2">LOW RISK</span>
-        <span id="footer-score" class="text-3xl font-bold bg-white/20 px-4 py-1 rounded-md">0</span>
+    <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex flex-col z-40">
+        <div class="flex items-center justify-between w-full">
+            <div id="footer-flags-green" class="flex items-center text-sm font-bold"></div>
+            <div class="text-center">
+                <span id="footer-category" class="font-bold text-sm block">GREEN</span>
+                <span id="footer-score" class="font-bold text-xl">0</span>
+            </div>
+            <div id="footer-flags-red" class="flex items-center text-sm font-bold"></div>
+        </div>
+        <div id="footer-context" class="text-xs text-center mt-1 truncate">
+            <span id="footer-location"></span> | <span id="footer-reason"></span>
+        </div>
     </div>
-    
-    <!-- Print Container -->
-    <div id="print-container" class="hidden"></div>
-    
-    <div class="text-center mt-8 text-gray-500 text-sm no-print">Version 21.0.1 - Bug Fix</div>
     
     <script src="js/script.js"></script>
 
 </body>
 </html>
-
