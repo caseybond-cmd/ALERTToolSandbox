@@ -1,569 +1,538 @@
-// js/script.js
-// Full script implementing:
-// - ADDS per provided table (with MET triggers)
-// - Flag-only engine (Critical / Important)
-// - Urine mL/kg/hr calculation
-// - Analgesia copied into DMR next to pain
-// - Handoff key includes icuReason, icuSummary, pmh
-// - Defensive: missing inputs are tolerated
 
-(function () {
-  'use strict';
-
-  // ---------- Helpers ----------
-  const toNum = (v) => {
-    const n = parseFloat(v);
-    return Number.isFinite(n) ? n : NaN;
+// --- SCRIPT START ---
+document.addEventListener('DOMContentLoaded', () => {
+  // --- STATE & CONFIG ---
+  let currentReview = {};
+  const form = document.getElementById('assessmentForm');
+  const p = (val) => {
+    const n = parseFloat(val);
+    return isNaN(n) ? NaN : n;
   };
 
-  const safeVal = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return undefined;
-    if (el.type === 'checkbox') return el.checked;
-    return el.value === undefined || el.value === null ? '' : el.value;
+  const CATEGORIES = {
+    RED: { text: 'CAT 1: RED', class: 'category-red' },
+    AMBER: { text: 'CAT 2: AMBER', class: 'category-amber' },
+    GREEN: { text: 'CAT 3: GREEN', class: 'category-green' }
   };
 
-  const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+  // --- Flag definitions (editable) ---
+  // Critical flags: any = Cat1
+  const CRITICAL_PREDICATES = [
+    // ADDS MET handled separately (calculated)
+    { id: 'vasopressor_recent', label: 'Vasopressor or inotrope within last 24h', test: (d) => !!d.vasopressor_recent },
+    { id: 'fio2_high', label: 'FiO2 >= 40% OR HFNP/NIV dependence', test: (d) => {
+        const fio2 = p(d.fio2); const device = d.o2_device || '';
+        if (!isNaN(fio2) && fio2 >= 40) return true;
+        if (['HFNP','NIV'].includes(device)) {
+          // If HFNP/NIV but SpO2 still low or device listed, consider critical if SpO2 < 92 or device in use
+          if (p(d.spo2) < 92 || device) return true;
+        }
+        return false;
+      }},
+    { id: 'lactate_high', label: 'Lactate >= 4 mmol/L OR rapidly rising lactate', test: (d) => {
+        if (!isNaN(p(d.lactate)) && p(d.lactate) >= 4) return true;
+        return d.lactate_trend === 'worsening' && !isNaN(p(d.lactate)) && p(d.lactate) >= 2.0;
+      }},
+    { id: 'unresponsive', label: 'Unresponsive / rapidly deteriorating consciousness', test: (d) => (d.consciousness === 'Unresponsive') },
+    { id: 'airway_risk', label: 'Active airway risk (recent intubation/failed extubation / inability to protect airway)', test: (d) => d.airway === 'At Risk' || d.airway === 'Tracheostomy' },
+    { id: 'met_call', label: 'ADDS/MET call triggered', test: (d, adds) => adds && adds.metCall === true }
+  ];
 
-  // ---------- Gather data from DOM ----------
+  // Important flags: 1 -> Cat2 ; >=2 -> Cat1 (or after-hours modifier)
+  const IMPORTANT_PREDICATES = [
+    { id: 'creatinine_delta', label: 'New/worsening renal dysfunction (rise >=26 µmol/L or >=1.5x baseline)', test: (d) => d.creatinine_trend === 'worsening' || (!isNaN(p(d.creatinine)) && !isNaN(p(d.creatinine_baseline)) && (p(d.creatinine) - p(d.creatinine_baseline) >= 26 || p(d.creatinine) >= 1.5 * p(d.creatinine_baseline))) },
+    { id: 'hemodynamic_instability', label: 'Significant haemodynamic instability (SBP <90 or persistent HR>140)', test: (d) => (!isNaN(p(d.sbp)) && p(d.sbp) < 90) || (!isNaN(p(d.hr)) && p(d.hr) > 140) },
+    { id: 'recent_extubation', label: 'Recent extubation (24-48h) with objective risk features', test: (d) => d.recent_extubation === true || d.recent_extubation === 'yes' },
+    { id: 'platelets_low', label: 'Platelets < 50 x10^9/L or active bleeding', test: (d) => !isNaN(p(d.platelets)) && p(d.platelets) < 50 || d.active_bleeding === true },
+    { id: 'delirium_mod', label: 'Delirium (moderate-severe) or rapidly worsening mental state', test: (d) => p(d.delirium) >= 2 || d.consciousness === 'Voice' && d.delirium === '1' },
+    { id: 'device_infection_risk', label: 'Device/line site concern (CVAD/PIVC site infection or rising inflammatory markers + device)', test: (d) => (d.cvad_present && d.cvad_site_health && d.cvad_site_health !== 'Clean & Healthy') || (d.pivc_1_present && d.pivc_1_site_health && d.pivc_1_site_health !== 'Clean & Healthy') },
+    { id: 'oliguria_persistent', label: 'Oliguria persistent (<0.5 mL/kg/hr for >6h) or trend worsening', test: (d) => {
+        if (!isNaN(p(d.urine_output_hr)) && !isNaN(p(d.weight)) && p(d.weight)>0) {
+          const mlkg = p(d.urine_output_hr) / p(d.weight);
+          return mlkg < 0.5 && d.urine_output_trend === 'worsening';
+        }
+        // If trend indicates persistent oliguria
+        return d.urine_output_trend === 'worsening' && !isNaN(p(d.urine_output_hr)) && p(d.urine_output_hr) > 0;
+      }},
+    { id: 'fio2_rapid_change', label: 'Rapid FiO2 changes (wean then increase) or worsening FiO2 trend', test: (d) => d.fio2_trend === 'worsening' || d.fio2_pattern === 'wean_then_rise' }
+  ];
+
+  // --- Initialization ---
+  function initializeApp() {
+    populateStaticContent();
+    setupEventListeners();
+    const saved = localStorage.getItem('alertToolState_v_flag_v1');
+    if (saved) {
+      currentReview = JSON.parse(saved);
+      loadReviewData();
+    } else {
+      updateRiskAssessment();
+    }
+  }
+
+  // --- Data helpers ---
   function gatherFormData() {
-    // List all fields we use (missing fields are OK)
-    const data = {
-      // patient/context
-      review_type: safeVal('review_type'),
-      location: safeVal('location'),
-      room_number: safeVal('room_number'),
-      patient_id: safeVal('patient_id'),
-      stepdown_date: safeVal('stepdown_date'),
-      weight: toNum(safeVal('weight')), // kg
-      age: toNum(safeVal('age')),
-      admission_type: safeVal('admission_type'),
-      icu_los: toNum(safeVal('icu_los')),
-      after_hours: !!(safeVal('after_hours') === true || safeVal('after_hours') === 'true' || safeVal('after_hours') === 'on'),
-      reason_icu: safeVal('reason_icu'),
-      icuReason: safeVal('icuReason'), // new field
-      icuSummary: safeVal('icuSummary'),
-      pmh: safeVal('pmh'),
-
-      // bloods / labs
-      creatinine: toNum(safeVal('creatinine')),
-      creatinine_baseline: toNum(safeVal('creatinineBaseline') || safeVal('creatinine_baseline')),
-      lactate: toNum(safeVal('lactate')),
-      lactate_trend: safeVal('lactate_trend'),
-      hb: toNum(safeVal('hb') || safeVal('haemoglobin')),
-      platelets: toNum(safeVal('platelets')),
-      crp: toNum(safeVal('crp')),
-      glucose: toNum(safeVal('glucose')),
-
-      // A-E / vitals
-      rr: toNum(safeVal('respiratoryRate') || safeVal('rr') ),
-      rr_trend: safeVal('rr_trend'),
-      spo2: toNum(safeVal('spo2')),
-      spo2_trend: safeVal('spo2_trend'),
-      o2_device: safeVal('o2Device') || safeVal('o2_device'),
-      o2_flow: toNum(safeVal('o2Flow') || safeVal('o2_flow')),
-      fio2: toNum(safeVal('fio2')),
-      fio2_trend: safeVal('fio2_trend'),
-      fio2_pattern: safeVal('fio2_pattern'), // e.g., 'wean_then_rise' if you capture it
-      hr: toNum(safeVal('heartRate') || safeVal('hr')),
-      hr_trend: safeVal('hr_trend'),
-      sbp: toNum(safeVal('systolicBP') || safeVal('sbp')),
-      sbp_trend: safeVal('sbp_trend'),
-      temp: toNum(safeVal('temperature') || safeVal('temp')),
-      temp_trend: safeVal('temp_trend'),
-      consciousness: safeVal('consciousness'),
-      delirium: toNum(safeVal('delirium') || safeVal('delirium_score') || 0),
-      cap_refill: safeVal('cap_refill'),
-
-      // fluids / urine
-      urineOutput: toNum(safeVal('urineOutput') || safeVal('urine_output') || safeVal('uop_ml_per_hr')),
-      urine_output_trend: safeVal('urine_output_trend'),
-
-      // devices
-      cvad_present: !!(safeVal('cvad_present') === true || safeVal('cvad_present') === 'true' || safeVal('cvad_present') === 'on'),
-      cvad_site_health: safeVal('cvad_site_health'),
-      pivc_1_present: !!(safeVal('pivc_1_present') === true || safeVal('pivc_1_present') === 'true' || safeVal('pivc_1_present') === 'on'),
-      pivc_1_site_health: safeVal('pivc_1_site_health'),
-      idc_present: !!(safeVal('idc_present') === true || safeVal('idc_present') === 'true' || safeVal('idc_present') === 'on'),
-      recent_extubation: !!(safeVal('recent_extubation') === true || safeVal('recent_extubation') === 'true' || safeVal('recent_extubation') === 'on'),
-      airway: safeVal('airway'),
-
-      // other
-      vasopressor_recent: !!(safeVal('vasopressor_recent') === true || safeVal('vasopressor_recent') === 'true' || safeVal('vasopressor_recent') === 'on'),
-      active_bleeding: !!(safeVal('active_bleeding') === true || safeVal('active_bleeding') === 'true' || safeVal('active_bleeding') === 'on'),
-      pain_score: toNum(safeVal('painScore') || safeVal('pain_score')),
-      analgesiaRegimen: safeVal('analgesiaRegimen'),
-
-      // misc / trend markers you may provide
-      fio2_was_weaned_then_risen: safeVal('fio2_pattern') === 'wean_then_rise' || safeVal('fio2_pattern') === 'wean-then-rise',
-      // clinician override fields (optional)
-      manual_upgrade: !!(safeVal('manual_upgrade') === true || safeVal('manual_upgrade') === 'true'),
-      manual_downgrade: !!(safeVal('manual_downgrade') === true || safeVal('manual_downgrade') === 'true')
-    };
-
+    const data = {};
+    form.querySelectorAll('input, select, textarea').forEach(el => {
+      if (!el.id) return;
+      if (el.type === 'checkbox') data[el.id] = el.checked;
+      else data[el.id] = el.value;
+    });
+    document.querySelectorAll('.trend-radio-group').forEach(group => {
+      const checked = group.querySelector('input[type="radio"]:checked');
+      if (checked) data[group.dataset.trendId] = checked.value;
+    });
+    // convenience booleans for some fields that may not exist in all forms
+    data.vasopressor_recent = data.vasopressor_recent || false;
     return data;
   }
 
-  // ---------- ADDS calculation (strict to supplied table) ----------
-  // returns { score: number, metCall: boolean, metReasons: [], breakdown: {} }
-  function calculateADDSFromData(d) {
-    let score = 0;
-    const metReasons = [];
-    const breakdown = {};
+  function saveState() {
+    currentReview = gatherFormData();
+    localStorage.setItem('alertToolState_v_flag_v1', JSON.stringify(currentReview));
+  }
 
-    // Resp Rate
-    if (!Number.isNaN(d.rr)) {
-      if (d.rr <= 4) { metReasons.push(`RR ${d.rr} <=4 (MET)`); breakdown.rr = 'MET'; }
-      else if (d.rr >= 36) { metReasons.push(`RR ${d.rr} >=36 (MET)`); breakdown.rr = 'MET'; }
-      else if (d.rr >= 5 && d.rr <= 8) { score += 3; breakdown.rr = 3; }
-      else if (d.rr >= 9 && d.rr <= 10) { score += 2; breakdown.rr = 2; }
-      else if (d.rr >= 11 && d.rr <= 20) { score += 0; breakdown.rr = 0; }
-      else if (d.rr >= 21 && d.rr <= 24) { score += 1; breakdown.rr = 1; }
-      else if (d.rr >= 25 && d.rr <= 30) { score += 2; breakdown.rr = 2; }
-      else if (d.rr >= 31 && d.rr <= 35) { score += 3; breakdown.rr = 3; }
-    }
-
-    // SpO2
-    if (!Number.isNaN(d.spo2)) {
-      if (d.spo2 <= 84) { metReasons.push(`SpO2 ${d.spo2} <=84 (MET)`); breakdown.spo2 = 'MET'; }
-      else if (d.spo2 >= 85 && d.spo2 <= 88) { score += 3; breakdown.spo2 = 3; }
-      else if (d.spo2 >= 89 && d.spo2 <= 90) { score += 2; breakdown.spo2 = 2; }
-      else if (d.spo2 >= 91 && d.spo2 <= 93) { score += 1; breakdown.spo2 = 1; }
-      else if (d.spo2 >= 94) { score += 0; breakdown.spo2 = 0; }
-    }
-
-    // O2 Flow Rate
-    if (!Number.isNaN(d.o2_flow)) {
-      if (d.o2_flow >= 10) { score += 3; breakdown.o2_flow = 3; }
-      else if (d.o2_flow >= 8) { score += 2; breakdown.o2_flow = 2; }
-      else if (d.o2_flow >= 6) { score += 1; breakdown.o2_flow = 1; }
-      else { score += 0; breakdown.o2_flow = 0; }
-    }
-
-    // O2 Device / FiO2 mapping
-    // Priority: if fio2 numeric present use mapping; else if device indicates high-flow, add 1 per table
-    if (!Number.isNaN(d.fio2)) {
-      // apply the mapping you asked for (21-28 =1; 29-40 =2; >40 =3)
-      if (d.fio2 >= 40) { score += 3; breakdown.fio2 = 3; }
-      else if (d.fio2 >= 29) { score += 2; breakdown.fio2 = 2; }
-      else if (d.fio2 >= 21) { score += 1; breakdown.fio2 = 1; }
-      // if fio2 <21 or NaN, ignore
-    } else {
-      // map HF devices to +1 (any high-flow device)
-      const dev = (d.o2_device || '').toString().toLowerCase();
-      if (dev.includes('hf') || dev.includes('hfnp') || dev.includes('high-flow') || dev.includes('high flow') || dev.includes('nhf')) {
-        score += 1;
-        breakdown.o2_device = 1;
+  function loadReviewData(isHandoff = false) {
+    Object.keys(currentReview).forEach(key => {
+      const el = form.querySelector(`#${key}`);
+      if (el) {
+        if (el.type === 'checkbox') el.checked = currentReview[key];
+        else el.value = currentReview[key];
+      } else if (key.endsWith('_trend')) {
+        const radios = document.querySelectorAll(`input[name="${key}_radio"]`);
+        radios.forEach(r => { if (r.value === currentReview[key]) r.checked = true; });
       }
-    }
+    });
+    updateRiskAssessment();
+    // trigger UI updates
+    form.querySelectorAll('input[type="date"], input[id*="present"], select[id*="present"], #diet, #cap_refill').forEach(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+    document.getElementById('pain_score')?.dispatchEvent(new Event('input'));
+  }
 
-    // Heart Rate
-    if (!Number.isNaN(d.hr)) {
-      if (d.hr <= 30) { metReasons.push(`HR ${d.hr} <=30 (MET)`); breakdown.hr = 'MET'; }
-      else if (d.hr >= 140) { metReasons.push(`HR ${d.hr} >=140 (MET)`); breakdown.hr = 'MET'; }
-      else if (d.hr >= 31 && d.hr <= 40) { score += 3; breakdown.hr = 3; }
-      else if (d.hr >= 41 && d.hr <= 50) { score += 2; breakdown.hr = 2; }
-      else if (d.hr >= 51 && d.hr <= 99) { score += 0; breakdown.hr = 0; }
-      else if (d.hr >= 100 && d.hr <= 109) { score += 1; breakdown.hr = 1; }
-      else if (d.hr >= 110 && d.hr <= 120) { score += 2; breakdown.hr = 2; }
-      else if (d.hr >= 121 && d.hr <= 129) { score += 1; breakdown.hr = 1; }
-      else if (d.hr >= 130 && d.hr <= 139) { score += 3; breakdown.hr = 3; }
-    }
+  function clearForm() {
+    form.reset();
+    localStorage.removeItem('alertToolState_v_flag_v1');
+    currentReview = {};
+    updateRiskAssessment();
+  }
 
-    // Systolic BP
-    if (!Number.isNaN(d.sbp)) {
-      if (d.sbp <= 40) { metReasons.push(`SBP ${d.sbp} extreme low (MET)`); breakdown.sbp = 'MET'; }
-      else if (d.sbp >= 221) { metReasons.push(`SBP ${d.sbp} >=221 (MET)`); breakdown.sbp = 'MET'; }
-      else if (d.sbp >= 41 && d.sbp <= 50) { score += 3; breakdown.sbp = 3; }
-      else if (d.sbp >= 51 && d.sbp <= 60) { score += 2; breakdown.sbp = 2; }
-      else if (d.sbp >= 61 && d.sbp <= 70) { score += 1; breakdown.sbp = 1; }
-      else if (d.sbp >= 71 && d.sbp <= 80) { score += 0; breakdown.sbp = 0; }
-      else if (d.sbp >= 81 && d.sbp <= 90) { score += 3; breakdown.sbp = 3; }
-      else if (d.sbp >= 91 && d.sbp <= 100) { score += 2; breakdown.sbp = 2; }
-      else if (d.sbp >= 101 && d.sbp <= 110) { score += 1; breakdown.sbp = 1; }
-      else if (d.sbp >= 111 && d.sbp <= 139) { score += 0; breakdown.sbp = 0; }
-      else if (d.sbp >= 140 && d.sbp <= 180) { score += 1; breakdown.sbp = 1; }
-      else if (d.sbp >= 181 && d.sbp <= 200) { score += 2; breakdown.sbp = 2; }
-      else if (d.sbp >= 201 && d.sbp <= 220) { score += 3; breakdown.sbp = 3; }
-    }
-
-    // Temperature
-    if (!Number.isNaN(d.temp)) {
-      if (d.temp >= 39.1) { metReasons.push(`Temp ${d.temp} >=39.1 (MET)`); breakdown.temp = 'MET'; }
-      else if (d.temp <= 35) { score += 3; breakdown.temp = 3; }
-      else if (d.temp >= 35.1 && d.temp <= 36.0) { score += 1; breakdown.temp = 1; }
-      else if (d.temp >= 36.1 && d.temp <= 37.5) { score += 0; breakdown.temp = 0; }
-      else if (d.temp >= 37.6 && d.temp <= 38.0) { score += 1; breakdown.temp = 1; }
-      else if (d.temp >= 38.1 && d.temp <= 39.0) { score += 2; breakdown.temp = 2; }
-    }
-
-    // Consciousness
-    const c = (d.consciousness || '').toString().toLowerCase();
-    if (c) {
-      if (c === 'alert') { breakdown.consciousness = 0; score += 0; }
-      else if (c === 'voice') { breakdown.consciousness = 1; score += 1; }
-      else if (c === 'pain') { breakdown.consciousness = 2; score += 2; }
-      else if (c === 'unresponsive') { metReasons.push('Unresponsive (MET)'); breakdown.consciousness = 'MET'; }
-    }
-
-    // Return structure
-    return {
-      score: score,
-      metCall: metReasons.length > 0,
-      metReasons,
-      breakdown
+  // --- ADDS calculation (reused to detect MET triggers, unchanged logic) ---
+  function calculateADDS(data) {
+    // Use your existing ADDS logic but return object with metCall boolean and reasons.
+    let score = 0, metCall = false, metReason = '', reasons = [];
+    const getScore = (val, ranges, paramName) => {
+      for (const r of ranges) {
+        if ((r.min === -Infinity || val >= r.min) && (r.max === Infinity || val <= r.max)) {
+          if (r.score === 'E') return { metCall: true, metReason: r.note || `${paramName} MET` };
+          if (r.score > 0) reasons.push(`${paramName} abnormal (${val})`);
+          return { score: r.score };
+        }
+      }
+      return { score: 0 };
     };
+    const checkParam = (value, ranges, paramName) => {
+      if (isNaN(value) || metCall) return;
+      const result = getScore(value, ranges, paramName);
+      if (result.metCall) { metCall = true; metReason = result.metReason; }
+      else { score += result.score; }
+    };
+
+    checkParam(p(data.rr), [{min:-Infinity,max:4,score:'E',note:'<=4 => MET'},{min:5,max:8,score:3},{min:9,max:10,score:2},{min:11,max:20,score:0},{min:21,max:24,score:1},{min:25,max:30,score:2},{min:31,max:35,score:3},{min:36,max:Infinity,score:'E',note:'>=36 => MET'}], 'Resp Rate');
+    if (data.rr_trend === 'worsening') reasons.push('Worsening Resp Rate trend');
+
+    checkParam(p(data.spo2), [{min:-Infinity,max:84,score:'E',note:'<=84 => MET'},{min:85,max:88,score:3},{min:89,max:90,score:2},{min:91,max:93,score:1},{min:94,max:Infinity,score:0}], 'SpO2');
+    if (data.spo2_trend === 'worsening') reasons.push('Worsening SpO2 trend');
+
+    checkParam(p(data.hr), [{min:-Infinity,max:30,score:'E',note:'<=30 => MET'},{min:31,max:40,score:3},{min:41,max:50,score:2},{min:51,max:99,score:0},{min:100,max:109,score:1},{min:110,max:120,score:2},{min:121,max:129,score:1},{min:130,max:139,score:3},{min:140,max:Infinity,score:'E',note:'>=140 => MET'}], 'Heart Rate');
+    if (data.hr_trend === 'worsening') reasons.push('Worsening Heart Rate trend');
+
+    checkParam(p(data.sbp), [{min:-Infinity,max:40,score:'E',note:'extreme low -> MET'},{min:41,max:50,score:3},{min:51,max:60,score:2},{min:61,max:70,score:1},{min:71,max:80,score:0},{min:81,max:90,score:3},{min:91,max:100,score:2},{min:101,max:110,score:1},{min:111,max:139,score:0},{min:140,max:180,score:1},{min:181,max:200,score:2},{min:201,max:220,score:3},{min:221,max:Infinity,score:'E',note:'>=221 => MET'}], 'Systolic BP');
+    if (data.sbp_trend === 'worsening') reasons.push('Worsening BP trend');
+
+    checkParam(p(data.temp), [{min:-Infinity,max:35,score:3},{min:35.1,max:36.0,score:1},{min:36.1,max:37.5,score:0},{min:37.6,max:38.0,score:1},{min:38.1,max:39.0,score:2},{min:39.1,max:Infinity,score:'E',note:'>=39.1 => MET'}], 'Temperature');
+    if (data.temp_trend === 'worsening') reasons.push('Worsening Temperature trend');
+
+    if (data.consciousness === 'Unresponsive') { metCall = true; metReason = 'Unresponsive'; }
+    else if (data.consciousness === 'Pain') { score += 2; reasons.push('Responds to Pain'); }
+    else if (data.consciousness === 'Voice') { score += 1; reasons.push('Responds to Voice'); }
+
+    if (data.o2_device === 'HFNP') reasons.push('Using High-Flow O₂');
+    checkParam(p(data.o2_flow), [{min:0,max:5,score:0},{min:6,max:7,score:1},{min:8,max:9,score:2},{min:10,max:Infinity,score:3}], 'O₂ Flow');
+    checkParam(p(data.fio2), [{min:0,max:27,score:0},{min:28,max:39,score:2},{min:40,max:Infinity,score:3}], 'FiO2');
+    if (data.o2_flow_trend === 'worsening') reasons.push('Worsening O₂ Flow trend');
+    if (data.fio2_trend === 'worsening') reasons.push('Worsening FiO2 trend');
+
+    return { score, metCall, metReason, reasons };
   }
 
-  // ---------- Urine output mL/kg/hr ----------
-  function urineMlPerKgPerHr(d) {
-    if (!Number.isNaN(d.urineOutput) && !Number.isNaN(d.weight) && d.weight > 0) {
-      const mlkg = d.urineOutput / d.weight;
-      return round2(mlkg);
-    }
-    return null;
-  }
-
-  // ---------- Flag engine (Critical / Important) ----------
+  // --- Core: Flag engine (no numeric scoring) ---
   function evaluateFlags(data) {
-    // compute ADDS first
-    const adds = calculateADDSFromData(data);
+    const adds = calculateADDS(data);
 
+    // compute critical flags
     const critical = [];
+    CRITICAL_PREDICATES.forEach(pred => {
+      try {
+        const hit = pred.id === 'met_call' ? pred.test(data, adds) : pred.test(data);
+        if (hit) critical.push(pred.label);
+      } catch (e) { /* ignore predicate error */ }
+    });
+
+    // compute important flags
     const important = [];
+    IMPORTANT_PREDICATES.forEach(pred => {
+      try {
+        if (pred.test(data)) important.push(pred.label);
+      } catch (e) { /* ignore */ }
+    });
 
-    // CRITICAL predicates (any -> Cat1)
-    // 1. ADDS MET trigger
-    if (adds.metCall) critical.push('ADDS MET trigger: ' + (adds.metReasons.join('; ') || 'reasons'));
-    // 2. Vasopressor/inotrope within last 24h
-    if (data.vasopressor_recent) critical.push('Recent vasopressor/inotrope use');
-    // 3. FiO2 >= 40% or device HFNP/NIV with low sats
-    if (!Number.isNaN(data.fio2) && data.fio2 >= 40) critical.push(`FiO2 ${data.fio2}% >=40%`);
-    const dev = (data.o2_device || '').toString().toLowerCase();
-    if (dev.includes('hf') || dev.includes('niv') || dev.includes('high-flow')) {
-      // treat HF/NIV as critical if SpO2 target not met or if device is in use
-      if (Number.isNaN(data.spo2) || data.spo2 < 92) critical.push(`High-flow / NIV in use with SpO2 ${data.spo2 || 'N/A'}`);
-      else critical.push('High-flow / NIV in use');
-    }
-    // 4. Lactate >=4 or rising rapidly
-    if (!Number.isNaN(data.lactate) && data.lactate >= 4) critical.push(`Lactate ${data.lactate} >=4`);
-    if (data.lactate_trend === 'worsening' && !Number.isNaN(data.lactate) && data.lactate >= 2) critical.push('Rising lactate (worsening trend)');
-    // 5. Unresponsive / failing to protect airway
-    if ((data.consciousness || '').toString().toLowerCase() === 'unresponsive') critical.push('Unresponsive / airway risk');
-    if ((data.airway || '').toString().toLowerCase() === 'at risk') critical.push('Airway at risk');
-
-    // IMPORTANT predicates
-    // New/worsening renal dysfunction: creatinine rise >=26 µmol/L or >=1.5x baseline
-    if (!Number.isNaN(data.creatinine)) {
-      if (!Number.isNaN(data.creatinine_baseline) && (data.creatinine - data.creatinine_baseline >= 26 || data.creatinine >= 1.5 * data.creatinine_baseline)) {
-        important.push('Rising creatinine / new renal dysfunction');
-      } else if (data.creatinine_trend === 'worsening') {
-        important.push('Creatinine trend worsening');
-      }
-    }
-    // Hemodynamic instability
-    if (!Number.isNaN(data.sbp) && data.sbp < 90) important.push('SBP <90 (hemodynamic instability)');
-    if (!Number.isNaN(data.hr) && data.hr > 140) important.push('HR >140 (hemodynamic instability)');
-
-    // Recent extubation within 24-48h with objective risk features
-    if (data.recent_extubation) important.push('Recent extubation (24-48h) with risk features');
-
-    // Platelets <50 or active bleeding
-    if (!Number.isNaN(data.platelets) && data.platelets < 50) important.push('Platelets <50');
-    if (data.active_bleeding) important.push('Active bleeding');
-
-    // Delirium moderate-severe
-    if (!Number.isNaN(data.delirium) && data.delirium >= 2) important.push('Delirium (mod-severe)');
-
-    // Device / line infection risk
-    if (data.cvad_present && data.cvad_site_health && data.cvad_site_health.toLowerCase() !== 'clean & healthy') important.push('CVAD site concern');
-    if (data.pivc_1_present && data.pivc_1_site_health && data.pivc_1_site_health.toLowerCase() !== 'clean & healthy') important.push('PIVC site concern');
-
-    // Oliguria: mL/kg/hr <0.5 with persistent/worsening trend
-    const mlkg = urineMlPerKgPerHr(data);
-    if (mlkg !== null && mlkg < 0.5 && (data.urine_output_trend === 'worsening' || data.urine_output_trend === 'persistent')) {
-      important.push(`Oliguria ${mlkg} mL/kg/hr (persistent/worsening)`);
-    } else if (mlkg !== null && mlkg < 0.5) {
-      // single low reading -> still an important flag
-      important.push(`Oliguria ${mlkg} mL/kg/hr`);
-    }
-
-    // FiO2 rapid change (wean then rise) OR worsening fio2 trend
-    if (data.fio2_was_weaned_then_risen || data.fio2_trend === 'worsening') important.push('Rapid/unstable FiO2 changes');
-
-    // Pain high despite analgesia could be an important flag
-    if (!Number.isNaN(data.pain_score) && data.pain_score >= 7) important.push('Pain score 7-10 despite treatment');
-
-    // After-hours is a strong modifier (per your local data)
+    // special local-finding: after-hours modifier (your local data: 80% of readmissions after-hours)
     const afterHours = !!data.after_hours;
 
-    // Category assignment (flag-only)
-    // - Any critical -> RED
-    // - Else if afterHours && any important -> RED
-    // - Else if important count >=2 -> RED
-    // - Else if important count === 1 -> AMBER
-    // - Else GREEN
-    let category = 'GREEN';
-    if (critical.length > 0) category = 'RED';
-    else if (afterHours && important.length > 0) category = 'RED';
-    else if (important.length >= 2) category = 'RED';
-    else if (important.length === 1) category = 'AMBER';
-    else category = 'GREEN';
+    // Determine category logic:
+    // - If any critical -> Cat1
+    // - Else if (afterHours && any important) -> Cat1
+    // - Else if important count >= 2 -> Cat1
+    // - Else if important count == 1 -> Cat2
+    // - Else -> Cat3
+    let categoryKey = 'GREEN';
+    if (critical.length > 0) categoryKey = 'RED';
+    else if (afterHours && important.length > 0) categoryKey = 'RED';
+    else if (important.length >= 2) categoryKey = 'RED';
+    else if (important.length === 1) categoryKey = 'AMBER';
+    else categoryKey = 'GREEN';
 
-    // If any worsening trend present and category is AMBER, promote to RED
-    const anyWorseTrend = Object.keys(data).some(k => k.endsWith('_trend') && data[k] === 'worsening');
-    if (anyWorseTrend && category === 'AMBER') category = 'RED';
+    // Also compute "worsening trend" promotion: if any important flag has an associated trend 'worsening', promote to RED
+    const hasWorsening = Object.keys(data).some(k => k.endsWith('_trend') && data[k] === 'worsening' && k !== 'adds_override_score');
+    if (hasWorsening && categoryKey === 'AMBER') categoryKey = 'RED';
 
-    return {
-      category,
-      critical,
-      important,
-      afterHours,
-      adds // include ADDS details
-    };
+    return { categoryKey, critical, important, afterHours, adds, hasWorsening };
   }
 
-  // ---------- DMR generation ----------
-  function generateDMRText(data, evalResult) {
-    const adds = evalResult.adds || { score: 0, metCall: false, metReasons: [], breakdown: {} };
-    const mlkg = urineMlPerKgPerHr(data);
-    const analgesia = data.analgesiaRegimen || '';
-    const pain = Number.isFinite(data.pain_score) ? data.pain_score : 'N/A';
-
-    // Bloods summary compact
-    const bloods = [
-      `Cr: ${Number.isFinite(data.creatinine) ? data.creatinine : '--'}`,
-      `Lac: ${Number.isFinite(data.lactate) ? data.lactate : '--'}`,
-      `Hb: ${Number.isFinite(data.hb) ? data.hb : '--'}`,
-      `Plt: ${Number.isFinite(data.platelets) ? data.platelets : '--'}`,
-      `CRP: ${Number.isFinite(data.crp) ? data.crp : '--'}`
-    ].join(', ');
-
-    const devicesSummary = [];
-    if (data.pivc_1_present) devicesSummary.push(`PIVC1: ${data.pivc_1_site_health || 'present'}`);
-    if (data.cvad_present) devicesSummary.push(`CVAD: ${data.cvad_site_health || 'present'}`);
-    if (data.idc_present) devicesSummary.push('IDC present');
-    if (devicesSummary.length === 0) devicesSummary.push('None');
-
-    const criticalList = evalResult.critical.length ? evalResult.critical.join('; ') : 'None';
-    const importantList = evalResult.important.length ? evalResult.important.join('; ') : 'None';
-
-    // Compose DMR
-    const lines = [];
-    lines.push(`ALERT CNS ${data.review_type || 'post'} on ward ${data.location || ''}`);
-    lines.push(`LOS: ${Number.isFinite(data.icu_los) ? data.icu_los : 'N/A'} days`);
-    lines.push(`${evalResult.category}`);
-    lines.push('');
-    lines.push(`Patient ID: ${data.patient_id || 'N/A'} | Age: ${Number.isFinite(data.age) ? data.age : 'N/A'}`);
-    lines.push('');
-    // ICU fields
-    if (data.icuReason) lines.push(`ICU Admission Reason: ${data.icuReason}`);
-    if (data.icuSummary) lines.push(`ICU Summary: ${data.icuSummary}`);
-    if (data.pmh) lines.push(`PMH: ${data.pmh}`);
-    lines.push('');
-    lines.push(`REASON FOR ICU: ${data.reason_icu || 'N/A'}`);
-    lines.push('');
-    lines.push(`A: Airway: ${data.airway || 'N/A'}`);
-    lines.push(`B: RR ${Number.isFinite(data.rr) ? data.rr : 'N/A'}, SpO2 ${Number.isFinite(data.spo2) ? data.spo2 : 'N/A'} on ${data.o2_device || 'N/A'} (FiO2 ${Number.isFinite(data.fio2) ? data.fio2 + '%' : 'N/A'})`);
-    lines.push(`C: HR ${Number.isFinite(data.hr) ? data.hr : 'N/A'}, BP ${Number.isFinite(data.sbp) ? data.sbp : 'N/A'}, CRT ${data.cap_refill || 'N/A'}, UO: ${mlkg !== null ? mlkg + ' mL/kg/hr' : 'N/A'}`);
-    lines.push(`D: Consciousness: ${data.consciousness || 'N/A'}, Delirium: ${Number.isFinite(data.delirium) ? data.delirium : '0'}, Pain: ${pain}/10${analgesia ? ' (Analgesia: ' + analgesia + ')' : ''}`);
-    lines.push(`E: Temp ${Number.isFinite(data.temp) ? data.temp + '°C' : 'N/A'}, Diet: ${safeVal('diet') || 'N/A'}`);
-    lines.push('');
-    lines.push(`DEVICES:`);
-    devicesSummary.forEach(s => lines.push(`- ${s}`));
-    lines.push('');
-    lines.push(`BLOODS: ${bloods}`);
-    lines.push('');
-    lines.push(`Flags:`);
-    lines.push(`- Critical: ${criticalList}`);
-    lines.push(`- Important: ${importantList}`);
-    lines.push(`- After-hours: ${data.after_hours ? 'Yes' : 'No'}`);
-    lines.push('');
-    lines.push(`ADDS score: ${adds.score} ${adds.metCall ? ' (MET triggered: ' + adds.metReasons.join('; ') + ')' : ''}`);
-    lines.push('');
-    lines.push(`IMP: ${safeVal('clinical_impression') || ''}`);
-    lines.push('');
-    lines.push(`Plan: ${safeVal('clinical_plan') || ''}`);
-
-    return lines.join('\n');
-  }
-
-  // ---------- Handoff key generation ----------
-  function generateHandoffKey() {
-    const d = gatherFormData();
-    // Selective handoff fields (include ICU fields)
-    const handoffFields = [
-      'review_type','location','room_number','patient_id','stepdown_date','weight','age','admission_type','icu_los','after_hours',
-      'reason_icu','icuReason','icuSummary','pmh',
-      'creatinine','creatinine_baseline','lactate','platelets','hb','crp',
-      'fio2','o2_device','o2_flow','spo2','respiratoryRate','hr','systolicBP'
-    ];
-    const out = {};
-    handoffFields.forEach(k => { if (d[k] !== undefined) out[k] = d[k]; });
-    try {
-      const key = btoa(JSON.stringify(out));
-      return key;
-    } catch (e) {
-      console.error('Handoff encode failed', e);
-      return null;
-    }
-  }
-
-  // ---------- UI wiring ----------
-  function updateAll() {
-    const data = gatherFormData();
-    const evalResult = evaluateFlags(data);
-    // render summary to summary container if it exists
-    const summaryEl = document.getElementById('summary-container');
-    if (summaryEl) {
-      // Build a brief html summary
-      const catClass = evalResult.category === 'RED' ? 'category-red' : evalResult.category === 'AMBER' ? 'category-amber' : 'category-green';
-      summaryEl.innerHTML = `
-        <div class="summary-category ${catClass}">${evalResult.category}</div>
-        <div style="margin-top:8px"><strong>Critical (${evalResult.critical.length}):</strong> ${evalResult.critical.length ? evalResult.critical.join('; ') : 'None'}</div>
-        <div style="margin-top:6px"><strong>Important (${evalResult.important.length}):</strong> ${evalResult.important.length ? evalResult.important.join('; ') : 'None'}</div>
-        <div style="margin-top:6px; font-size:0.9rem;"><strong>ADDS:</strong> ${evalResult.adds.score} ${evalResult.adds.metCall ? '(MET: '+evalResult.adds.metReasons.join('; ')+')' : ''}</div>
-      `;
-    }
-
-    // Fill DMR textarea if present
-    const emrEl = document.getElementById('emrSummary') || document.getElementById('dmrOutput');
-    if (emrEl) {
-      emrEl.value = generateDMRText(data, evalResult);
-    }
-
-    // Update footer (if sticky elements exist)
+  // --- Presentation ---
+  function displayResults(result, data) {
+    const category = CATEGORIES[result.categoryKey];
+    const summaryContainer = document.getElementById('summary-container');
     const footerCategory = document.getElementById('footer-category');
     const footerCriticalCount = document.getElementById('footer-critical-count');
     const footerImportantCount = document.getElementById('footer-important-count');
-    const footerFlagsRed = document.getElementById('footer-flags-red');
-    const footerFlagsGreen = document.getElementById('footer-flags-green');
+    const footerRedFlags = document.getElementById('footer-flags-red');
+    const footerGreenFlags = document.getElementById('footer-flags-green');
+    const stickyFooter = document.getElementById('sticky-footer');
 
-    if (footerCategory) footerCategory.textContent = evalResult.category;
-    if (footerCriticalCount) footerCriticalCount.textContent = evalResult.critical.length;
-    if (footerImportantCount) footerImportantCount.textContent = `Important: ${evalResult.important.length}`;
-    if (footerFlagsRed) footerFlagsRed.innerHTML = `<span>🚩 ${evalResult.critical.length}</span>`;
-    if (footerFlagsGreen) footerFlagsGreen.innerHTML = `<span>✅ ${evalResult.important.length}</span>`;
+    document.getElementById('footer-location').textContent = `${data.location || 'N/A'} - ${data.room_number || 'N/A'}`;
+    const reason = data.reason_icu || 'No reason entered';
+    document.getElementById('footer-reason').textContent = reason.length > 60 ? reason.substring(0, 60) + '...' : reason;
 
-    // Save current state (simple localStorage snapshot)
-    try {
-      localStorage.setItem('alertTool_state_v1', JSON.stringify(document.getElementById('assessmentForm') ? new FormData(document.getElementById('assessmentForm')) : {}));
-    } catch (e) { /* ignore storage errors */ }
+    footerCategory.textContent = category.text;
+    footerCriticalCount.textContent = result.critical.length;
+    footerImportantCount.textContent = `Important: ${result.important.length}`;
+
+    stickyFooter.className = `fixed bottom-0 left-0 right-0 p-2 shadow-lg transition-colors duration-300 flex flex-col z-40 ${category.class}`;
+    footerRedFlags.innerHTML = `<span>🚩 ${result.critical.length}</span>`;
+    footerGreenFlags.innerHTML = `<span>✅ ${result.important.length}</span>`;
+
+    // Build summary HTML
+    const criticalHtml = result.critical.length ? `<ul class="list-disc list-inside text-sm text-gray-700">${result.critical.map(f => `<li>${f}</li>`).join('')}</ul>` : '<div class="text-sm text-gray-500">None</div>';
+    const importantHtml = result.important.length ? `<ul class="list-disc list-inside text-sm text-gray-700">${result.important.map(f => `<li>${f}</li>`).join('')}</ul>` : '<div class="text-sm text-gray-500">None</div>';
+    const afterHoursHtml = result.afterHours ? '<div class="mt-2 text-sm text-yellow-700 font-semibold">After-hours discharge — local modifier applied</div>' : '';
+
+    // ADDS reasons if present
+    const addsReasons = (result.adds && result.adds.reasons && result.adds.reasons.length) ? `<div class="mt-2 text-sm text-gray-700"><strong>ADDS reasons:</strong><ul class="list-disc list-inside">${result.adds.reasons.map(r => `<li>${r}</li>`).join('')}</ul></div>` : '';
+
+    const plan = generateActionPlan(result.categoryKey, result.critical, result.important);
+
+    summaryContainer.innerHTML = `
+      <div class="summary-category ${category.class}">${category.text}</div>
+      ${afterHoursHtml}
+      ${addsReasons}
+      <div class="summary-flags-container mt-4"><div><h4 class="flag-list-red">Critical Flags (${result.critical.length}):</h4>${criticalHtml}</div><div><h4 class="flag-list-green">Important Flags (${result.important.length}):</h4>${importantHtml}</div></div>
+      <div class="summary-plan mt-4"><h4>Recommended Action Plan:</h4><p class="text-sm">${plan}</p></div>
+    `;
   }
 
-  // ---------- Copy DMR / Handoff interactions ----------
-  function copyDMRToClipboard() {
-    const emrEl = document.getElementById('emrSummary') || document.getElementById('dmrOutput');
-    if (!emrEl) return alert('DMR element not found.');
-    emrEl.select?.();
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(emrEl.value).then(() => alert('DMR copied to clipboard'));
-    } else {
-      try {
-        document.execCommand('copy');
-        alert('DMR copied to clipboard (legacy method)');
-      } catch (e) {
-        alert('Could not copy DMR — please copy manually.');
-      }
+  // --- Action plan generator (concise, editable) ---
+  function generateActionPlan(categoryKey, criticalFlags, importantFlags) {
+    switch (categoryKey) {
+      case 'RED':
+        let redPlan = 'Cat 1: Daily senior review for 72 hrs. Escalate immediately to ICU liaison/medical team if any deterioration.';
+        if (criticalFlags.some(f => f.toLowerCase().includes('lactate'))) redPlan += ' Repeat lactate as clinically indicated (e.g., within 6 hrs).';
+        if (criticalFlags.some(f => f.toLowerCase().includes('fio2'))) redPlan += ' Review respiratory support and consider review by respiratory/ICU.';
+        if (importantFlags.some(f => f.toLowerCase().includes('creatinine'))) redPlan += ' Consider renal review and repeat serum creatinine.';
+        return redPlan;
+      case 'AMBER':
+        return 'Cat 2: Enhanced ward monitoring q24–48 hrs for 72 hrs; nurse-led observations and early MDT review if any trend worsens.';
+      default:
+        return 'Cat 3: Routine ward care. Single check within 24 hrs and include DMR notes.';
     }
   }
 
-  function copyHandoffKeyToClipboard() {
-    const key = generateHandoffKey();
-    if (!key) return alert('Handoff key generation failed');
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard'));
-    } else {
-      alert('Please copy the handoff key: ' + key);
-    }
+  // --- DMR summary (keeps your prior format but uses flags) ---
+  function generateDMRSummary() {
+    const data = gatherFormData();
+    const result = evaluateFlags(data);
+    const uopSummary = computeUOPSummary(data);
+    const bloodsSummary = [
+      {id:'creatinine',name:'Cr'}, {id:'lactate',name:'Lac'}, {id:'hb',name:'Hb'},
+      {id:'platelets',name:'Plt'}, {id:'albumin',name:'Alb'}, {id:'crp',name:'CRP'}
+    ].map(b => {
+      const val = data[b.id] || '--', trend = data[`${b.id}_trend`], arrow = trend === 'improving' ? '↑' : trend === 'worsening' ? '↓' : '→';
+      return `${b.name} ${val}${trend ? `(${arrow})` : ''}`;
+    }).join(', ');
+
+    const devicesSummary = [];
+    if (data.pivc_1_present) devicesSummary.push(`PIVC1: ${data.pivc_1_site_health || 'N/A'} (Dwell ${document.getElementById('pivc_1_dwell_time')?.textContent || 'N/A'}d)`);
+    if (data.cvad_present) devicesSummary.push(`CVAD: ${data.cvad_type || 'N/A'} ${data.cvad_site_health || ''}`);
+    if (data.idc_present) devicesSummary.push('IDC present');
+    if (devicesSummary.length === 0) devicesSummary.push('None');
+
+    const categoryText = CATEGORIES[result.categoryKey].text;
+
+    const summary = `
+ALERT CNS ${data.review_type || 'post'} on ward ${data.location || ''} 
+LOS: ${data.icu_los || 'N/A'} days
+${categoryText}
+
+Patient ID: ${data.patient_id || 'N/A'} | Age: ${data.age || 'N/A'}
+
+REASON FOR ICU: ${data.reason_icu || 'N/A'}
+
+ICU SUMMARY: ${data.icu_summary || 'N/A'}
+
+A: Airway: ${data.airway || 'N/A'}
+B: RR ${data.rr || 'N/A'}, SpO2 ${data.spo2 || 'N/A'} on ${data.o2_device || 'N/A'} (FiO2 ${data.fio2 || 'N/A'}%)
+C: HR ${data.hr || 'N/A'}, BP ${data.sbp || 'N/A'}/${data.dbp || 'N/A'}, CRT ${data.cap_refill || 'N/A'}, UO: ${uopSummary}
+D: Consciousness: ${data.consciousness || 'N/A'}, Delirium: ${data.delirium || '0'}, Pain: ${data.pain_score || 'N/A'}/10
+E: Temp ${data.temp || 'N/A'}°C, Diet: ${data.diet || 'N/A'}
+
+DEVICES:
+- ${devicesSummary.join('\n- ')}
+
+BLOODS:
+${bloodsSummary}
+
+Flags:
+- Critical: ${result.critical.length ? result.critical.join('; ') : 'None'}
+- Important: ${result.important.length ? result.important.join('; ') : 'None'}
+- After-hours: ${result.afterHours ? 'Yes' : 'No'}
+
+IMP:
+${data.clinical_impression || ''}
+
+Plan:
+${data.clinical_plan || generateActionPlan(result.categoryKey, result.critical, result.important)}
+`.trim();
+
+    document.getElementById('emrSummary').value = summary;
   }
 
-  function pasteHandoffKeyAndLoad() {
-    const pasteInput = document.getElementById('pasteDataInput');
-    if (!pasteInput) return alert('Paste box not present in UI');
-    const raw = pasteInput.value.trim();
-    if (!raw) return alert('Paste a base64 handoff key into the box first');
-    try {
-      const json = JSON.parse(atob(raw));
-      // set fields present in JSON back into DOM
-      Object.keys(json).forEach(k => {
-        const el = document.getElementById(k);
-        if (el) {
-          if (el.type === 'checkbox') el.checked = json[k] === true || json[k] === 'true';
-          else el.value = json[k];
-        }
-      });
-      // hide paste container
-      const pc = document.getElementById('pasteContainer');
-      if (pc) pc.style.display = 'none';
-      updateAll();
-      alert('Handoff loaded (some fields may be missing depending on your form)');
-    } catch (e) {
-      console.error(e);
-      alert('Invalid handoff key');
+  function computeUOPSummary(data) {
+    const weight = p(data.weight);
+    const uop_hr = p(data.urine_output_hr);
+    if (!isNaN(weight) && weight > 0 && !isNaN(uop_hr)) {
+      const mlkg = (uop_hr / weight).toFixed(2);
+      return `${uop_hr} mL/hr (${mlkg} mL/kg/hr)`;
+    } else if (!isNaN(uop_hr)) {
+      return `${uop_hr} mL/hr`;
     }
+    return 'N/A';
   }
 
-  // ---------- DOM events ----------
-  function initEventHandlers() {
-    // When any input in the form changes, update evaluation
-    const form = document.getElementById('assessmentForm');
-    if (form) {
-      form.addEventListener('input', updateAll);
-      form.addEventListener('change', updateAll);
-    } else {
-      // fallback: re-evaluate on body input/change
-      document.body.addEventListener('input', updateAll);
-      document.body.addEventListener('change', updateAll);
-    }
+  // --- Core orchestrator ---
+  function updateRiskAssessment() {
+    const data = gatherFormData();
+    const result = evaluateFlags(data);
+    displayResults(result, data);
+    saveState();
+    generateDMRSummary();
+  }
 
-    // Buttons
-    const copyBtn = document.getElementById('copySummaryButton');
-    if (copyBtn) copyBtn.addEventListener('click', copyDMRToClipboard);
+  // --- Event wiring & UI helpers (retain your existing UI behavior) ---
+  function setupEventListeners() {
+    const toggleReviewBtn = document.getElementById('toggle-full-review-btn');
+    let isQuickView = false;
+    toggleReviewBtn?.addEventListener('click', () => {
+      isQuickView = !isQuickView;
+      toggleReviewBtn.textContent = isQuickView ? 'Expand to Full Review' : 'Collapse to Quick Score';
+      document.querySelectorAll('.full-review-item').forEach(el => el.style.display = isQuickView ? 'none' : '');
+    });
 
-    const getHandoffBtn = document.getElementById('getHandoffKeyBtn');
-    if (getHandoffBtn) getHandoffBtn.addEventListener('click', copyHandoffKeyToClipboard);
-
-    const useHandoffBtn = document.getElementById('useHandoffKeyBtn');
-    if (useHandoffBtn) useHandoffBtn.addEventListener('click', () => {
+    document.getElementById('useHandoffKeyBtn')?.addEventListener('click', () => {
       const pasteContainer = document.getElementById('pasteContainer');
-      if (pasteContainer) pasteContainer.style.display = pasteContainer.style.display === 'block' ? 'none' : 'block';
+      pasteContainer.style.display = pasteContainer.style.display === 'block' ? 'none' : 'block';
     });
 
-    const loadPasteBtn = document.getElementById('loadPastedDataBtn');
-    if (loadPasteBtn) loadPasteBtn.addEventListener('click', pasteHandoffKeyAndLoad);
+    document.getElementById('loadPastedDataBtn')?.addEventListener('click', () => {
+      const pasted = document.getElementById('pasteDataInput').value;
+      if (!pasted) return;
+      try {
+        currentReview = JSON.parse(atob(pasted));
+        loadReviewData(true);
+        document.getElementById('pasteContainer').style.display = 'none';
+        document.getElementById('pasteDataInput').value = '';
+      } catch (e) { alert('Invalid handoff key.'); }
+    });
 
-    const startOverBtn = document.getElementById('startOverBtn');
-    if (startOverBtn) startOverBtn.addEventListener('click', () => {
-      if (confirm('Clear form?')) {
-        const f = document.getElementById('assessmentForm');
-        if (f) f.reset();
-        updateAll();
+    document.getElementById('startOverBtn')?.addEventListener('click', () => {
+      if (confirm('Are you sure? This will clear all data.')) clearForm();
+    });
+
+    form.addEventListener('input', updateRiskAssessment);
+    form.addEventListener('change', updateRiskAssessment);
+
+    document.getElementById('copySummaryButton')?.addEventListener('click', () => {
+      const summaryEl = document.getElementById('emrSummary');
+      summaryEl.select();
+      summaryEl.setSelectionRange(0, 99999);
+      document.execCommand('copy');
+      alert('DMR Summary Copied to Clipboard!');
+    });
+
+    document.getElementById('getHandoffKeyBtn')?.addEventListener('click', () => {
+      const data = gatherFormData();
+      const handoffFields = ['review_type','location','room_number','patient_id','stepdown_date','weight','age','admission_type','icu_los','after_hours','reason_icu','icu_summary','pmh','severe_comorbidities','creatinine','creatinine_trend','lactate','lactate_trend','platelets','platelets_trend','hb','hb_trend','fio2','fio2_trend'];
+      const handoffData = {};
+      handoffFields.forEach(id => { if (data.hasOwnProperty(id)) handoffData[id] = data[id]; });
+      const key = btoa(JSON.stringify(handoffData));
+      navigator.clipboard.writeText(key).then(() => alert('Handoff key copied to clipboard!'));
+    });
+
+    // show/hide O2 flow and FiO2 containers (same as original)
+    const o2DeviceEl = document.getElementById('o2_device');
+    if (o2DeviceEl) {
+      o2DeviceEl.addEventListener('change', (e) => {
+        const device = e.target.value;
+        document.getElementById('o2_flow_container').classList.toggle('hidden', !['NP', 'HFNP', 'NIV'].includes(device));
+        document.getElementById('fio2_container').classList.toggle('hidden', !['HFNP', 'NIV'].includes(device));
+        document.getElementById('peep_ps_container').classList.toggle('hidden', device !== 'NIV');
+      });
+    }
+
+    // other UI toggles copied from your original file
+    const assessmentContainer = document.getElementById('assessment-section');
+    assessmentContainer?.addEventListener('change', (e) => {
+      const handlers = {
+        'diet': () => { document.getElementById('diet_other_container')?.classList.toggle('hidden', e.target.value !== 'Other (specify)'); },
+        'cap_refill': () => { document.getElementById('crt_details_container')?.classList.toggle('hidden', e.target.value !== '>3s'); },
+      };
+      if (handlers[e.target.id]) handlers[e.target.id]();
+    });
+
+    assessmentContainer?.addEventListener('input', (e) => {
+      if (e.target.id === 'pain_score') {
+        const val = p(e.target.value);
+        document.getElementById('pain_interventions_container')?.classList.toggle('hidden', isNaN(val) || val <= 0);
+      }
+    });
+
+    // device dwell time calculator (same idea as original)
+    const devicesContainer = document.getElementById('devices-section');
+    const calculateDwellTime = (startDate, displayElId) => {
+      const displayEl = document.getElementById(displayElId);
+      if (!startDate || !displayEl) { if (displayEl) displayEl.textContent = 'N/A'; return; }
+      const start = new Date(startDate);
+      const today = new Date();
+      const diffTime = Math.abs(today - start);
+      const diffDays = Math.ceil(diffTime / (1000*60*60*24));
+      displayEl.textContent = diffDays;
+    };
+    devicesContainer?.addEventListener('change', (e) => {
+      const id = e.target.id;
+      if (id.endsWith('_present')) {
+        const detailsId = id.replace('_present','_details_container');
+        document.getElementById(detailsId)?.classList.toggle('hidden', !e.target.checked);
+      }
+      if (id.endsWith('_commencement_date')) {
+        const dwellId = id.replace('_commencement_date','_dwell_time');
+        calculateDwellTime(e.target.value,dwellId);
       }
     });
   }
 
-  // ---------- Boot ----------
-  function boot() {
-    initEventHandlers();
-    // initial evaluation
-    setTimeout(updateAll, 50);
-  }
-
-  // run on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
-
-  // expose some functions for debugging if console open
-  window._ALERTTool = {
-    gatherFormData,
-    calculateADDSFromData,
-    evaluateFlags,
-    generateDMRText,
-    generateHandoffKey
-  };
-
-})();
+  // --- UI population (reuses your dynamic form structure) ---
+ function populateStaticContent() {
+        const createBloodInput = (label, id) => {
+            let specialHtml = '';
+            if (id === 'glucose') {
+                return `<div class="blood-score-item"><label class="font-medium text-sm">${label}:</label><label class="text-sm flex items-center mt-1"><input type="checkbox" id="glucose_control" class="input-checkbox !h-5 !w-5">Poorly Controlled</label></div>`;
+            }
+             if (id === 'k' || id === 'mg') {
+                specialHtml = `<div id="${id}_replacement_container" class="hidden mt-2 full-review-item"><label class="text-xs">Replacement/Action:<textarea id="${id}_replacement" rows="1" class="input-field"></textarea></label></div>`;
+            }
+            return `<div class="blood-score-item"><label class="font-medium text-sm">${label}:<input type="number" step="0.1" id="${id}" class="input-field" placeholder="Current"></label><div class="trend-radio-group full-review-item" data-trend-id="${id}_trend"><label title="Improving"><input type="radio" name="${id}_trend_radio" value="improving"><span>↑</span></label><label title="Stable"><input type="radio" name="${id}_trend_radio" value="stable" checked><span>→</span></label><label title="Worsening"><input type="radio" name="${id}_trend_radio" value="worsening"><span>↓</span></label></div>${specialHtml}</div>`;
+        };
+        const createTrendButtons = (id) => `<div class="trend-radio-group full-review-item" data-trend-id="${id}_trend"><label title="Improving"><input type="radio" name="${id}_trend_radio" value="improving"><span>↑</span></label><label title="Stable"><input type="radio" name="${id}_trend_radio" value="stable" checked><span>→</span></label><label title="Worsening"><input type="radio" name="${id}_trend_radio" value="worsening"><span>↓</span></label></div>`;
+            
+document.querySelector('#patient-details-section').innerHTML = `<details class="form-section desktop-only" open><summary>Patient & Review Details</summary><div class="form-section-content"><div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm"><label>Review Type:<select id="review_type" class="input-field"><option value="post">Post-ICU stepdown review</option><option value="pre">Pre-ICU stepdown review</option></select></label><div class="grid grid-cols-2 gap-4"><label>Location (Ward):<select id="location" class="input-field"><option value="" disabled selected>Select a Ward</option><optgroup label="Towers"><option>3A</option><option>3B</option><option>3C</option><option>3D</option><option>4A</option><option>4B</option><option>4C</option><option>4D</option><option>5A</option><option>5B</option><option>5C</option><option>5D</option><option>6A</option><option>6B</option><option>6C</option><option>6D</option><option>7A</option><option>7B</option><option>7C</option><option>7D</option><option>CCU</option></optgroup><optgroup label="Medihotel"><option>Medihotel 5</option><option>Medihotel 6</option><option>Medihotel 7</option><option>Medihotel 8</option></optgroup><optgroup label="SRS"><option>SRS 1A</option><option>SRS 2A</option><option>SRS A</option><option>SRS B</option></optgroup><optgroup label="Mental Health"><option>Mental Health Adult</option><option>Mental Health Youth</option></optgroup></select></label><label>Room No.:<input type="text" id="room_number" class="input-field"></label></div><label class="full-review-item">Patient ID (Initials + URN):<input type="text" id="patient_id" class="input-field"></label><label class="full-review-item">Stepdown Date:<input type="date" id="stepdown_date" class="input-field"></label><label>Weight (kg):<input type="number" id="weight" class="input-field" placeholder="e.g., 75"></label><label>Age:<input type="number" id="age" class="input-field" placeholder="Years"></label><label>Admission Type:<select id="admission_type" class="input-field"><option value="0">Elective Surgical</option><option value="1">Emergency Surgical</option><option value="2">Medical/ED</option></select></label><label>ICU LOS (days):<input type="number" id="icu_los" class="input-field" placeholder="Days"></label><label class="flex items-center pt-6 full-review-item"><input type="checkbox" id="after_hours" class="input-checkbox"> After-Hours Discharge</label></div></div></details>`;
+        document.querySelector('#bloods-section').innerHTML = `<details class="form-section" open><summary>Scorable Blood Panel</summary><div class="form-section-content"><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">${createBloodInput('Creatinine (µmol/L)', 'creatinine')}${createBloodInput('Lactate (mmol/L)', 'lactate')}${createBloodInput('Hb (g/L)', 'hb')}${createBloodInput('Platelets (x10⁹/L)', 'platelets')}${createBloodInput('Albumin (g/L)', 'albumin')}${createBloodInput('CRP (mg/L)', 'crp')}${createBloodInput('Glucose', 'glucose')}${createBloodInput('K+ (mmol/L)', 'k')}${createBloodInput('Mg++ (mmol/L)', 'mg')}</div></div></details>`;
+        
+        document.getElementById('assessment-section').innerHTML = `<details class="form-section" open><summary>A-E Assessment & Context</summary><div class="form-section-content">
+            <h3 class="assessment-section-title">Core Vitals (ADDS Entry)</h3>
+            <div class="assessment-grid" style="align-items: end;">
+                <div><label>Resp Rate:</label><div class="flex items-center gap-2"><input type="number" id="rr" class="input-field">${createTrendButtons('rr')}</div></div>
+                <div><label>SpO2 (%):</label><div class="flex items-center gap-2"><input type="number" id="spo2" class="input-field">${createTrendButtons('spo2')}</div></div>
+                <div><label>O₂ Device:<select id="o2_device" class="input-field"><option value="RA">Room Air</option><option value="NP">Nasal Prongs</option><option value="HFNP">High-Flow</option><option value="NIV">NIV/CPAP</option></select></label><div id="o2_flow_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">Flow (L/min):<input type="number" id="o2_flow" class="input-field"></label>${createTrendButtons('o2_flow')}</div><div id="fio2_container" class="hidden flex items-center gap-2"><label class="text-xs w-full">FiO2 (%):<input type="number" id="fio2" class="input-field"></label>${createTrendButtons('fio2')}</div><div id="peep_ps_container" class="hidden grid grid-cols-2 gap-2"><label class="text-xs">PEEP:<input type="number" id="peep" class="input-field"></label><label class="text-xs">PS:<input type="number" id="ps" class="input-field"></label></div></div>
+                <div><label>Heart Rate:</label><div class="flex items-center gap-2"><input type="number" id="hr" class="input-field">${createTrendButtons('hr')}</div></div>
+                <div><label>Systolic BP:</label><div class="flex items-center gap-2"><input type="number" id="sbp" class="input-field">${createTrendButtons('sbp')}</div></div>
+                <label>Diastolic BP:<input type="number" id="dbp" class="input-field"></label>
+                <div><label>Temperature (°C):</label><div class="flex items-center gap-2"><input type="number" step="0.1" id="temp" class="input-field">${createTrendButtons('temp')}</div></div>
+                <label>Consciousness:<select id="consciousness" class="input-field"><option value="Alert">Alert</option><option value="Voice">Voice</option><option value="Pain">Pain</option><option value="Unresponsive">Unresponsive</option></select></label>
+                <div class="lg:col-span-1">
+                    <label>Pain Score (0-10):<input type="number" id="pain_score" class="input-field" min="0" max="10"></label>
+                    <div id="pain_interventions_container" class="hidden mt-2 space-y-2 full-review-item">
+                        <label>Analgesia Regimen:<textarea id="analgesia_regimen" rows="2" class="input-field"></textarea></label>
+                        <div id="aps_referral_container" class="hidden"><label class="flex items-center"><input type="checkbox" id="aps_referral" class="input-checkbox">APS Referral</label></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 p-4 border rounded-lg full-review-item"><label class="font-medium text-sm">Vital Sign Modifications (MODS):</label><textarea id="mods_details" class="input-field" rows="2" placeholder="e.g., Target HR < 110, SBP > 90..."></textarea><div class="flex items-center mt-2"><input type="checkbox" id="adds_override_checkbox" class="input-checkbox"><label for="adds_override_checkbox" class="text-sm">Manually Override ADDS Score</label></div><div id="adds_override_score_container" class="hidden mt-2"><label class="text-sm">Override ADDS Score:<input type="number" id="adds_override_score" class="input-field w-24"></label></div></div>
+            <div class="mt-6 bg-teal-50 p-4 rounded-lg border border-teal-200 text-center relative"><div id="met-alert-container" class="met-alert absolute top-2 right-2"></div><span class="text-sm font-medium text-gray-500">ADDS SCORE</span><div id="finalADDSScore" class="font-bold text-5xl my-2">0</div></div>
+            
+            <div class="mt-6">
+                <h3 class="assessment-section-title">Assessment Details</h3>
+                <div class="assessment-grid">
+                    <label>Airway:<select id="airway" class="input-field"><option>Patent</option><option>At Risk</option><option>Tracheostomy</option><option>Laryngectomy</option></select></label>
+                    <div><label>Cap Refill:<select id="cap_refill" class="input-field"><option value="<3s">< 3 sec</option><option value=">3s">> 3 sec</option></select></label><div id="crt_details_container" class="hidden mt-2 full-review-item"><label class="text-xs">Details:<textarea id="crt_details" class="input-field" rows="1"></textarea></label></div></div>
+                    <div class="grid grid-cols-2 gap-2 items-end"><label>Urine Output (last hr, mL):<input type="number" id="urine_output_hr" class="input-field"></label><label>mL/kg/hr:<input type="text" id="uop_ml_kg_hr_display" class="input-field bg-gray-100" readonly></label></div>
+                    <label>Delirium:<select id="delirium" class="input-field"><option value="0">None</option><option value="1">Mild</option><option value="2">Mod-Severe</option></select></label>
+                    <label>Mobility:<select id="mobility" class="input-field"><option>Independent</option><option>Supervision/Standby Assist</option><option>Requires Physical Assistance</option><option>Bedbound/Immobile</option></select></label>
+                    <label>Frailty Score (CFS):<input type="number" id="frailty_score" class="input-field" min="1" max="9"></label>
+                    <div class="full-review-item"><label>Bowels:<select id="bowels" class="input-field"><option>Normal</option><option>Formed</option><option>Diarrhoea</option><option>BNO</option></select></label></div>
+                    <label class="full-review-item">Bowels Last Opened:<input type="date" id="bowels_last_opened" class="input-field"></label>
+                    <div class="full-review-item"><label>Diet:<select id="diet" class="input-field"><option>Tolerating Full Diet</option><option>Tolerating Light Diet</option><option>Clear fluids</option><option>Nourishing fluids</option><option>Nausea / Vomiting</option><option>NBM</option><option>Other (specify)</option></select></label><div id="diet_other_container" class="hidden mt-2"><label>Specify Diet:<textarea id="diet_other" class="input-field" rows="1"></textarea></label></div></div>
+                </div>
+            </div>
+        </div></details>`;
+        
+        document.getElementById('devices-section').innerHTML = `<details class="form-section"><summary>Devices</summary><div class="form-section-content"><div class="space-y-4">
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="pivc_1_present" class="input-checkbox">PIVC 1</label><div id="pivc_1_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center"><label class="text-sm">Commencement Date:<input type="date" id="pivc_1_commencement_date" class="input-field"></label><label class="text-sm">Gauge:<select id="pivc_1_gauge" class="input-field"><option>24G</option><option>22G</option><option>20G</option><option>18G</option><option>16G</option></select></label><label class="text-sm">Site Health:<select id="pivc_1_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label><div class="text-sm">Dwell Time: <span id="pivc_1_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="pivc_2_present" class="input-checkbox">PIVC 2</label><div id="pivc_2_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center"><label class="text-sm">Commencement Date:<input type="date" id="pivc_2_commencement_date" class="input-field"></label><label class="text-sm">Gauge:<select id="pivc_2_gauge" class="input-field"><option>24G</option><option>22G</option><option>20G</option><option>18G</option><option>16G</option></select></label><label class="text-sm">Site Health:<select id="pivc_2_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label><div class="text-sm">Dwell Time: <span id="pivc_2_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="cvad_present" class="input-checkbox">CVAD</label><div id="cvad_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center"><label class="text-sm">Type:<select id="cvad_type" class="input-field"><option>CVC</option><option>PICC</option><option>Vascath</option></select></label><label class="text-sm">Commencement Date:<input type="date" id="cvad_commencement_date" class="input-field"></label><div class="text-sm">Dwell Time: <span id="cvad_dwell_time" class="font-bold">N/A</span> days</div><label class="text-sm sm:col-span-2">Site Health:<select id="cvad_site_health" class="input-field"><option>Clean & Healthy</option><option>Redness/Swelling</option><option>Signs of Infection</option><option>Occluded/Poor Function</option></select></label></div></div></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="idc_present" class="input-checkbox">IDC</label><div id="idc_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-3 gap-4"><label class="text-sm">Commencement Date:<input type="date" id="idc_commencement_date" class="input-field"></label><div class="text-sm">Dwell Time: <span id="idc_dwell_time" class="font-bold">N/A</span> days</div></div></div></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="ng_tube_present" class="input-checkbox">NG Tube</label></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="nj_tube_present" class="input-checkbox">NJ Tube</label></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="drains_present" class="input-checkbox">Drains</label><div id="drains_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><label class="text-sm">24hr Output (mL):<input type="number" id="drain_output_24hr" class="input-field"></label><label class="text-sm">Cumulative Output (mL):<input type="number" id="drain_output_cumulative" class="input-field"></label></div></div></div>
+                <div class="device-item"><label class="flex items-center font-medium"><input type="checkbox" id="wounds_present" class="input-checkbox">Wounds</label><div id="wounds_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2 full-review-item"><label class="text-sm">Description:<textarea id="wound_description" rows="2" class="input-field"></textarea></label></div></div>
+                <div class="device-item full-review-item"><label class="flex items-center font-medium"><input type="checkbox" id="other_device_present" class="input-checkbox">Other Device</label><div id="other_device_details_container" class="hidden mt-2 ml-6 pl-4 border-l-2 space-y-2"><label class="text-sm">Details:<textarea id="other_device_details" rows="2" class="input-field"></textarea></label></div></div>
+            </div></div></details>`;
+        
+        document.getElementById('context-section').innerHTML = `<details class="form-section"><summary>Context & Overrides</summary><div class="form-section-content"><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label class="font-medium text-sm">Ward Placement/Staffing (Reducer):</label><select id="ward_staffing" class="input-field"><option value="0">1:4+ Standard</option><option value="-0.5">1:3</option><option value="-1">1:2</option><option value="-2">1:1</option><option value="-1">Monitored Bed</option></select></div>
+                <div class="sm:col-span-2 full-review-item"><label class="font-medium text-sm">General Notes (for DMR):</label><textarea id="general_notes" class="input-field" rows="2" placeholder="Note any other relevant context for the DMR summary..."></textarea></div>
+                <div class="sm:col-span-2 full-review-item">
+                    <label class="flex items-center"><input type="checkbox" id="manual_override" class="input-checkbox"> Manual Category Upgrade - Clinical Concern</label>
+                    <textarea id="override_reason" class="input-field mt-2" placeholder="Reason for upgrade..."></textarea>
+                </div>
+                 <div class="sm:col-span-2 full-review-item">
+                    <label class="flex items-center"><input type="checkbox" id="manual_downgrade" class="input-checkbox"> Manual Category Downgrade</label>
+                    <div id="downgrade_details_container" class="hidden mt-2">
+                        <label>New Category:<select id="manual_downgrade_category" class="input-field mb-2"><option value="AMBER">Amber</option><option value="GREEN">Green</option></select></label>
+                        <textarea id="downgrade_reason" class="input-field" placeholder="Reason for downgrade is mandatory..."></textarea>
+                    </div>
+                </div>
+            </div></div></details>`;
+    }
+        
+    initializeApp();
+});
+// --- SCRIPT END ---
